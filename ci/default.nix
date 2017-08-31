@@ -3,7 +3,7 @@
 with import ../lib/image.nix pkgs;
 
 let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 -p 3000 --max_spare_servers 5 --max_servers 25 --max_requests 100 -d";
-    hydraQueueRunnerCmd = "${pkgs.hydra}/bin/hydra-queue-runner -v --option build-use-substitutes true";
+    hydraQueueRunnerCmd = "${pkgs.hydra}/bin/hydra-queue-runner -v";
     hydraEvaluator = "${pkgs.hydra}/bin/hydra-evaluator";
 
     hydraConf = pkgs.writeText "hydra.conf" ''
@@ -12,7 +12,6 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       notification_sender hydra@example.com
       max_servers 25
       gc_roots_dir /nix/var/nix/gcroots/hydra
-      use-substitutes = 0
       max_output_size = 4294967296
     '';
 
@@ -120,9 +119,8 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
 in
 {
-hydraServer = pkgs.dockerTools.buildImage rec {
+hydraServer = pkgs.dockerTools.buildImageWithNixDb rec {
     name = "hydra";
-    populateNixDb = true;
     contents = [
       pkgs.hydra
       pkgs.nix pkgs.eject # eject provides 'more' which is required by nix-store
