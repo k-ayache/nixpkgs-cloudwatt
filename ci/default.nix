@@ -1,6 +1,7 @@
 {pkgs ? import <nixpkgs> {}}:
 
 with import ../lib/image.nix pkgs;
+with import ../deps.nix pkgs;
 
 let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 -p 3000 --max_spare_servers 5 --max_servers 25 --max_requests 100 -d";
     hydraQueueRunnerCmd = "${pkgs.hydra}/bin/hydra-queue-runner -v";
@@ -143,7 +144,7 @@ hydraServer = pkgs.dockerTools.buildImageWithNixDb rec {
       + containerInit + nixInit + hydraInit + nscdInit + perpInit;
 
     config = {
-      Cmd = [ "${pkgs.bash}/bin/bash"  "-c" "${perpEntryPoint}/bin/entry-point" ];
+      Cmd = [ "${perp}/usr/sbin/perpd" ];
       Env = [
         "HYDRA_DATA=/${hydraBaseDir}"
         "HYDRA_CONFIG=/${hydraBaseDir}/hydra.conf"

@@ -28,10 +28,4 @@ rec {
       eval $TARGET "$@"
     '';
   };
-
-  perpEntryPoint = pkgs.writeScriptBin "entry-point" ''
-    # Enable all perp services
-#    ${pkgs.findutils}/bin/find /etc/perp -type d -exec chmod +t {} \;
-    ${perp}/usr/sbin/perpd
-  '';
 }
