@@ -94,6 +94,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
     nixInit = ''
       mkdir {tmp,root}
+      chmod 777 tmp
       echo "root:x:0:0::/root:/bin/bash" >> etc/passwd
       echo "nixbld:x:30000:nixbld1,nixbld2,nixbld3,nixbld4,nixbld5,nixbld6,nixbld7,nixbld8,nixbld9,nixbld10,nixbld11,nixbld12,nixbld13,nixbld14,nixbld15,nixbld16,nixbld17,nixbld18,nixbld19,nixbld20,nixbld21,nixbld22,nixbld23,nixbld24,nixbld25,nixbld26,nixbld27,nixbld28,nixbld29,nixbld30" >> etc/group
       for i in $(seq 1 30); do echo "nixbld$i:x:$((30000 + $i)):30000:::" >> etc/passwd; done
@@ -106,7 +107,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
     # This could be avoided by patching in contrail build itself
     contrailBuildInit = ''
       mkdir -p usr/bin
-      ln -s ${pkgs.coreutils} usr/bin/env
+      ln -s ${pkgs.coreutils}/bin/env usr/bin/env
     '';
 
     perpInit = ''
