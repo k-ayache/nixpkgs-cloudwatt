@@ -32,8 +32,11 @@ docker run --link postgres:postgres hydra hydra-create-user admin --role admin -
 
 We can then start the Hydra container
 ```
-$ docker run --name hydra -d -p 3000:3000 --link postgres:postgres hydra
+$ docker run --name hydra -d -p 3000:3000 --link postgres:postgres --volume $PWD/nix-cache:/nix-cache hydra
 ```
+
+The volume store a binary cache that is filled by the
+`hydra-queue-runner` and can be also used by it to avoid downloading.
 
 We can then access the webUI. First login, then create a project, a
 jobset. Unfortunately, the API is not well documented so we create

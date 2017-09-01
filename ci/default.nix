@@ -4,8 +4,8 @@ with import ../lib/image.nix pkgs;
 with import ../deps.nix pkgs;
 
 let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 -p 3000 --max_spare_servers 5 --max_servers 25 --max_requests 100 -d";
-    hydraQueueRunnerCmd = "${pkgs.hydra}/bin/hydra-queue-runner -v";
-    hydraEvaluator = "${pkgs.hydra}/bin/hydra-evaluator";
+    hydraQueueRunnerCmd = "${pkgs.hydra}/bin/hydra-queue-runner -vvvvv --option build-use-substitutes true";
+    hydraEvaluator = "${pkgs.hydra}/bin/hydra-evaluator -vvvvv";
 
     hydraConf = pkgs.writeText "hydra.conf" ''
       using_frontend_proxy 1
@@ -14,6 +14,8 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       max_servers 25
       gc_roots_dir /nix/var/nix/gcroots/hydra
       max_output_size = 4294967296
+      store_uri = file:///nix-cache/
+      use-substitutes = 1
     '';
 
     containerInit = ''
@@ -86,6 +88,8 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       mkdir -m 0750 -p ${hydraBaseDir}/build-logs
 
       cp ${hydraConf} var/lib/hydra/hydra.conf
+
+      mkdir -p nix-cache
     '';
 
     nixInit = ''
