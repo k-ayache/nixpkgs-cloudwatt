@@ -7,6 +7,9 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
     hydraQueueRunnerCmd = "${pkgs.hydra}/bin/hydra-queue-runner -vvvvv --option build-use-substitutes true";
     hydraEvaluator = "${pkgs.hydra}/bin/hydra-evaluator -vvvvv";
 
+    binaryCacheUri = "file:///nix-cache/";
+    hydraBaseDir = "var/lib/hydra/";
+
     hydraConf = pkgs.writeText "hydra.conf" ''
       using_frontend_proxy 1
       base_uri http://example.com
@@ -14,19 +17,10 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       max_servers 25
       gc_roots_dir /nix/var/nix/gcroots/hydra
       max_output_size = 4294967296
-      store_uri = file:///nix-cache/
+      store_uri = ${binaryCacheUri}
       use-substitutes = 1
     '';
 
-    containerInit = ''
-      mkdir -p etc
-      chmod 0755 etc
-      echo 'hosts:     files dns' > etc/nsswitch.conf
-
-      mkdir -p etc/ssl/certs
-      ln -s ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt etc/ssl/certs/ca-certificates.crt
-    '';
-    
     # We need nscd to workaround the bug https://github.com/NixOS/nix/issues/1536
     # Once it is fixed, remove nscd
     nscdConf = pkgs.writeText "nscd.conf" ''
@@ -53,11 +47,9 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       build-max-jobs = 1
       build-cores = 1
       build-use-sandbox = false
-      binary-caches = https://cache.nixos.org/
       trusted-binary-caches =
-      binary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
       auto-optimise-store = false
-      signed-binary-caches = *
+      binary-caches = https://cache.nixos.org/ ${binaryCacheUri}
 
       trusted-users = *
       allowed-users = *
@@ -71,11 +63,15 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       auto-optimise-store = true
     '';
 
-    machinesConf = pkgs.writeText "machines" ''
-      localhost x86_64-linux - 2 1 kvm,nixos-test,big-parallel
-    '';
+    containerInit = ''
+      mkdir -p etc
+      chmod 0755 etc
+      echo 'hosts:     files dns' > etc/nsswitch.conf
 
-    hydraBaseDir = "var/lib/hydra/";
+      mkdir -p etc/ssl/certs
+      ln -s ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt etc/ssl/certs/ca-certificates.crt
+    '';
+    
     hydraInit = ''
       mkdir -p nix/var/nix/gcroots/hydra
       mkdir -p var/lib/hydra/
@@ -101,7 +97,6 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
       mkdir -p etc/nix
       ln -s ${nixConf} etc/nix/nix.conf
-      ln -s ${machinesConf} etc/nix/machines
     '';
 
     # This could be avoided by patching in contrail build itself
@@ -114,13 +109,24 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       ${pkgs.findutils}/bin/find etc/perp -type d -exec chmod +t {} \;
     '';
     
+    # This is executed at container runtime
     hydraPreStart = pkgs.writeScript "hydraPreStart" ''
-      if [ "$BINARY_CACHE_SECRET" != "" ]; then
-        echo $BINARY_CACHE_SECRET > /var/lib/hydra/secret
+      if [ "$BINARY_CACHE_KEY_SECRET" != "" ]; then
+        echo $BINARY_CACHE_KEY_SECRET > /var/lib/hydra/secret
 	chmod 440 /var/lib/hydra/secret
         cp ${hydraConf} /var/lib/hydra/hydra.conf
 	echo 'binary_cache_secret_key_file = /var/lib/hydra/secret' >> /var/lib/hydra/hydra.conf
       fi
+
+      if [ "$BINARY_CACHE_KEY_PUBLIC" != "" ]; then
+        cp ${nixConf} /etc/nix/nix.conf
+	echo "binary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= $BINARY_CACHE_KEY_PUBLIC" >> /etc/nix/nix.conf
+	echo "signed-binary-caches = *" >> /etc/nix/nix.conf
+      fi
+
+      echo "localhost x86_64-linux - $MAX_JOBS 1 kvm,nixos-test,big-parallel" > /etc/nix/machines
+
+      chgrp nixbld /dev/kvm
     '';
 
 in
@@ -146,7 +152,7 @@ hydraServer = pkgs.dockerTools.buildImageWithNixDb rec {
       # There is a bug in the docker builder
       chmod a+w ../layer 
       ''
-      + containerInit + nixInit + hydraInit + nscdInit + perpInit;
+      + containerInit + nixInit + hydraInit + nscdInit + perpInit + contrailBuildInit;
 
     config = {
       Cmd = [ "${perp}/usr/sbin/perpd" ];
@@ -154,7 +160,9 @@ hydraServer = pkgs.dockerTools.buildImageWithNixDb rec {
         "HYDRA_DATA=/${hydraBaseDir}"
         "HYDRA_CONFIG=/${hydraBaseDir}/hydra.conf"
 	"HYDRA_DBI=dbi:Pg:dbname=hydra;host=postgres;user=hydra;"
-	"BINARY_CACHE_SECRET="
+	"BINARY_CACHE_KEY_SECRET="
+	"BINARY_CACHE_KEY_PUBLIC="
+	"MAX_JOBS=1"
       ];
     };
   };

@@ -35,45 +35,22 @@ We can then start the Hydra container
 $ docker run --name hydra -d -p 3000:3000 --link postgres:postgres --volume $PWD/nix-cache:/nix-cache hydra
 ```
 
-The volume store a binary cache that is filled by the
-`hydra-queue-runner` and can be also used by it to avoid downloading.
+The volume stores a binary cache that is filled by the
+`hydra-queue-runner`. Hydra also uses this binary cache to avoid
+downloading of packages.
 
 We can then access the webUI. First login, then create a project, a
 jobset. Unfortunately, the API is not well documented so we create
 them manually.
 
-### Project example
+### Creating a project and a jobset
 
-```
-Display name: 	Contrail CI
-Description: 	Contrail Build
-Homepage: 	(not specified)
-Owner: 	admin
-Enabled: 	Yes
-```
+The script `create-jobset.sh` can be used to create a jobset to build
+expressions defined in the current repository.
 
-### Jobset example
-Then you can create a jobset in this project.
+### Binary cache
 
-```
-State:  Enabled
-Description:    Contrail
-Nix expression:         jobset.nix in input ciSrc
-Check interval:         60
-Scheduling shares:      100 (100.00% out of 100 shares)
-Enable email notification:      No
-Email override:         
-Number of evaluations to keep:  5
-
-Inputs
-Input name      Type            Values
-ciSrc           Git checkout    https://github.com/nlewo/nixpkgs-contrail
-nixpkgs         Git checkout    https://github.com/NixOS/nixpkgs-channels nixpkgs-unstable
-```
-
-### Signing the binary cache
-
-The container can take the environment variable `BINARY_CACHE_SECRET`
+The container can take the environment variable `BINARY_CACHE_KEY_SECRET`
 that should contain the secret used to sign the binary cache.
 
 To generate this secret:
@@ -83,11 +60,27 @@ nix-store --generate-binary-cache-key hydra hydra.secret hydra.public
 
 Then, run the container with
 ```
-docker run -e "BINARY_CACHE_SECRET=$(cat hydra.secret)" hydra
+docker run -e "BINARY_CACHE_KEY_SECRET=$(cat hydra.secret)" hydra
 ```
+
+If we want to use this generated signed binary cache to speed up first Hydra
+evaluation, you have to provide the environment variable
+`BINARY_CACHE_KEY_SECRET`.
+
+Note: if you don't provide this environment variable, binary caches
+      don't need to be signed (nix.conf `signed-binary-caches` variable is not set).
 
 ### Specifying databases credentials
 
 ```
 docker run -e "HYDRA_DBI=dbi:Pg:dbname=hydra;host=postgres;user=hydra;" hydra
+```
+
+### Set the number of parallel jobs
+
+The `MAX_JOBS` environment variable define how many jobs can be run in
+parallel. By default, it is set to `1`.
+
+```
+docker run -e "MAX_JOBS=12" hydra
 ```
