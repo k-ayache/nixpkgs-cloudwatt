@@ -125,7 +125,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
 in
 {
-hydraServer = pkgs.dockerTools.buildImageWithNixDb rec {
+hydra = pkgs.dockerTools.buildImageWithNixDb rec {
     name = "hydra";
     contents = [
       pkgs.hydra
