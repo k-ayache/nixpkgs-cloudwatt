@@ -2,7 +2,15 @@ pkgs:
 
 with import ../deps.nix pkgs;
 
-rec {
+{
+  # We want that Hydra generates a link to manually download the image
+  dockerImageBuildProduct = image: pkgs.runCommand "${image.name}" {} ''
+    mkdir $out
+    ln -s ${image.out} $out/image.tar.gz
+    mkdir $out/nix-support
+    echo "file gzip ${image.out}" > $out/nix-support/hydra-build-products
+  '';
+
   genPerpRcMain = { name, executable, preStartScript?"" }: pkgs.writeTextFile {
     name = "${name}-rc.main";
     executable = true;

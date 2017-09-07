@@ -1,4 +1,6 @@
 let
   pkgs = import <nixpkgs> {};
+  lib = import ./lib pkgs;
+  ci = import ./ci {inherit pkgs;};
 in
-  { ci = import ./ci {inherit pkgs;}; }
+  { ci.hydra = lib.dockerImageBuildProduct ci.hydra; }
