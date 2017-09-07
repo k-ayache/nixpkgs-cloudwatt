@@ -3,21 +3,26 @@ pkgs:
 with import ../deps.nix pkgs;
 
 {
-  dockerPushImage = { image, url ? "localhost:5000", username ? null, password ? null }:
+  dockerPushImage = { image, url ? "localhost:5000", username ? "", passwordFilepath ? "" }:
     let
       imageRef = "${image.imageName}:${image.imageTag}";
-      destCreds = if (username != null && password != null) then "--dest-creds ${username}:${password}" else "";
-      creds     = if (username != null && password != null) then "--creds ${username}:${password}" else "";
       jobName = with pkgs.lib; "push-" + (removeSuffix ".tar" (removeSuffix ".gz" image.name));
     in
       pkgs.runCommand jobName {
         buildInputs = with pkgs; [ jq skopeo ];
       } ''
+      DESTCREDS=""
+      CREDS=""
+      if [ ! ${username} == "" ] && [ ! ${passwordFilepath} == "" ]; then
+        DESTCREDS="--dest-creds ${username}:$(cat ${passwordFilepath})"
+        CREDS="--creds ${username}:$(cat ${passwordFilepath})"
+      fi
+
       echo "Ungunzip image (since skopeo doesn't support tgz image)..."
       gzip -d ${image.out} -c > image.tar
       echo "Pushing unzipped image ${image.out} ($(du -hs image.tar | cut -f1)) to registry ${url}/${imageRef} ..."
-      skopeo --insecure-policy copy ${destCreds} --dest-tls-verify=false --dest-cert-dir=/tmp docker-archive:image.tar docker://${url}/${imageRef} > skipeo.log
-      skopeo --insecure-policy inspect ${creds} --tls-verify=false --cert-dir=/tmp docker://${url}/${imageRef} > $out
+      skopeo --insecure-policy copy $DESTCREDS --dest-tls-verify=false --dest-cert-dir=/tmp docker-archive:image.tar docker://${url}/${imageRef} > skipeo.log
+      skopeo --insecure-policy inspect $CREDS --tls-verify=false --cert-dir=/tmp docker://${url}/${imageRef} > $out
     '';
 
   # We want that Hydra generates a link to manually download the image
