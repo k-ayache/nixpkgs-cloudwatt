@@ -15,6 +15,12 @@ let
 		     else null;
 in
   {
+    ci.debug = pkgs.writeText "debug" ''
+      echo username:  ${builtins.toString registryUsername}
+      echo password: ${builtins.toString registryPassword}
+      echo passwordFilepath: ${builtins.toString registryPasswordFilepath}
+      echo url: ${builtins.toString registryUrl}
+    '';
     ci.hydraImage = lib.dockerImageBuildProduct ci.hydra;
     ci.pushHydraImage = lib.dockerPushImage {
       image = ci.hydra;
