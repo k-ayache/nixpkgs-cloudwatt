@@ -6,8 +6,8 @@ with import ../deps.nix pkgs;
   dockerPushImage = { image, url ? "localhost:5000", username ? null, password ? null }:
     let
       imageRef = "${image.imageName}:${image.imageTag}";
-      destCreds = if (username != null && password != null) then "--dest-creds ${username}:${password}" else null;
-      creds     = if (username != null && password != null) then "--creds ${username}:${password}" else null;
+      destCreds = if (username != null && password != null) then "--dest-creds ${username}:${password}" else "";
+      creds     = if (username != null && password != null) then "--creds ${username}:${password}" else "";
       jobName = with pkgs.lib; "push-" + (removeSuffix ".tar" (removeSuffix ".gz" image.name));
     in
       pkgs.runCommand jobName {
