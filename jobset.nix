@@ -1,9 +1,4 @@
-{ nixpkgs
-, registryUrl ? "localhost:5000"
-, registryUsername ? ""
-  # The path of a file containing the Docker registry password
-, registryPasswordFilepath ? "",
-}:
+{ nixpkgs }:
 
 let
   pkgs = import nixpkgs {};
@@ -12,8 +7,5 @@ let
 in
   {
     ci.hydraImage = lib.dockerImageBuildProduct ci.hydra;
-    ci.pushHydraImage = lib.dockerPushImage {
-      image = ci.hydra;
-      url = registryUrl; username = registryUsername; passwordFilepath = registryPasswordFilepath;
-    };
+    ci.pushHydraImage = lib.dockerPushImage ci.hydra;
   }
