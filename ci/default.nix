@@ -111,11 +111,6 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
     
     # This is executed at container runtime
     hydraPreStart = pkgs.writeScript "hydraPreStart" ''
-      if [ "$PG_PASSWORD" != "" ]; then
-        echo "*:*:*:*:$PG_PASSWORD" > /root/.pgpass
-	chmod 0600 /root/.pgpass
-      fi
-
       if [ "$BINARY_CACHE_KEY_SECRET" != "" ]; then
         echo $BINARY_CACHE_KEY_SECRET > /var/lib/hydra/secret
 	chmod 440 /var/lib/hydra/secret
@@ -167,7 +162,6 @@ hydra = pkgs.dockerTools.buildImageWithNixDb rec {
         "HYDRA_DATA=/${hydraBaseDir}"
         "HYDRA_CONFIG=/${hydraBaseDir}/hydra.conf"
 	"HYDRA_DBI=dbi:Pg:dbname=hydra;host=postgres;user=hydra;"
-	"PG_PASSWORD="
 	"BINARY_CACHE_KEY_SECRET="
 	"BINARY_CACHE_KEY_PUBLIC="
 	"MAX_JOBS=1"
