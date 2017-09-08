@@ -22,7 +22,7 @@ with import ../deps.nix pkgs;
       } ''
       DESTCREDS=""
       CREDS=""
-      if [ ! -z $REGISTRY_USERNAME] && [ ! $REGISTRY_USERNAME == "" ]; then
+      if [ ! -z $REGISTRY_USERNAME ] && [ ! -z $REGISTRY_USERNAME ]; then
         DESTCREDS="--dest-creds $REGISTRY_USERNAME:$REGISTRY_PASSWORD"
         CREDS="--creds $REGISTRY_USERNAME:$REGISTRY_PASSWORD"
       fi
