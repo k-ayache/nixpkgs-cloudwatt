@@ -7,6 +7,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
     hydraQueueRunnerCmd = "${pkgs.hydra}/bin/hydra-queue-runner -vvvvv --option build-use-substitutes true";
     hydraEvaluator = "${pkgs.hydra}/bin/hydra-evaluator -vvvvv";
 
+    binaryCacheUri = "file:///nix-cache/";
     hydraBaseDir = "var/lib/hydra/";
 
     hydraConf = pkgs.writeText "hydra.conf" ''
@@ -16,6 +17,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       max_servers 25
       gc_roots_dir /nix/var/nix/gcroots/hydra
       max_output_size = 4294967296
+      store_uri = ${binaryCacheUri}
       use-substitutes = 1
     '';
 
@@ -47,7 +49,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       build-use-sandbox = false
       trusted-binary-caches =
       auto-optimise-store = false
-      binary-caches = https://cache.nixos.org/
+      binary-caches = https://cache.nixos.org/ ${binaryCacheUri}
 
       trusted-users = *
       allowed-users = *
