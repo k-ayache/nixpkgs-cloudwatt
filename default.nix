@@ -1,4 +1,4 @@
-{ nixpkgs ? import ./nixpkgs-fetch.nix }:
+{ nixpkgs ? import ./nixpkgs-fetch.nix {} }:
 
 let pkgs = import nixpkgs {};
 in

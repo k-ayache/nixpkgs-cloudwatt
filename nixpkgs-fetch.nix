@@ -1,4 +1,6 @@
-let bootstrap_pkgs = import <nixpkgs> {};
+{ nixpkgs ? <nixpkgs> }:
+
+let bootstrap_pkgs = import nixpkgs {};
 in bootstrap_pkgs.fetchFromGitHub {
      owner = "nlewo";
      repo = "nixpkgs";

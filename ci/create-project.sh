@@ -44,7 +44,7 @@ cat >data.json <<EOF
       "value": "https://github.com/nlewo/nixpkgs-cloudwatt master",
       "type": "git"
     },
-    "nixpkgs": {
+    "bootstrap_pkgs": {
       "value": "https://github.com/NixOS/nixpkgs release-17.09",
       "type": "git"
     }
