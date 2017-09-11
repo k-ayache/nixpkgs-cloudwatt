@@ -78,7 +78,6 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
       mkdir -p ${hydraBaseDir}
       chmod 0750 ${hydraBaseDir}
-
       mkdir -m 0700 -p ${hydraBaseDir}/www
       mkdir -m 0700 -p ${hydraBaseDir}/queue-runner
       mkdir -m 0750 -p ${hydraBaseDir}/build-logs
