@@ -93,3 +93,12 @@ parallel. By default, it is set to `1`.
 ```
 docker run -e "MAX_JOBS=12" hydra
 ```
+
+### Stateful datas
+
+There are currently two directories that are stateful
+
+- `/hydra` which contains the build logs and the hydra gcroots (this
+  is used to specify elements that must not be garbage collected)
+- `/nix-cache` which contains the nix cache. This is currently used
+  when the container restart.
