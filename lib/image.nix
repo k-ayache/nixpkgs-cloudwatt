@@ -8,7 +8,7 @@ with import ../deps.nix pkgs;
   # registry.
   dockerPushImage = image:
     let
-      imageRef = "${image.imageName}:${image.imageTag}";
+      imageRef = "${image.imageName}:${builtins.baseNameOf image.out}";
       jobName = with pkgs.lib; "push-" + (removeSuffix ".tar" (removeSuffix ".gz" image.name));
       outputString = "Pushed image " + image.out;
     in
