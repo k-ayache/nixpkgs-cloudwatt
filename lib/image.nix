@@ -10,7 +10,7 @@ with import ../deps.nix pkgs;
     let
       imageRef = "${image.imageName}:${builtins.baseNameOf image.out}";
       jobName = with pkgs.lib; "push-" + (removeSuffix ".tar" (removeSuffix ".gz" image.name));
-      outputString = "Pushed image " + image.out;
+      outputString = "Pushed image " + imageRef;
     in
       pkgs.runCommand jobName {
         buildInputs = with pkgs; [ jq skopeo ];
