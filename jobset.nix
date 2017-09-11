@@ -1,7 +1,6 @@
-{ nixpkgs ? import ./nixpkgs-fetch.nix }:
+{ pkgs ? import (import ./nixpkgs-fetch.nix) {} }:
 
 let
-  pkgs = import nixpkgs {};
   lib = import ./lib pkgs;
   ci = import ./ci {inherit pkgs;};
 in
