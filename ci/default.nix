@@ -9,6 +9,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
     binaryCacheUri = "file:///nix-cache/";
     hydraBaseDir = "var/lib/hydra/";
+    hydraStatefulDir = "hydra";
 
     hydraConf = pkgs.writeText "hydra.conf" ''
       using_frontend_proxy 1
@@ -73,7 +74,6 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
     '';
     
     hydraInit = ''
-      mkdir -p nix/var/nix/gcroots/hydra
       mkdir -p var/lib/hydra/
 
       mkdir -p ${hydraBaseDir}
@@ -111,6 +111,14 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
     
     # This is executed at container runtime
     hydraPreStart = pkgs.writeScript "hydraPreStart" ''
+      # We replace build logs dir by a link to keep them.
+      # Build logs should be send to an object storage instead...
+      mkdir -p /${hydraStatefulDir}/build-logs
+      ln -s /${hydraStatefulDir}/gcroots/hydra /nix/var/nix/gcroots/hydra
+
+      rmdir /${hydraBaseDir}/build-logs
+      ln -sf /${hydraStatefulDir}/build-logs /${hydraBaseDir}/build-logs
+
       if [ "$BINARY_CACHE_KEY_SECRET" != "" ]; then
         echo $BINARY_CACHE_KEY_SECRET > /var/lib/hydra/secret
 	chmod 440 /var/lib/hydra/secret
@@ -126,7 +134,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
       echo "localhost x86_64-linux - $MAX_JOBS 1 kvm,nixos-test,big-parallel" > /etc/nix/machines
 
-      if [ -i /dev/kvm ]; then
+      if [ -e /dev/kvm ]; then
         chgrp nixbld /dev/kvm
       fi
     '';
