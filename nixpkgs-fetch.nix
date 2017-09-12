@@ -4,7 +4,7 @@ let bootstrap_pkgs = import nixpkgs {};
 in bootstrap_pkgs.fetchFromGitHub {
      owner = "nlewo";
      repo = "nixpkgs";
-     rev = "1e8c43bb98d8f85c3ace4e73745e8853b0abd0e6";
-     sha256 = "01a0wmddm8j07k4g0lj2xwmpnr0fr4a7ssx56kldq98k82iac964";
+     rev = "afbf69691ead9c423fd026f2a80933973b22a774";
+     sha256 = "1xb4yayrzmplr25npwj94l56mwif9xy8acc5z8i849yvrrnp0zfa";
    }
 
