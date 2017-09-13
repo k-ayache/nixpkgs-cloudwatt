@@ -5,7 +5,7 @@ in bootstrap_pkgs.fetchFromGitHub {
      owner = "nlewo";
      repo = "nixpkgs";
      # Part of the branch release-17.09-cloudwatt
-     rev = "e102c3d14ce4d2d13178208710abb85b358f0c18";
-     sha256 = "1bacphbasgfl00bvc7wmrlis423g2xpcvrrcswfn5n8p98vw7alm";
+     rev = "0c41433868ad61aac43da184c113f305a3784957";
+     sha256 = "0jrlk9wwbskzw2bxvncna1fi4qm596r83smcfh1dashb8gm3ddp8";
    }
 
