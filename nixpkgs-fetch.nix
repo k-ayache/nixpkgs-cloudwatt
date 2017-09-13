@@ -4,7 +4,8 @@ let bootstrap_pkgs = import nixpkgs {};
 in bootstrap_pkgs.fetchFromGitHub {
      owner = "nlewo";
      repo = "nixpkgs";
-     rev = "afbf69691ead9c423fd026f2a80933973b22a774";
-     sha256 = "1xb4yayrzmplr25npwj94l56mwif9xy8acc5z8i849yvrrnp0zfa";
+     # Part of the branch release-17.09-cloudwatt
+     rev = "e102c3d14ce4d2d13178208710abb85b358f0c18";
+     sha256 = "1bacphbasgfl00bvc7wmrlis423g2xpcvrrcswfn5n8p98vw7alm";
    }
 
