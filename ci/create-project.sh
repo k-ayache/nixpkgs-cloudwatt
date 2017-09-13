@@ -45,7 +45,7 @@ cat >data.json <<EOF
       "type": "git"
     },
     "bootstrap_pkgs": {
-      "value": "https://github.com/NixOS/nixpkgs afbf69691ead9c423fd026f2a80933973b22a774",
+      "value": "https://github.com/NixOS/nixpkgs a0e6a891ee21a6dcf3da35169794cc20b110ce05",
       "type": "git"
     }
   }
