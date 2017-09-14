@@ -34,6 +34,7 @@ mycurl --silent -X PUT $URL/project/$PROJECT_NAME -d @data.json -b hydra-cookie.
 echo -e "\nCreating jobset trunk:"
 cat >data.json <<EOF
 {
+  "description": "Build master of nixpkgs-cloudwatt",
   "checkinterval": "60",
   "enabled": "1",
   "visible": "1",
@@ -46,6 +47,36 @@ cat >data.json <<EOF
     },
     "bootstrap_pkgs": {
       "value": "https://github.com/NixOS/nixpkgs a0e6a891ee21a6dcf3da35169794cc20b110ce05",
+      "type": "git"
+    }
+  }
+}
+EOF
+cat data.json
+mycurl --silent -X PUT $URL/jobset/$PROJECT_NAME/$JOBSET_NAME -d @data.json -b hydra-cookie.txt
+
+
+JOBSET_NAME="contrail-testing"
+echo -e "\nCreating jobset contrail testing:"
+cat >data.json <<EOF
+{
+  "description": "Build master of nixpkgs-cloudwatt and nixpkgs-contrail",
+  "checkinterval": "60",
+  "enabled": "1",
+  "visible": "1",
+  "nixexprinput": "cloudwatt",
+  "nixexprpath": "jobset.nix",
+  "inputs": {
+    "cloudwatt": {
+      "value": "https://github.com/nlewo/nixpkgs-cloudwatt master",
+      "type": "git"
+    },
+    "bootstrap_pkgs": {
+      "value": "https://github.com/NixOS/nixpkgs a0e6a891ee21a6dcf3da35169794cc20b110ce05",
+      "type": "git"
+    },
+    "contrail": {
+      "value": "https://github.com/nlewo/nixpkgs-contrail master",
       "type": "git"
     }
   }
