@@ -6,7 +6,7 @@
 
 let pkgs = import nixpkgs {};
     lib =  import ./lib pkgs;
-    contrailPkgs = import contrail { inherit pkgs; };
+    contrailPkgs = import contrail { pkgs_path = nixpkgs; };
 in
   {
     ci.hydraImage = import ./ci {inherit pkgs;};

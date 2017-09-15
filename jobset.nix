@@ -2,14 +2,14 @@
 # only used to checkout the specified nixpkgs commit.
 { bootstrap_pkgs ? <nixpkgs>
 , fetched ? import ./nixpkgs-fetch.nix { nixpkgs = bootstrap_pkgs; }
-, _pkgs ? fetched.pkgs
+, nixpkgs ? fetched.pkgs
 , contrail ? fetched.contrail
 }:
 
 let
-  pkgs = import _pkgs {};
+  pkgs = import nixpkgs {};
   lib = import ./lib pkgs;
-  default = import ./default.nix { inherit contrail; nixpkgs = _pkgs; };
+  default = import ./default.nix { inherit contrail nixpkgs; };
   genDockerPushJobs = drvs:
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair ("docker-push-" + n) (lib.dockerPushImage v)) drvs;
 in
