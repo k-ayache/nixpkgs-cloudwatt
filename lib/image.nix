@@ -2,7 +2,7 @@ pkgs:
 
 with import ../deps.nix pkgs;
 
-{
+rec {
   # We use environment variables REGISTRY_URL, REGISTRY_USERNAME,
   # REGISTRY_PASSWORD to specify the url and credentials of the
   # registry.
@@ -69,6 +69,26 @@ with import ../deps.nix pkgs;
       }
 
       eval $TARGET "$@"
+    '';
+  };
+
+  # Build an image where 'command' is started by Perp
+  buildImageWithPerp = name: command: pkgs.dockerTools.buildImage {
+    inherit name;
+    fromImage = pkgs.dockerTools.pullImage {
+      imageName = "ubuntu";
+      imageTag = "14.04";
+      sha256 = "03xg52p31yl69z50ya3cqy0yv160hgsfilhgia7yq520c46xq7m2";
+    };
+    contents = [
+      pkgs.coreutils
+      (genPerpRcMain { name=name; executable=command; })
+    ];
+    config = {
+      Cmd = [ "${perp}/usr/sbin/perpd" ];
+    };
+    extraCommands = ''
+      ${pkgs.findutils}/bin/find etc/perp -type d -exec chmod +t {} \;
     '';
   };
 }
