@@ -11,7 +11,7 @@ let
   lib = import ./lib pkgs;
   default = import ./default.nix { inherit contrail nixpkgs; };
   genDockerPushJobs = drvs:
-    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair ("docker-push-" + n) (lib.dockerPushImage v)) drvs;
+    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair n (lib.dockerPushImage v)) drvs;
 in
   {
     ci.hydraImage = lib.dockerImageBuildProduct default.ci.hydraImage;
