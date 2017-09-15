@@ -3,13 +3,13 @@
 { bootstrap_pkgs ? <nixpkgs>
 , fetched ? import ./nixpkgs-fetch.nix { nixpkgs = bootstrap_pkgs; }
 , _pkgs ? fetched.pkgs
-, _contrail ? fetched.contrail
+, contrail ? fetched.contrail
 }:
 
 let
   pkgs = import _pkgs {};
   lib = import ./lib pkgs;
-  default = import ./default.nix { nixpkgs = _pkgs; contrail = _contrail; };
+  default = import ./default.nix { inherit contrail; nixpkgs = _pkgs; };
   genDockerPushJobs = drvs:
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair ("docker-push-" + n) (lib.dockerPushImage v)) drvs;
 in
