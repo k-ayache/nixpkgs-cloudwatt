@@ -3,16 +3,20 @@
 { bootstrap_pkgs ? <nixpkgs>
 , fetched ? import ./nixpkgs-fetch.nix { nixpkgs = bootstrap_pkgs; }
 , _pkgs ? fetched.pkgs
-, contrail ? fetched.contrail
+, _contrail ? fetched.contrail
 }:
 
 let
   pkgs = import _pkgs {};
   lib = import ./lib pkgs;
-  ci = import ./ci {inherit pkgs;};
+  default = import ./default.nix { nixpkgs = _pkgs; contrail = _contrail; };
+  genDockerPushJobs = drvs:
+    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair ("docker-push-" + n) (lib.dockerPushImage v)) drvs;
 in
   {
-    ci.hydraImage = lib.dockerImageBuildProduct ci.hydra;
-    ci.pushHydraImage = lib.dockerPushImage ci.hydra;
-    contrail = import contrail {inherit pkgs;  pkgs_path = _pkgs;};
+    ci.hydraImage = lib.dockerImageBuildProduct default.ci.hydraImage;
+    ci.pushHydraImage = lib.dockerPushImage default.ci.hydraImage;
+    contrail = default.contrail;
+    images = pkgs.lib.mapAttrs (n: v: lib.dockerImageBuildProduct v) default.images;
+    pushImages = genDockerPushJobs default.images;
   }

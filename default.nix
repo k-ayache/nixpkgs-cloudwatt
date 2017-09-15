@@ -9,7 +9,7 @@ let pkgs = import nixpkgs {};
     contrailPkgs = import contrail { inherit pkgs; };
 in
   {
-    ci.hydra = import ./ci {inherit pkgs;};
+    ci.hydraImage = import ./ci {inherit pkgs;};
     contrail = contrailPkgs;
     images = builtins.listToAttrs (builtins.map (a: { name = a.attr; value = lib.buildImageWithPerp a.name a.cmd; }) [
       { attr = "contrailApi";

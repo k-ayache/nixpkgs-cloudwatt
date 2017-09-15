@@ -139,8 +139,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
     '';
 
 in
-{
-hydra = pkgs.dockerTools.buildImageWithNixDb rec {
+  pkgs.dockerTools.buildImageWithNixDb rec {
     name = "hydra";
     contents = [
       pkgs.hydra
@@ -174,5 +173,5 @@ hydra = pkgs.dockerTools.buildImageWithNixDb rec {
 	"MAX_JOBS=1"
       ];
     };
-  };
-}
+  }
+
