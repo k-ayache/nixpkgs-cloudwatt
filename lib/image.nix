@@ -1,7 +1,5 @@
 pkgs:
 
-with import ../deps.nix pkgs;
-
 rec {
   # We use environment variables REGISTRY_URL, REGISTRY_USERNAME,
   # REGISTRY_PASSWORD to specify the url and credentials of the
@@ -62,7 +60,7 @@ rec {
       ${preStartScript}
 
       start() {
-        exec ${perp}/usr/sbin/runtool ${executable}
+        exec runtool ${executable}
       }
 
       reset() {
