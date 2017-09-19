@@ -64,6 +64,26 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       auto-optimise-store = true
     '';
 
+    nginxConf = pkgs.writeText "nginx.conf" ''
+      user root root;
+      daemon off;
+      error_log /dev/stdout info;
+      pid /tmp/nginx.pid;
+      events {}
+      http {
+        client_body_temp_path /tmp;
+        proxy_temp_path /tmp;
+        fastcgi_temp_path /tmp;
+        uwsgi_temp_path /tmp;
+        scgi_temp_path /tmp;
+        access_log /dev/stdout;
+        server {
+            listen 80;
+            root /nix-cache;
+        }
+      }
+    '';
+
     containerInit = ''
       mkdir -p etc
       chmod 0755 etc
@@ -93,6 +113,8 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       echo "root:x:0:0::/root:/bin/bash" >> etc/passwd
       echo "nixbld:x:30000:nixbld1,nixbld2,nixbld3,nixbld4,nixbld5,nixbld6,nixbld7,nixbld8,nixbld9,nixbld10,nixbld11,nixbld12,nixbld13,nixbld14,nixbld15,nixbld16,nixbld17,nixbld18,nixbld19,nixbld20,nixbld21,nixbld22,nixbld23,nixbld24,nixbld25,nixbld26,nixbld27,nixbld28,nixbld29,nixbld30" >> etc/group
       for i in $(seq 1 30); do echo "nixbld$i:x:$((30000 + $i)):30000:::" >> etc/passwd; done
+
+      echo "root:x:0:" >> etc/group
 
       mkdir -p etc/nix
       ln -s ${nixConf} etc/nix/nix.conf
@@ -155,6 +177,7 @@ in
       (genPerpRcMain {name = "hydra-queue-runner"; executable = hydraQueueRunnerCmd; })
       (genPerpRcMain {name = "hydra-evaluator"; executable = hydraEvaluator; })
       (genPerpRcMain {name = "nscd"; executable = "${pkgs.glibc.bin}/sbin/nscd -f ${nscdConf} -F"; })
+      (genPerpRcMain {name = "nginx"; executable = "${pkgs.nginx}/bin/nginx -c ${nginxConf}"; })
     ];
     extraCommands = ''
       # There is a bug in the docker builder
