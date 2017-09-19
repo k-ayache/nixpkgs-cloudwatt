@@ -77,16 +77,16 @@ rec {
   buildImageWithPerp = name: command: pkgs.dockerTools.buildImage {
     inherit name;
     fromImage = pkgs.dockerTools.pullImage {
-      imageName = "ubuntu";
-      imageTag = "14.04";
-      sha256 = "03xg52p31yl69z50ya3cqy0yv160hgsfilhgia7yq520c46xq7m2";
+      imageName = "r.cwpriv.net/kubernetes/base";
+      imageTag = "16.04-c6e9c969951cf94b";
+      sha256 = "0gksw7l0mbdhmjvb0mvb48h5ay9qr7sqsxq4hs3cfla9kn73l5cd";
     };
     contents = [
       pkgs.coreutils
       (genPerpRcMain { name=name; executable=command; })
     ];
     config = {
-      Cmd = [ "${perp}/usr/sbin/perpd" ];
+      Cmd = [ "/usr/sbin/perpd" ];
     };
     extraCommands = ''
       ${pkgs.findutils}/bin/find etc/perp -type d -exec chmod +t {} \;
