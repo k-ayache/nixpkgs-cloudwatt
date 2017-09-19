@@ -6,9 +6,10 @@ rec {
   # We use environment variables REGISTRY_URL, REGISTRY_USERNAME,
   # REGISTRY_PASSWORD to specify the url and credentials of the
   # registry.
-  dockerPushImage = image:
+  # The commit ID is used to generate the image tag.
+  dockerPushImage = image: commitId:
     let
-      imageRef = "${image.imageName}:${builtins.baseNameOf image.out}";
+      imageRef = "${image.imageName}:${commitId}-${builtins.baseNameOf image.out}";
       jobName = with pkgs.lib; "push-" + (removeSuffix ".tar" (removeSuffix ".gz" image.name));
       outputString = "Pushed image " + imageRef;
     in

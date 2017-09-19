@@ -4,18 +4,25 @@
 , fetched ? import ./nixpkgs-fetch.nix { nixpkgs = bootstrap_pkgs; }
 , nixpkgs ? fetched.pkgs
 , contrail ? fetched.contrail
+# Should contain the path of the nixpkgs-cloudwatt repository.
+# This is used to get the commit id.
+, cloudwatt
 }:
 
 let
   pkgs = import nixpkgs {};
   lib = import ./lib pkgs;
   default = import ./default.nix { inherit contrail nixpkgs; };
+  getCommitId = pkgs.runCommand "nixpkgs-cloudwatt-commit-id" { buildInputs = [ pkgs.git ]; } ''
+    git -C ${cloudwatt} rev-parse HEAD > $out
+  '';
+  commitId = builtins.readFile getCommitId;
   genDockerPushJobs = drvs:
-    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair ("docker-push-" + n) (lib.dockerPushImage v)) drvs;
+    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.dockerPushImage v commitId)) drvs;
 in
   {
     ci.hydraImage = lib.dockerImageBuildProduct default.ci.hydraImage;
-    ci.pushHydraImage = lib.dockerPushImage default.ci.hydraImage;
+    ci.pushHydraImage = lib.dockerPushImage default.ci.hydraImage commitId;
     contrail = default.contrail;
     images = pkgs.lib.mapAttrs (n: v: lib.dockerImageBuildProduct v) default.images;
     pushImages = genDockerPushJobs default.images;
