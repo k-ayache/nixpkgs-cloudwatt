@@ -16,7 +16,7 @@ let
   getCommitId = pkgs.runCommand "nixpkgs-cloudwatt-commit-id" { buildInputs = [ pkgs.git ]; } ''
     git -C ${cloudwatt} rev-parse HEAD > $out
   '';
-  commitId = builtins.readFile getCommitId;
+  commitId = builtins.replaceStrings ["\n"] [""] (builtins.readFile getCommitId);
   genDockerPushJobs = drvs:
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.dockerPushImage v commitId)) drvs;
 in
