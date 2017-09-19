@@ -48,6 +48,10 @@ cat >data.json <<EOF
     "bootstrap_pkgs": {
       "value": "https://github.com/NixOS/nixpkgs a0e6a891ee21a6dcf3da35169794cc20b110ce05",
       "type": "git"
+    },
+    "pushToDockerRegistry": {
+      "value": "true",
+      "type": "boolean"
     }
   }
 }
