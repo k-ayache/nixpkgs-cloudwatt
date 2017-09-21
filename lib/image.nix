@@ -9,7 +9,7 @@ rec {
     let
       imageRef = "${image.imageName}:${commitId}-${builtins.baseNameOf image.out}";
       jobName = with pkgs.lib; "push-" + (removeSuffix ".tar" (removeSuffix ".gz" image.name));
-      outputString = "Pushed image " + imageRef;
+      outputString = "Pushed image ${image.imageName} with content ${builtins.baseNameOf image.out}" ;
     in
       pkgs.runCommand jobName {
         buildInputs = with pkgs; [ jq skopeo ];
