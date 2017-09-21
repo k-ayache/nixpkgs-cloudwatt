@@ -72,7 +72,7 @@ cat >data.json <<EOF
   "nixexprpath": "jobset.nix",
   "inputs": {
     "cloudwatt": {
-      "value": "https://github.com/nlewo/nixpkgs-cloudwatt master",
+      "value": "https://github.com/nlewo/nixpkgs-cloudwatt master keepDotGit",
       "type": "git"
     },
     "bootstrap_pkgs": {
