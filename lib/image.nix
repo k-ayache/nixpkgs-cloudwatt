@@ -80,7 +80,6 @@ rec {
       sha256 = "0gksw7l0mbdhmjvb0mvb48h5ay9qr7sqsxq4hs3cfla9kn73l5cd";
     };
     contents = [
-      pkgs.coreutils
       (genPerpRcMain { name=name; executable=command; })
     ];
     config = {
