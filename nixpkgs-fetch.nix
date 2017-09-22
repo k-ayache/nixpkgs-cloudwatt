@@ -13,5 +13,5 @@ in {
     repo = "nixpkgs-contrail";
     # Belong to the master branch
     rev = "29ca558d4fcb331ff482cfa3b0124cba59ff86dc";
-    sha256 = "1rbx9lxs47bivdrh7g18gqpj6j2317k48h6wavmfqk67r2v2kfqn";};
+    sha256 = "12mpbzlg9pc211axsa2sd99z115nk1k1zb3sw091gmd82ck6jzma";};
   }
