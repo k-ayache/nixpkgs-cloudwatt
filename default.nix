@@ -28,8 +28,7 @@ in {
     }
   ];
   debianPackages = {
-    contrailVrouter = {
-      ubuntu_3_13_0_83_generic = lib.mkDebianPackage rec {
+    contrailVrouterUbuntu_3_13_0_83_generic = lib.mkDebianPackage rec {
         name = "contraill-vrouter-module";
         contents = contrailPkgs.contrailVrouter deps.ubuntuKernelHeaders_3_13_0_83_generic;
         linkScript = ''
@@ -40,8 +39,7 @@ in {
           vrouterPath=$(find ${contents} -name vrouter.ko)
           ln -s $vrouterPath $vrouterRelativeDir
         '';
-        };
-      };
+    };
     contrailVrouterUserland = lib.mkDebianPackage rec {
       name = "contraill-vrouter-userland";
       contents = [
