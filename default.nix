@@ -28,7 +28,34 @@ in {
     }
   ];
   debianPackages = {
-    contrailVrouterUbuntu_3_13_0_83_generic = lib.mkDebianPackage (
-      contrailPkgs.contrailVrouter deps.ubuntuKernelHeaders_3_13_0_83_generic);
+    contrailVrouter = {
+      ubuntu_3_13_0_83_generic = lib.mkDebianPackage rec {
+        name = "contraill-vrouter-module";
+        contents = contrailPkgs.contrailVrouter deps.ubuntuKernelHeaders_3_13_0_83_generic;
+        linkScript = ''
+          vrouterRelativePath=$(find ${contents} -name vrouter.ko -printf '%P')
+          vrouterRelativeDir=$(dirname $vrouterRelativePath)
+          mkdir -p $vrouterRelativeDir
+
+          vrouterPath=$(find ${contents} -name vrouter.ko)
+          ln -s $vrouterPath $vrouterRelativeDir
+        '';
+        };
+      };
+    contrailVrouterUserland = lib.mkDebianPackage rec {
+      name = "contraill-vrouter-userland";
+      contents = [
+        contrailPkgs.contrailVrouterAgent contrailPkgs.contrailVrouterPortControl contrailPkgs.contrailVrouterUtils ];
+      linkScript = ''
+        for path in ${pkgs.lib.foldl (a: b: a + " " + b) "" contents};
+        do
+          find $path/bin/ -type f >> files
+        done
+        mkdir -p usr/bin
+        echo "Link binaries found in contents"
+        cat files | xargs -I'{}' -t ln -s '{}' usr/bin/
+        rm files
+      '';
+      };
   };
 }
