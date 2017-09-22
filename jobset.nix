@@ -26,6 +26,7 @@ in
   ci.hydraImage = lib.dockerImageBuildProduct default.ci.hydraImage;
   ci.pushHydraImage = lib.dockerPushImage default.ci.hydraImage commitId;
   contrail = default.contrail;
+  debianPackages = pkgs.lib.mapAttrs (n: v: lib.debianPackageBuildProduct v) default.debianPackages;
   images = pkgs.lib.mapAttrs (n: v: lib.dockerImageBuildProduct v) default.images;
 } // pkgs.lib.optionalAttrs pushToDockerRegistry { pushImages = genDockerPushJobs default.images; }
 

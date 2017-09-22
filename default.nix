@@ -6,6 +6,7 @@
 
 let pkgs = import nixpkgs {};
     lib =  import ./lib pkgs;
+    deps = import ./deps.nix pkgs;
     contrailPkgs = import contrail { pkgs_path = nixpkgs; };
     configuration = import ./configuration.nix pkgs;
 
@@ -26,4 +27,8 @@ in {
       command = "${contrailPkgs.contrailDiscovery}/bin/contrail-discovery --conf_file ${configuration.discovery}";
     }
   ];
+  debianPackages = {
+    contrailVrouterUbuntu_3_13_0_83_generic = lib.mkDebianPackage (
+      contrailPkgs.contrailVrouter deps.ubuntuKernelHeaders_3_13_0_83_generic);
+  };
 }

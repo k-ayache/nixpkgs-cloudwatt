@@ -1,4 +1,4 @@
 pkgs:
 
-import ./image.nix pkgs
-
+(import ./image.nix pkgs) //
+(import ./debian.nix pkgs)
