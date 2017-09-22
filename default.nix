@@ -13,18 +13,17 @@ let pkgs = import nixpkgs {};
     generateImages = images: builtins.listToAttrs (builtins.map (a:
       { name = a.attr;
         value = lib.buildImageWithPerp a.name a.command; }) images);
-in
-  {
-    ci.hydraImage = import ./ci {inherit pkgs;};
-    contrail = contrailPkgs;
-    images =  generateImages [
-      { attr = "contrailApi";
-        name = "contrail-api";
-        command = "${contrailPkgs.contrailApi}/bin/contrail-api --conf_file ${configuration.api}";
-      }
-      { attr = "contrailDiscovery";
-        name = "contrail-discovery";
-        command = "${contrailPkgs.contrailDiscovery}/bin/contrail-discovery --conf_file ${configuration.discovery}";
-      }
-    ];
-  }
+in {
+  ci.hydraImage = import ./ci {inherit pkgs;};
+  contrail = contrailPkgs;
+  images =  generateImages [
+    { attr = "contrailApi";
+      name = "contrail-api";
+      command = "${contrailPkgs.contrailApi}/bin/contrail-api --conf_file ${configuration.api}";
+    }
+    { attr = "contrailDiscovery";
+      name = "contrail-discovery";
+      command = "${contrailPkgs.contrailDiscovery}/bin/contrail-discovery --conf_file ${configuration.discovery}";
+    }
+  ];
+}
