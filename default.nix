@@ -14,7 +14,7 @@ let pkgs = import nixpkgs {};
     generateImages = images: builtins.listToAttrs (builtins.map (a:
       { name = a.attr;
         value = lib.buildImageWithPerp a.name a.command; }) images);
-in {
+in rec {
   ci.hydraImage = import ./ci {inherit pkgs;};
   contrail = contrailPkgs;
   images =  generateImages [
@@ -56,4 +56,10 @@ in {
       '';
       };
   };
+
+  # Useful to dev Debian packages
+  tools.installDebianPackages = lib.runUbuntuVmScript [
+    debianPackages.contrailVrouterUbuntu_3_13_0_83_generic
+    debianPackages.contrailVrouterUserland
+  ];
 }
