@@ -43,7 +43,8 @@ in rec {
     contrailVrouterUserland = lib.mkDebianPackage rec {
       name = "contraill-vrouter-userland";
       contents = [
-        contrailPkgs.contrailVrouterAgent contrailPkgs.contrailVrouterPortControl contrailPkgs.contrailVrouterUtils ];
+        contrailPkgs.contrailVrouterAgent contrailPkgs.contrailVrouterPortControl
+        contrailPkgs.contrailVrouterUtils contrailPkgs.contrailVrouterNetns ];
       linkScript = ''
         for path in ${pkgs.lib.foldl (a: b: a + " " + b) "" contents};
         do
