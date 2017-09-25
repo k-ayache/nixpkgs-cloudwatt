@@ -10,6 +10,20 @@ pkgs:
     preConfigure = "sed 's~ /usr/~ \${out}/usr/~' -i conf.mk";
   };
 
+  ubuntuKernelImage_3_13_0_83_generic = pkgs.stdenv.mkDerivation rec {
+    name = "ubuntuImageHeaders-3.13.0-83-generic";
+    phases = [ "unpackPhase" "installPhase" ];
+    buildInputs = [ pkgs.dpkg ];
+    unpackCmd = "dpkg-deb --extract $curSrc tmp/";
+    src = pkgs.fetchurl {
+      url = http://fr.archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-3.13.0-83-generic_3.13.0-83.127_amd64.deb;
+      sha256 = "1gmg99a5ipdi7fjcna3wf8as58p84p3l9wl89d7b3lgm26qvrzg2";
+    };
+    installPhase = ''
+      cp boot/vmlinuz* $out
+    '';
+  };
+
   ubuntuKernelHeaders_3_13_0_83_generic = pkgs.stdenv.mkDerivation rec {
     name = "ubuntuKernelHeaders-3.13.0-83-generic";
     phases = [ "unpackPhase" "installPhase" ];
