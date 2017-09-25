@@ -6,8 +6,8 @@ in {
     owner = "nlewo";
     repo = "nixpkgs";
     # Belong to the branch release-17.09-cloudwatt
-    rev = "0c41433868ad61aac43da184c113f305a3784957";
-    sha256 = "0jrlk9wwbskzw2bxvncna1fi4qm596r83smcfh1dashb8gm3ddp8";};
+    rev = "cb5ac615101c5ef346a88648f918685f39f335d8";
+    sha256 = "0lrn1vvbli82zkcq32dkkj56b1l008bmpw2zyhmsw85ajqw8imab";};
   contrail = bootstrap_pkgs.fetchFromGitHub {
     owner = "nlewo";
     repo = "nixpkgs-contrail";
