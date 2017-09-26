@@ -13,9 +13,9 @@ rec {
     in
       pkgs.runCommand jobName {
         buildInputs = with pkgs; [ jq skopeo ];
-	impureEnvVars = pkgs.stdenv.lib.fetchers.proxyImpureEnvVars ++
-	  [ "REGISTRY_URL" "REGISTRY_USERNAME" "REGISTRY_PASSWORD" ];
-	outputHashMode = "flat";
+        impureEnvVars = pkgs.stdenv.lib.fetchers.proxyImpureEnvVars ++
+          [ "REGISTRY_URL" "REGISTRY_USERNAME" "REGISTRY_PASSWORD" ];
+        outputHashMode = "flat";
         outputHashAlgo = "sha256";
         outputHash = builtins.hashString "sha256" outputString;
       } ''
