@@ -1,6 +1,6 @@
 In this repository are defined
 
-- Contrail builds and tests (coming from `nixpkgs-contrail`)
+- Contrail builds and tests (coming from `https://github.com/nlewo/nixpkgs-contrail`)
 - Docker image builds
 - Debian package builds
 - Build of the Hydra CI image
