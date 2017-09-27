@@ -12,7 +12,7 @@ pkgs:
       in map (x: [("closure-" + baseNameOf x) x]) contentsList;
     buildInputs = [ pkgs.dpkg ];
   } ''
-    NIX_STORE=usr/lib/
+    NIX_STORE=var/opt/
     BUILD_DIR=${name}-0.0
 
     mkdir -p $BUILD_DIR/$NIX_STORE
@@ -24,7 +24,7 @@ pkgs:
 
     pushd $BUILD_DIR
 
-    ln -s usr/lib/nix nix
+    ln -s $NIX_STORE/nix nix
 
     mkdir DEBIAN
     cat > DEBIAN/control <<EOF
