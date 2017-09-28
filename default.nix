@@ -26,6 +26,10 @@ in rec {
       name = "contrail-discovery";
       command = "${contrailPkgs.contrailDiscovery}/bin/contrail-discovery --conf_file ${configuration.discovery}";
     }
+    { attr = "contrailControl";
+      name = "contrail-control";
+      command = "${contrailPkgs.contrailControl}/bin/contrail-control --conf_file ${configuration.control}";
+    }
   ];
   debianPackages = {
     contrailVrouterUbuntu_3_13_0_83_generic = lib.mkDebianPackage rec {
@@ -64,3 +68,4 @@ in rec {
     debianPackages.contrailVrouterUserland
   ];
 }
+
