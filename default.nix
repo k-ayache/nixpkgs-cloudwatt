@@ -14,6 +14,9 @@ let pkgs = import nixpkgs {};
     generateImages = images: builtins.listToAttrs (builtins.map (a:
       { name = a.attr;
         value = lib.buildImageWithPerp a.name a.command; }) images);
+
+    debianPackageVersion = "3.2-1";
+
 in rec {
   ci.hydraImage = import ./ci {inherit pkgs;};
   contrail = contrailPkgs;
@@ -34,6 +37,7 @@ in rec {
   debianPackages = {
     contrailVrouterUbuntu_3_13_0_83_generic = lib.mkDebianPackage rec {
         name = "contraill-vrouter-module";
+        version = debianPackageVersion;
         contents = contrailPkgs.contrailVrouter deps.ubuntuKernelHeaders_3_13_0_83_generic;
         linkScript = ''
           vrouterRelativePath=$(find ${contents} -name vrouter.ko -printf '%P')
@@ -46,6 +50,7 @@ in rec {
     };
     contrailVrouterUserland = lib.mkDebianPackage rec {
       name = "contraill-vrouter-userland";
+      version = debianPackageVersion;
       contents = [
         contrailPkgs.contrailVrouterAgent contrailPkgs.contrailVrouterPortControl
         contrailPkgs.contrailVrouterUtils contrailPkgs.contrailVrouterNetns ];

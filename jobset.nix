@@ -7,8 +7,10 @@
 # Should contain the path of the nixpkgs-cloudwatt repository.
 # This is used to get the commit id.
 , cloudwatt
-# Set it to true to push iamge to the Docker registry
+# Set it to true to push image to the Docker registry
 , pushToDockerRegistry ? false
+# Set it to true to publish Debian packages to Aptly
+, publishToAptly ? false
 }:
 
 let
@@ -21,6 +23,8 @@ let
   commitId = builtins.replaceStrings ["\n"] [""] (builtins.readFile getCommitId);
   genDockerPushJobs = drvs:
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.dockerPushImage v commitId)) drvs;
+  genDebPublishJobs = drvs:
+    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.publishDebianPkg v)) drvs;
 in
 {
   ci.hydraImage = lib.dockerImageBuildProduct default.ci.hydraImage;
@@ -28,5 +32,7 @@ in
   contrail = default.contrail;
   debianPackages = pkgs.lib.mapAttrs (n: v: lib.debianPackageBuildProduct v) default.debianPackages;
   images = pkgs.lib.mapAttrs (n: v: lib.dockerImageBuildProduct v) default.images;
-} // pkgs.lib.optionalAttrs pushToDockerRegistry { pushImages = genDockerPushJobs default.images; }
-
+} // pkgs.lib.optionalAttrs pushToDockerRegistry {
+       pushImages = genDockerPushJobs default.images; }
+  // pkgs.lib.optionalAttrs publishToAptly {
+       publishPackages = genDebPublishJobs default.debianPackages; }
