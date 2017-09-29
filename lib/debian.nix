@@ -75,7 +75,6 @@ rec {
     in pkgs.runCommand "publish-${package.name}"
          {
            buildInputs = [ debianPackagePublish ];
-           impureEnvVars = pkgs.stdenv.lib.fetchers.proxyImpureEnvVars;
            outputHashMode = "flat";
            outputHashAlgo = "sha256";
            outputHash = builtins.hashString "sha256" outputString;
