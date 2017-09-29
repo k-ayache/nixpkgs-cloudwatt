@@ -1,6 +1,6 @@
 { pkgs, contrailPkgs }:
 
-let debianPackageVersion = "3.2-1";
+let debianPackageVersion = "3.2-3";
 
     lib =  import ./lib pkgs;
     deps = import ./deps.nix pkgs;
