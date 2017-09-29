@@ -15,7 +15,7 @@ let pkgs = import nixpkgs {};
       { name = a.attr;
         value = lib.buildImageWithPerp a.name a.command; }) images);
 
-    debianPackageVersion = "3.2-2";
+    debianPackageVersion = "3.2-1";
 
 in rec {
   ci.hydraImage = import ./ci {inherit pkgs;};
