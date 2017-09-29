@@ -52,6 +52,10 @@ cat >data.json <<EOF
     "pushToDockerRegistry": {
       "value": "true",
       "type": "boolean"
+    },
+    "publishToAptly": {
+      "value": "true",
+      "type": "boolean"
     }
   }
 }
