@@ -7,12 +7,14 @@ rec {
   # The script is executed in the package directory context
   , linkScript
   , version
+  , description
   }:
     pkgs.runCommand "${name}-${version}.deb" {
     exportReferencesGraph =
       let contentsList = if builtins.isList contents then contents else [ contents ];
       in map (x: [("closure-" + baseNameOf x) x]) contentsList;
     buildInputs = [ pkgs.dpkg ];
+    inherit version;
   } ''
     NIX_STORE=var/opt/
     BUILD_DIR=${name}-0.0
@@ -32,7 +34,7 @@ rec {
     cat > DEBIAN/control <<EOF
     Package: ${name}
     Architecture: all
-    Description: Nixified
+    Description: ${description}
     Maintainer: nobody
     Version: ${version}
     EOF
@@ -82,7 +84,7 @@ rec {
            mkdir packages
            ln -s ${package} packages/${package.name}
            echo "Publishing ${package.name}..."
-           debian-package-publish.sh -d trusty -r contrail packages
+           debian-package-publish.sh -d trusty -r contrail-${package.version} packages
            echo -n ${outputString} > $out
          '';
 }
