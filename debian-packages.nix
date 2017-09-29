@@ -33,7 +33,7 @@ in
     linkScript = ''
       for path in ${pkgs.lib.foldl (a: b: a + " " + b) "" contents};
       do
-        find $path/bin/ -type f >> files
+        find $path/bin/ -type f -not -name ".*" >> files
       done
       mkdir -p usr/bin
       echo "Link binaries found in contents"
