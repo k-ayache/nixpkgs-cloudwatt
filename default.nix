@@ -36,7 +36,7 @@ in rec {
   ];
   debianPackages = {
     contrailVrouterUbuntu_3_13_0_83_generic = lib.mkDebianPackage rec {
-        name = "contraill-vrouter-module";
+        name = "contrail-vrouter-module";
         version = debianPackageVersion;
         contents = contrailPkgs.contrailVrouter deps.ubuntuKernelHeaders_3_13_0_83_generic;
         linkScript = ''
@@ -49,7 +49,7 @@ in rec {
         '';
     };
     contrailVrouterUserland = lib.mkDebianPackage rec {
-      name = "contraill-vrouter-userland";
+      name = "contrail-vrouter-userland";
       version = debianPackageVersion;
       contents = [
         contrailPkgs.contrailVrouterAgent contrailPkgs.contrailVrouterPortControl
