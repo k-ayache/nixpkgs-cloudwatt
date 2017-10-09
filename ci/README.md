@@ -25,11 +25,6 @@ docker exec postgres su postgres -c "createdb -O hydra hydra"
 Note, if you choose different credentials, you have to set the
 HYDRA_DBI environment variable as explained below.
 
-```
-docker run --link postgres:postgres hydra hydra-init
-docker run --link postgres:postgres hydra hydra-create-user admin --role admin --password admin
-```
-
 We can then start the Hydra container
 ```
 $ docker run --name hydra -d -p 3000:3000 --link postgres:postgres --volume $PWD/nix-cache:/nix-cache hydra
@@ -92,6 +87,15 @@ parallel. By default, it is set to `1`.
 
 ```
 docker run -e "MAX_JOBS=12" hydra
+```
+
+### Create the Hydra admin account at startup
+
+If environment variables `HYDRA_ADMIN_USERNAME` and `HYDRA_ADMIN_PASSWORD`
+are both set, they are then used to create an account with the `admin` role.
+
+```
+docker run -p 3000:3000 --link postgres:postgres -e HYDRA_ADMIN_USERNAME=hydraAdmin -e HYDRA_ADMIN_PASSWORD=hydraPwd hydra
 ```
 
 ### Stateful datas

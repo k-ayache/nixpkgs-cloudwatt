@@ -132,6 +132,14 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
     
     # This is executed at container runtime
     hydraPreStart = pkgs.writeScript "hydraPreStart" ''
+      # Hydra database schema initialisation
+      hydra-init
+      # If Hydra credentials are provided, we create the admin account
+      if [ "$HYDRA_ADMIN_USERNAME" != "" ] && [ "$HYDRA_ADMIN_PASSWORD" != "" ]; then
+        echo "Creating $HYDRA_ADMIN_USERNAME account with admin role..."
+        hydra-create-user $HYDRA_ADMIN_USERNAME --role admin --password $HYDRA_ADMIN_PASSWORD
+      fi
+
       # We replace build logs dir by a link to keep them.
       # Build logs should be send to an object storage instead...
       mkdir -p /${hydraStatefulDir}/build-logs
@@ -200,7 +208,8 @@ in
         "BINARY_CACHE_KEY_SECRET="
         "BINARY_CACHE_KEY_PUBLIC="
         "MAX_JOBS=1"
+        "HYDRA_ADMIN_USERNAME="
+        "HYDRA_ADMIN_PASSWORD="
       ];
     };
   }
-
