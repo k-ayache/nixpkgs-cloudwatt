@@ -142,15 +142,15 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
       if [ "$BINARY_CACHE_KEY_SECRET" != "" ]; then
         echo $BINARY_CACHE_KEY_SECRET > /var/lib/hydra/secret
-	chmod 440 /var/lib/hydra/secret
+        chmod 440 /var/lib/hydra/secret
         cp ${hydraConf} /var/lib/hydra/hydra.conf
-	echo 'binary_cache_secret_key_file = /var/lib/hydra/secret' >> /var/lib/hydra/hydra.conf
+        echo 'binary_cache_secret_key_file = /var/lib/hydra/secret' >> /var/lib/hydra/hydra.conf
       fi
 
       if [ "$BINARY_CACHE_KEY_PUBLIC" != "" ]; then
         cp ${nixConf} /etc/nix/nix.conf
-	echo "binary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= $BINARY_CACHE_KEY_PUBLIC" >> /etc/nix/nix.conf
-	echo "signed-binary-caches = *" >> /etc/nix/nix.conf
+        echo "binary-cache-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= $BINARY_CACHE_KEY_PUBLIC" >> /etc/nix/nix.conf
+        echo "signed-binary-caches = *" >> /etc/nix/nix.conf
       fi
 
       echo "localhost x86_64-linux - $MAX_JOBS 1 kvm,nixos-test,big-parallel" > /etc/nix/machines
@@ -196,10 +196,10 @@ in
       Env = [
         "HYDRA_DATA=/${hydraBaseDir}"
         "HYDRA_CONFIG=/${hydraBaseDir}/hydra.conf"
-	"HYDRA_DBI=dbi:Pg:dbname=hydra;host=postgres;user=hydra;"
-	"BINARY_CACHE_KEY_SECRET="
-	"BINARY_CACHE_KEY_PUBLIC="
-	"MAX_JOBS=1"
+        "HYDRA_DBI=dbi:Pg:dbname=hydra;host=postgres;user=hydra;"
+        "BINARY_CACHE_KEY_SECRET="
+        "BINARY_CACHE_KEY_PUBLIC="
+        "MAX_JOBS=1"
       ];
     };
   }
