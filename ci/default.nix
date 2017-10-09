@@ -163,6 +163,12 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 in
   pkgs.dockerTools.buildImageWithNixDb rec {
     name = "hydra";
+    fromImage = pkgs.dockerTools.pullImage {
+      imageName = "r.cwpriv.net/kubernetes/base";
+      imageTag = "16.04-c6e9c969951cf94b";
+      sha256 = "0gksw7l0mbdhmjvb0mvb48h5ay9qr7sqsxq4hs3cfla9kn73l5cd";
+    };
+
     contents = [
       pkgs.hydra
       pkgs.nix pkgs.eject # eject provides 'more' which is required by nix-store
