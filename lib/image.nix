@@ -7,8 +7,12 @@ rec {
   # The commit ID is used to generate the image tag.
   dockerPushImage = image: commitId:
     let
+      registryNamespace = "hydraservice";
       imageRef = "${image.imageName}:${commitId}-${builtins.baseNameOf image.out}";
       jobName = with pkgs.lib; "push-" + (removeSuffix ".tar" (removeSuffix ".gz" image.name));
+      # Be careful since only the image and its name are take into the
+      # sha calculation. This means if the registry url changes,
+      # images are not pushed again.
       outputString = "Pushed image ${image.imageName} with content ${builtins.baseNameOf image.out}" ;
     in
       pkgs.runCommand jobName {
@@ -31,9 +35,9 @@ rec {
 
       echo "Ungunzip image (since skopeo doesn't support tgz image)..."
       gzip -d ${image.out} -c > image.tar
-      echo "Pushing unzipped image ${image.out} ($(du -hs image.tar | cut -f1)) to registry $REGISTRY_URL/${imageRef} ..."
-      skopeo --insecure-policy copy $DESTCREDS --dest-tls-verify=false --dest-cert-dir=/tmp docker-archive:image.tar docker://$REGISTRY_URL/${imageRef}
-      skopeo --insecure-policy inspect $CREDS --tls-verify=false --cert-dir=/tmp docker://$REGISTRY_URL/${imageRef}
+      echo "Pushing unzipped image ${image.out} ($(du -hs image.tar | cut -f1)) to registry $REGISTRY_URL/${registryNamespace}/${imageRef} ..."
+      skopeo --insecure-policy copy $DESTCREDS --dest-tls-verify=false --dest-cert-dir=/tmp docker-archive:image.tar docker://$REGISTRY_URL/${registryNamespace}/${imageRef}
+      skopeo --insecure-policy inspect $CREDS --tls-verify=false --cert-dir=/tmp docker://$REGISTRY_URL/${registryNamespace}/${imageRef}
       echo -n ${outputString} > $out
     '';
 
