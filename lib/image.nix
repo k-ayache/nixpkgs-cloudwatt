@@ -5,11 +5,11 @@ rec {
   # REGISTRY_PASSWORD to specify the url and credentials of the
   # registry.
   # The commit ID is used to generate the image tag.
-  dockerPushImage = image: registryNamespace: commitId:
+  dockerPushImage = image: commitId:
     let
       imageRef = "${image.imageName}:${commitId}-${builtins.baseNameOf image.out}";
       jobName = with pkgs.lib; "push-" + (removeSuffix ".tar" (removeSuffix ".gz" image.name));
-      outputString = "Pushed image ${image.imageName} into namespace ${registryNamespace} with content ${builtins.baseNameOf image.out}" ;
+      outputString = "Pushed image ${image.imageName} with content ${builtins.baseNameOf image.out}" ;
     in
       pkgs.runCommand jobName {
         buildInputs = with pkgs; [ jq skopeo ];
@@ -31,9 +31,9 @@ rec {
 
       echo "Ungunzip image (since skopeo doesn't support tgz image)..."
       gzip -d ${image.out} -c > image.tar
-      echo "Pushing unzipped image ${image.out} ($(du -hs image.tar | cut -f1)) to registry $REGISTRY_URL/${registryNamespace}/${imageRef} ..."
-      skopeo --insecure-policy copy $DESTCREDS --dest-tls-verify=false --dest-cert-dir=/tmp docker-archive:image.tar docker://$REGISTRY_URL/${registryNamespace}/${imageRef}
-      skopeo --insecure-policy inspect $CREDS --tls-verify=false --cert-dir=/tmp docker://$REGISTRY_URL/${registryNamespace}/${imageRef}
+      echo "Pushing unzipped image ${image.out} ($(du -hs image.tar | cut -f1)) to registry $REGISTRY_URL/${imageRef} ..."
+      skopeo --insecure-policy copy $DESTCREDS --dest-tls-verify=false --dest-cert-dir=/tmp docker-archive:image.tar docker://$REGISTRY_URL/${imageRef}
+      skopeo --insecure-policy inspect $CREDS --tls-verify=false --cert-dir=/tmp docker://$REGISTRY_URL/${imageRef}
       echo -n ${outputString} > $out
     '';
 
@@ -80,7 +80,7 @@ rec {
       sha256 = "0gksw7l0mbdhmjvb0mvb48h5ay9qr7sqsxq4hs3cfla9kn73l5cd";
     };
     contents = [
-      (genPerpRcMain { name=name; executable=command; })
+      (genPerpRcMain { name=builtins.replaceStrings ["/"] ["-"]  name; executable=command; })
     ];
     config = {
       Cmd = [ "/usr/sbin/perpd" ];

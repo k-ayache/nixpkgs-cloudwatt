@@ -170,7 +170,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
 in
   pkgs.dockerTools.buildImageWithNixDb rec {
-    name = "hydra";
+    name = "hydra/hydra";
     fromImage = pkgs.dockerTools.pullImage {
       imageName = "r.cwpriv.net/kubernetes/base";
       imageTag = "16.04-c6e9c969951cf94b";

@@ -19,15 +19,15 @@ in rec {
   contrail = contrailPkgs;
   images =  generateImages [
     { attr = "contrailApi";
-      name = "contrail-api";
+      name = "opencontrail/api";
       command = "${contrailPkgs.contrailApi}/bin/contrail-api --conf_file ${configuration.api}";
     }
     { attr = "contrailDiscovery";
-      name = "contrail-discovery";
+      name = "opencontrail/discovery";
       command = "${contrailPkgs.contrailDiscovery}/bin/contrail-discovery --conf_file ${configuration.discovery}";
     }
     { attr = "contrailControl";
-      name = "contrail-control";
+      name = "opencontrail/control";
       command = "${contrailPkgs.contrailControl}/bin/contrail-control --conf_file ${configuration.control}";
     }
   ];
