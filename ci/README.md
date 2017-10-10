@@ -27,21 +27,23 @@ HYDRA_DBI environment variable as explained below.
 
 We can then start the Hydra container
 ```
-$ docker run --name hydra -d -p 3000:3000 --link postgres:postgres --volume $PWD/nix-cache:/nix-cache hydra
+$ docker run --name hydra -d -p 3000:3000 --link postgres:postgres
 ```
 
-The volume stores a binary cache that is filled by the
-`hydra-queue-runner`. Hydra also uses this binary cache to avoid
-downloading of packages.
+We can then access the webUI at `http://localhost:3000`. To create an
+admin account, we can either use the `hydra-create-user` command or
+set container environment variables `HYDRA_ADMIN_*` as explained below.
 
-We can then access the webUI. First login, then create a project, a
-jobset. Unfortunately, the API is not well documented so we create
-them manually.
 
 ### Creating a project and a jobset
 
 The script `create-jobset.sh` can be used to create a jobset to build
-expressions defined in the current repository.
+expressions defined in the current repository. To set the hydra url,
+user credentials, set environment variables:
+```
+$ URL=YOUR-HYDRA USERNAME=admin PASSWORD=admin bash ci/create-project.sh
+```
+
 
 ### Binary cache
 
@@ -65,6 +67,7 @@ evaluation, you have to provide the environment variable
 Note: if you don't provide this environment variable, binary caches
       don't need to be signed (nix.conf `signed-binary-caches` variable is not set).
 
+
 ### Specifying databases credentials
 
 ```
@@ -80,6 +83,7 @@ chmod 600 pgpass
 docker run -v $PWD/pgpass:/root/.pgpass hydra
 ```
 
+
 ### Set the number of parallel jobs
 
 The `MAX_JOBS` environment variable define how many jobs can be run in
@@ -88,6 +92,7 @@ parallel. By default, it is set to `1`.
 ```
 docker run -e "MAX_JOBS=12" hydra
 ```
+
 
 ### Create the Hydra admin account at startup
 
@@ -98,7 +103,8 @@ are both set, they are then used to create an account with the `admin` role.
 docker run -p 3000:3000 --link postgres:postgres -e HYDRA_ADMIN_USERNAME=hydraAdmin -e HYDRA_ADMIN_PASSWORD=hydraPwd hydra
 ```
 
-### Stateful datas
+
+### Volumes or Stateful datas
 
 There are currently two directories that are stateful
 
