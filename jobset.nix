@@ -22,13 +22,14 @@ let
   '';
   commitId = builtins.replaceStrings ["\n"] [""] (builtins.readFile getCommitId);
   genDockerPushJobs = drvs:
-    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.dockerPushImage v commitId)) drvs;
+    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.dockerPushImage v "opencontrail" commitId)) drvs;
   genDebPublishJobs = drvs:
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.publishDebianPkg v)) drvs;
 in
 {
-  ci.hydraImage = lib.dockerImageBuildProduct default.ci.hydraImage;
-  ci.pushHydraImage = lib.dockerPushImage default.ci.hydraImage commitId;
+  ci = { hydraImage = lib.dockerImageBuildProduct default.ci.hydraImage; }
+       // pkgs.lib.optionalAttrs pushToDockerRegistry
+          { pushHydraImage = lib.dockerPushImage default.ci.hydraImage "hydraservice" commitId; };
   contrail = default.contrail;
   debianPackages = pkgs.lib.mapAttrs (n: v: lib.debianPackageBuildProduct v) default.debianPackages;
   images = pkgs.lib.mapAttrs (n: v: lib.dockerImageBuildProduct v) default.images;

@@ -5,15 +5,11 @@ rec {
   # REGISTRY_PASSWORD to specify the url and credentials of the
   # registry.
   # The commit ID is used to generate the image tag.
-  dockerPushImage = image: commitId:
+  dockerPushImage = image: registryNamespace: commitId:
     let
-      registryNamespace = "hydraservice";
       imageRef = "${image.imageName}:${commitId}-${builtins.baseNameOf image.out}";
       jobName = with pkgs.lib; "push-" + (removeSuffix ".tar" (removeSuffix ".gz" image.name));
-      # Be careful since only the image and its name are take into the
-      # sha calculation. This means if the registry url changes,
-      # images are not pushed again.
-      outputString = "Pushed image ${image.imageName} with content ${builtins.baseNameOf image.out}" ;
+      outputString = "Pushed image ${image.imageName} into namespace ${registryNamespace} with content ${builtins.baseNameOf image.out}" ;
     in
       pkgs.runCommand jobName {
         buildInputs = with pkgs; [ jq skopeo ];
