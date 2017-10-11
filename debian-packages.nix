@@ -9,7 +9,7 @@ in
   contrailVrouterUbuntu_3_13_0_83_generic = lib.mkDebianPackage rec {
     name = "contrail-vrouter-module-3-13-0-83-generic";
     version = debianPackageVersion;
-    contents = contrailPkgs.contrailVrouter deps.ubuntuKernelHeaders_3_13_0_83_generic;
+    contents = contrailPkgs.vrouter deps.ubuntuKernelHeaders_3_13_0_83_generic;
     description = "Contrail vrouter kernel module for kernel 3-13-0-83-generic";
     linkScript = ''
       vrouterRelativePath=$(find ${contents} -name vrouter.ko -printf '%P')
@@ -25,8 +25,8 @@ in
     name = "contrail-vrouter-userland";
     version = debianPackageVersion;
     contents = [
-      contrailPkgs.contrailVrouterAgent contrailPkgs.contrailVrouterPortControl
-      contrailPkgs.contrailVrouterUtils contrailPkgs.contrailVrouterNetns ];
+      contrailPkgs.vrouterAgent contrailPkgs.vrouterPortControl
+      contrailPkgs.vrouterUtils contrailPkgs.vrouterNetns ];
     description = "Vrouter userland programs (contrail-vrouter-agent, vrouter utilities, opencontrail-netns tools)";
     # This links all binaries files found in the contents to the
     # /usr/bin directory of the target system

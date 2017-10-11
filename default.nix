@@ -6,7 +6,8 @@
 
 let pkgs = import nixpkgs {};
     lib =  import ./lib pkgs;
-    contrailPkgs = import contrail { pkgs_path = nixpkgs; };
+    contrailFn = import (contrail + "/all-packages.nix") { inherit pkgs nixpkgs; };
+    contrailPkgs = pkgs.lib.fix contrailFn;
     configuration = import ./configuration.nix pkgs;
 
     # Take a list of image description and generate an attribute set
@@ -16,22 +17,31 @@ let pkgs = import nixpkgs {};
 
 in rec {
   ci.hydraImage = import ./ci {inherit pkgs;};
-  contrail = contrailPkgs;
+  contrail32 = with contrailPkgs.contrail32; {
+    inherit api control vrouterAgent
+            collector analyticsApi discovery
+            queryEngine
+            configUtils vrouterUtils
+            vrouterNetns vrouterPortControl
+            webCore
+            test
+            vms;
+    };
   images =  generateImages [
     { attr = "contrailApi";
       name = "opencontrail/api";
-      command = "${contrailPkgs.contrailApi}/bin/contrail-api --conf_file ${configuration.api}";
+      command = "${contrail32.api}/bin/contrail-api --conf_file ${configuration.api}";
     }
     { attr = "contrailDiscovery";
       name = "opencontrail/discovery";
-      command = "${contrailPkgs.contrailDiscovery}/bin/contrail-discovery --conf_file ${configuration.discovery}";
+      command = "${contrail32.discovery}/bin/contrail-discovery --conf_file ${configuration.discovery}";
     }
     { attr = "contrailControl";
       name = "opencontrail/control";
-      command = "${contrailPkgs.contrailControl}/bin/contrail-control --conf_file ${configuration.control}";
+      command = "${contrail32.control}/bin/contrail-control --conf_file ${configuration.control}";
     }
   ];
-  debianPackages = import ./debian-packages.nix {inherit pkgs contrailPkgs;};
+  debianPackages = import ./debian-packages.nix { contrailPkgs=contrail32; inherit pkgs; };
 
   # Useful to dev Debian packages
   tools.installDebianPackages = lib.runUbuntuVmScript [
