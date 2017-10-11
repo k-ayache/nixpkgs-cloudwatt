@@ -30,7 +30,7 @@ in
   ci = { hydraImage = lib.dockerImageBuildProduct default.ci.hydraImage; }
        // pkgs.lib.optionalAttrs pushToDockerRegistry
           { pushHydraImage = lib.dockerPushImage default.ci.hydraImage commitId; };
-  contrail = default.contrail;
+  contrail32 = default.contrail32;
   debianPackages = pkgs.lib.mapAttrs (n: v: lib.debianPackageBuildProduct v) default.debianPackages;
   images = pkgs.lib.mapAttrs (n: v: lib.dockerImageBuildProduct v) default.images;
 } // pkgs.lib.optionalAttrs pushToDockerRegistry {

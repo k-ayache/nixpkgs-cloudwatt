@@ -41,7 +41,7 @@ in rec {
       command = "${contrail32.control}/bin/contrail-control --conf_file ${configuration.control}";
     }
   ];
-  debianPackages = import ./debian-packages.nix { contrailPkgs=contrail32; inherit pkgs; };
+  debianPackages = import ./debian-packages.nix { contrailPkgs=contrailPkgs.contrail32; inherit pkgs; };
 
   # Useful to dev Debian packages
   tools.installDebianPackages = lib.runUbuntuVmScript [
