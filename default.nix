@@ -7,7 +7,11 @@
 let pkgs = import nixpkgs {};
     lib =  import ./lib pkgs;
     contrailFn = import (contrail + "/all-packages.nix") { inherit pkgs nixpkgs; };
-    contrailPkgs = pkgs.lib.fix contrailFn;
+
+    # Override sources attribute to use the Cloudwatt repositories instead of Contrail repositories
+    overrideContrailPkgs = self: super: { sources = import ./sources.nix {}; };
+    contrailPkgsCw = pkgs.lib.fix (pkgs.lib.extends overrideContrailPkgs contrailFn);
+
     configuration = import ./configuration.nix pkgs;
 
     # Take a list of image description and generate an attribute set
@@ -17,7 +21,7 @@ let pkgs = import nixpkgs {};
 
 in rec {
   ci.hydraImage = import ./ci {inherit pkgs;};
-  contrail32 = with contrailPkgs.contrail32; {
+  contrail32Cw = with contrailPkgsCw.contrail32; {
     inherit api control vrouterAgent
             collector analyticsApi discovery
             queryEngine
@@ -30,18 +34,18 @@ in rec {
   images =  generateImages [
     { attr = "contrailApi";
       name = "opencontrail/api";
-      command = "${contrail32.api}/bin/contrail-api --conf_file ${configuration.api}";
+      command = "${contrail32Cw.api}/bin/contrail-api --conf_file ${configuration.api}";
     }
     { attr = "contrailDiscovery";
       name = "opencontrail/discovery";
-      command = "${contrail32.discovery}/bin/contrail-discovery --conf_file ${configuration.discovery}";
+      command = "${contrail32Cw.discovery}/bin/contrail-discovery --conf_file ${configuration.discovery}";
     }
     { attr = "contrailControl";
       name = "opencontrail/control";
-      command = "${contrail32.control}/bin/contrail-control --conf_file ${configuration.control}";
+      command = "${contrail32Cw.control}/bin/contrail-control --conf_file ${configuration.control}";
     }
   ];
-  debianPackages = import ./debian-packages.nix { contrailPkgs=contrailPkgs.contrail32; inherit pkgs; };
+  debianPackages = import ./debian-packages.nix { contrailPkgs=contrailPkgsCw.contrail32; inherit pkgs; };
 
   # Useful to dev Debian packages
   tools.installDebianPackages = lib.runUbuntuVmScript [
