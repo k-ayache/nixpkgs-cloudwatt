@@ -143,6 +143,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       # We replace build logs dir by a link to keep them.
       # Build logs should be send to an object storage instead...
       mkdir -p /${hydraStatefulDir}/build-logs
+      mkdir -p /${hydraStatefulDir}/gcroots/hydra
       ln -s /${hydraStatefulDir}/gcroots/hydra /nix/var/nix/gcroots/hydra
 
       rmdir /${hydraBaseDir}/build-logs
