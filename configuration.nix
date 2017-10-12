@@ -67,6 +67,8 @@ control = pkgs.writeTextFile {
     log_local = 1
     log_level = SYS_DEBUG
 
+    collectors=10.0.0.12
+
     [IFMAP]
     server_url= https://10.0.0.3:8443
     password = api-server
@@ -77,4 +79,72 @@ control = pkgs.writeTextFile {
     server = 10.0.0.4
     '';
   };
+
+collector = pkgs.writeTextFile {
+  name = "contrail-collector.conf";
+  text = ''
+    [DEFAULT]
+
+    analytics_data_ttl = 48
+    analytics_flow_ttl = 48
+    analytics_statistics_ttl = 48
+    analytics_config_audit_ttl = 48
+
+    log_file=/var/log/contrail/contrail-collector.log
+    log_level=SYS_DEBUG
+    log_local=1
+
+    cassandra_server_list = 10.0.0.2:9042
+    zookeeper_server_list = 10.0.0.8:2181
+    http_server_port = 8089
+
+    [COLLECTOR]
+    server = 0.0.0.0
+    port   = 8086
+
+    [DISCOVERY]
+    port = 5998
+    server = 10.0.0.4
+
+    [REDIS]
+    server = 127.0.0.1
+    port   = 6379
+
+    [API_SERVER]
+    api_server_list = 10.0.0.3:8082
+    '';
+   
+  };
+
+analytics-api = pkgs.writeTextFile {
+  name = "contrail-analytics-api.conf";
+  text = ''
+
+    [DEFAULT]
+    cassandra_server_list = 10.0.0.2:9042
+    collectors = 127.0.0.1:8086
+    http_server_port = 8090
+    rest_api_port = 8081
+    rest_api_ip = 0.0.0.0
+
+    log_local = 1
+    log_level = SYS_DEBUG
+    log_file = /var/log/contrail/contrail-analytics-api.log
+
+    api_server = 10.0.0.3:8082
+    aaa_mode = no-auth
+
+    [DISCOVERY]
+    server = 10.0.0.4
+    port   = 5998
+
+    [REDIS]
+    server= 127.0.0.1
+    redis_server_port=6379
+    redis_query_port=6379
+    redis_uve_list = 127.0.0.1:6379
+    '';
+   
+  };
+
 }		

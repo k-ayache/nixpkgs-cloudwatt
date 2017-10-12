@@ -49,6 +49,14 @@ in rec {
       name = "opencontrail/control";
       command = "${contrail32Cw.control}/bin/contrail-control --conf_file ${configuration.control}";
     }
+    { attr = "contrailCollector";
+      name = "contrail-collector";
+      command = "${contrailPkgs.contrailCollector}/bin/contrail-collector --conf_file ${configuration.collector}";
+    }
+    { attr = "contrailAnalyticsApi";
+      name = "contrail-analytics-api";
+      command = "${contrailPkgs.contrailAnalyticsApi}/bin/contrail-analytics-api --conf_file ${configuration.analytics-api}";
+    }
   ];
   debianPackages = import ./debian-packages.nix { contrailPkgs=contrailPkgsCw.contrail32; inherit pkgs; };
 
