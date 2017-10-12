@@ -9,7 +9,7 @@ let pkgs = import nixpkgs {};
     contrailFn = import (contrail + "/all-packages.nix") { inherit pkgs nixpkgs; };
 
     # Override sources attribute to use the Cloudwatt repositories instead of Contrail repositories
-    overrideContrailPkgs = self: super: { sources = import ./sources.nix {}; };
+    overrideContrailPkgs = self: super: { sources = super.sources // (import ./sources.nix {}); };
     contrailPkgsCw = pkgs.lib.fix (pkgs.lib.extends overrideContrailPkgs contrailFn);
 
     configuration = import ./configuration.nix pkgs;
