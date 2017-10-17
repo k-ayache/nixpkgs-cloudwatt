@@ -50,14 +50,12 @@ api = pkgs.writeTextFile {
     zk_server_port = 2181
     zk_server_ip = 10.0.0.8
 
-
     [IFMAP_SERVER]
     ifmap_listen_ip = 0.0.0.0
     ifmap_listen_port = 8443
     ifmap_credentials = api-server:api-server
     '';
   };
-
 
 control = pkgs.writeTextFile {
   name = "contrail-control.conf";
@@ -67,7 +65,7 @@ control = pkgs.writeTextFile {
     log_local = 1
     log_level = SYS_DEBUG
 
-    collectors=10.0.0.12
+    collectors=10.0.0.12:8086
 
     [IFMAP]
     server_url= https://10.0.0.3:8443
@@ -84,7 +82,6 @@ collector = pkgs.writeTextFile {
   name = "contrail-collector.conf";
   text = ''
     [DEFAULT]
-
     analytics_data_ttl = 48
     analytics_flow_ttl = 48
     analytics_statistics_ttl = 48
@@ -113,7 +110,6 @@ collector = pkgs.writeTextFile {
     [API_SERVER]
     api_server_list = 10.0.0.3:8082
     '';
-   
   };
 
 analytics-api = pkgs.writeTextFile {
@@ -133,18 +129,17 @@ analytics-api = pkgs.writeTextFile {
 
     api_server = 10.0.0.3:8082
     aaa_mode = no-auth
+    partitions = 0
 
     [DISCOVERY]
-    server = 10.0.0.4
-    port   = 5998
+    disc_server_ip = 10.0.0.4
+    disc_server_port = 5998
 
     [REDIS]
     server= 127.0.0.1
     redis_server_port=6379
     redis_query_port=6379
     redis_uve_list = 127.0.0.1:6379
-    '';
-   
+    '';   
   };
-
 }		
