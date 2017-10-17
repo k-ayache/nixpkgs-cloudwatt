@@ -67,7 +67,7 @@ control = pkgs.writeTextFile {
     log_local = 1
     log_level = SYS_DEBUG
 
-    collectors=10.0.0.12
+    collectors=10.0.0.12:8086
 
     [IFMAP]
     server_url= https://10.0.0.3:8443
@@ -134,9 +134,11 @@ analytics-api = pkgs.writeTextFile {
     api_server = 10.0.0.3:8082
     aaa_mode = no-auth
 
+    partitions = 0
+
     [DISCOVERY]
-    server = 10.0.0.4
-    port   = 5998
+    disc_server_ip = 10.0.0.4
+    disc_server_port = 5998
 
     [REDIS]
     server= 127.0.0.1
