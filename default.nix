@@ -14,10 +14,15 @@ let pkgs = import nixpkgs {};
 
     configuration = import ./configuration.nix pkgs;
 
+    buildContrailImageWithPerp = name: command:
+      lib.buildImageWithPerp {
+        inherit name command;
+        extraCommands = "mkdir -p var/log/contrail";
+      };
     # Take a list of image description and generate an attribute set
     generateImages = images: builtins.listToAttrs (builtins.map (a:
       { name = a.attr;
-        value = lib.buildImageWithPerp a.name a.command; }) images);
+        value = buildContrailImageWithPerp a.name a.command; }) images);
 
 in rec {
   ci.hydraImage = import ./ci {inherit pkgs;};

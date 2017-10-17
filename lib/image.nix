@@ -72,7 +72,7 @@ rec {
   };
 
   # Build an image where 'command' is started by Perp
-  buildImageWithPerp = name: command: pkgs.dockerTools.buildImage {
+  buildImageWithPerp = { name, command, extraCommands ? "" }: pkgs.dockerTools.buildImage {
     inherit name;
     fromImage = pkgs.dockerTools.pullImage {
       imageName = "r.cwpriv.net/kubernetes/base";
@@ -87,6 +87,6 @@ rec {
     };
     extraCommands = ''
       ${pkgs.findutils}/bin/find etc/perp -type d -exec chmod +t {} \;
-    '';
+    '' + extraCommands;
   };
 }
