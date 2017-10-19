@@ -9,7 +9,7 @@ let pkgs = import nixpkgs {};
     contrailFn = import (contrail + "/all-packages.nix") { inherit pkgs nixpkgs; };
 
     # Override sources attribute to use the Cloudwatt repositories instead of Contrail repositories
-    overrideContrailPkgs = self: super: { sources = super.sources // (import ./sources.nix {}); };
+    overrideContrailPkgs = self: super: { sources = super.sources // (import ./sources.nix { inherit pkgs; }); };
     contrailPkgsCw = pkgs.lib.fix (pkgs.lib.extends overrideContrailPkgs contrailFn);
 
     configuration = import ./configuration.nix pkgs;
@@ -26,7 +26,7 @@ let pkgs = import nixpkgs {};
 
 in rec {
   ci.hydraImage = import ./ci {inherit pkgs;};
-  contrail32Cw = with contrailPkgsCw.contrail32; {
+  contrail32Cw = with contrailPkgsCw.contrail; {
     inherit api control vrouterAgent
             collector analyticsApi discovery
             queryEngine

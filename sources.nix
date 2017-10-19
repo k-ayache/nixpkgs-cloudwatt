@@ -18,3 +18,4 @@
     rev = "91a10d261184fec7bde8d9413f53151b094a64f1";
     sha256 = "1c6rsgg6ld6mbg9x331chg2bwxwyagicnjpppm83qgak4i71v1vx";
   };
+}
