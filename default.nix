@@ -58,7 +58,7 @@ in rec {
       command = "${contrail32Cw.analyticsApi}/bin/contrail-analytics-api --conf_file ${configuration.analytics-api}";
     }
   ];
-  debianPackages = import ./debian-packages.nix { contrailPkgs=contrailPkgsCw.contrail32; inherit pkgs; };
+  debianPackages = import ./debian-packages.nix { contrailPkgs=contrailPkgsCw.contrail; inherit pkgs; };
 
   # Useful to dev Debian packages
   tools.installDebianPackages = lib.runUbuntuVmScript [
