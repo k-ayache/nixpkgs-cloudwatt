@@ -4,22 +4,26 @@ let debianPackageVersion = "3.2-3";
 
     lib =  import ./lib pkgs;
     deps = import ./deps.nix pkgs;
+
+    contrailVrouterUbuntu = kernel: lib.mkDebianPackage rec {
+      name = "contrail-vrouter-module-${kernel.version}";
+      version = debianPackageVersion;
+      contents = contrailPkgs.vrouter kernel;
+      description = "Contrail vrouter kernel module for kernel ${kernel.version}";
+      linkScript = ''
+        vrouterRelativePath=$(find ${contents} -name vrouter.ko -printf '%P')
+        vrouterRelativeDir=$(dirname $vrouterRelativePath)
+        mkdir -p $vrouterRelativeDir
+
+        vrouterPath=$(find ${contents} -name vrouter.ko)
+        ln -s $vrouterPath $vrouterRelativeDir
+      '';
+    };
 in
 {
-  contrailVrouterUbuntu_3_13_0_83_generic = lib.mkDebianPackage rec {
-    name = "contrail-vrouter-module-3-13-0-83-generic";
-    version = debianPackageVersion;
-    contents = contrailPkgs.vrouter deps.ubuntuKernelHeaders_3_13_0_83_generic;
-    description = "Contrail vrouter kernel module for kernel 3-13-0-83-generic";
-    linkScript = ''
-      vrouterRelativePath=$(find ${contents} -name vrouter.ko -printf '%P')
-      vrouterRelativeDir=$(dirname $vrouterRelativePath)
-      mkdir -p $vrouterRelativeDir
 
-      vrouterPath=$(find ${contents} -name vrouter.ko)
-      ln -s $vrouterPath $vrouterRelativeDir
-    '';
-  };
+  contrailVrouterUbuntu_3_13_0_83_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_3_13_0_83_generic;
+  contrailVrouterUbuntu_3_13_0_112_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_3_13_0_112_generic;
 
   contrailVrouterUserland = lib.mkDebianPackage rec {
     name = "contrail-vrouter-userland";
