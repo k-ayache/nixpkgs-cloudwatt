@@ -6,7 +6,7 @@ let
   ubuntuKernelHeaders = version: srcs: pkgs.stdenv.mkDerivation rec {
     inherit version srcs;
     pname = "ubuntu-kernel-headers";
-    name = "${pname}-${version}-generic";
+    name = "${pname}-${version}";
     phases = [ "unpackPhase" "installPhase" ];
     buildInputs = [ pkgs.dpkg ];
     unpackCmd = "dpkg-deb --extract $curSrc tmp/";
@@ -16,11 +16,11 @@ let
 
       # We patch these scripts since they have been compiled for ubuntu
       for i in recordmcount basic/fixdep mod/modpost; do
-        ${pkgs.patchelf}/bin/patchelf --set-interpreter ${pkgs.stdenv.glibc}/lib/ld-linux-x86-64.so.2 $out/usr/src/linux-headers-${version}-generic/scripts/$i
-        ${pkgs.patchelf}/bin/patchelf --set-rpath ${pkgs.stdenv.glibc}/lib $out//usr/src/linux-headers-${version}-generic/scripts/$i
+        ${pkgs.patchelf}/bin/patchelf --set-interpreter ${pkgs.stdenv.glibc}/lib/ld-linux-x86-64.so.2 $out/usr/src/linux-headers-${version}/scripts/$i
+        ${pkgs.patchelf}/bin/patchelf --set-rpath ${pkgs.stdenv.glibc}/lib $out//usr/src/linux-headers-${version}/scripts/$i
       done
 
-      ln -sf $out/usr/src/linux-headers-${version}-generic $out/lib/modules/${version}-generic/build
+      ln -sf $out/usr/src/linux-headers-${version} $out/lib/modules/${version}/build
     '';
   };
 in
@@ -49,7 +49,7 @@ in
     '';
   };
 
-  ubuntuKernelHeaders_3_13_0_83_generic = ubuntuKernelHeaders "3.13.0-83" [
+  ubuntuKernelHeaders_3_13_0_83_generic = ubuntuKernelHeaders "3.13.0-83-generic" [
     (pkgs.fetchurl {
       url = http://fr.archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-83-generic_3.13.0-83.127_amd64.deb;
       sha256 = "f8b5431798c315b7c08be0fb5614c844c38a07c0b6656debc9cc8833400bdd98";
@@ -60,7 +60,7 @@ in
     })
   ];
 
-  ubuntuKernelHeaders_3_13_0_112_generic = ubuntuKernelHeaders "3.13.0-112" [
+  ubuntuKernelHeaders_3_13_0_112_generic = ubuntuKernelHeaders "3.13.0-112-generic" [
     (pkgs.fetchurl {
       url = http://fr.archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-112-generic_3.13.0-112.159_amd64.deb;
       sha256 = "0kjj6zkr8yh79haj7xqdqndwq2rhcvs53wzkgfa666q939dh4dr0";
@@ -71,7 +71,7 @@ in
     })
   ];
 
-  ubuntuKernelHeaders_3_13_0_125_generic = ubuntuKernelHeaders "3.13.0-125" [
+  ubuntuKernelHeaders_3_13_0_125_generic = ubuntuKernelHeaders "3.13.0-125-generic" [
     (pkgs.fetchurl {
       url = http://fr.archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-125-generic_3.13.0-125.174_amd64.deb;
       sha256 = "0s231qkf5bjdnaj103xxv1wwspy4vlgbsgzk93254ixqvsjh5hbr";
