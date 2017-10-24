@@ -70,4 +70,15 @@ in
       sha256 = "1irx346ifqbirz4pfncpz1spynhy3hmy1y3sfmva339vx6a224y9";
     })
   ];
+
+  ubuntuKernelHeaders_3_13_0_125_generic = ubuntuKernelHeaders "3.13.0-125" [
+    (pkgs.fetchurl {
+      url = http://fr.archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-125-generic_3.13.0-125.174_amd64.deb;
+      sha256 = "0s231qkf5bjdnaj103xxv1wwspy4vlgbsgzk93254ixqvsjh5hbr";
+    })
+    (pkgs.fetchurl {
+      url = http://fr.archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-125_3.13.0-125.174_all.deb;
+      sha256 = "1hbb6z1i5xjx68nssxm90jr6h142n8cphbi8z688cz05zrnzlk60";
+    })
+  ];
 }
