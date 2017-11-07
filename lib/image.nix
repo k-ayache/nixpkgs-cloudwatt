@@ -77,7 +77,7 @@ rec {
     fromImage = pkgs.dockerTools.pullImage {
       imageName = "r.cwpriv.net/kubernetes/base";
       imageTag = "16.04-c6e9c969951cf94b";
-      sha256 = "1nhw17d785jvm6afacxm3y76k3q7sz69p3zvnlv38v67nj9sg8an";
+      sha256 = "0gksw7l0mbdhmjvb0mvb48h5ay9qr7sqsxq4hs3cfla9kn73l5cd";
     };
     contents = [
       (genPerpRcMain { name=builtins.replaceStrings ["/"] ["-"]  name; executable=command; })
