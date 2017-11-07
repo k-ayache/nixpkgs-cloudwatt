@@ -3,14 +3,19 @@
 , contrail ? fetched.contrail
 }:
 
-
 let pkgs = import nixpkgs {};
     lib =  import ./lib pkgs;
-    contrailFn = import (contrail + "/all-packages.nix") { inherit pkgs nixpkgs; };
+
+    allPackages = import (contrail + "/all-packages.nix") { inherit pkgs nixpkgs; };
 
     # Override sources attribute to use the Cloudwatt repositories instead of Contrail repositories
-    overrideContrailPkgs = self: super: { sources = super.sources // (import ./sources.nix { inherit pkgs; }); };
-    contrailPkgsCw = pkgs.lib.fix (pkgs.lib.extends overrideContrailPkgs contrailFn);
+    overrideContrailPkgs = self: super: {
+      sources = super.sources32 // (import ./sources.nix { inherit pkgs; });
+      contrailVersion = self.contrail32;
+      thirdPartyCache = super.thirdPartyCache.overrideAttrs(oldAttrs:
+        { outputHash = "1rvj0dkaw4jbgmr5rkdw02s1krw1307220iwmf2j0p0485p7d3h2"; });
+    };
+    contrailPkgsCw = pkgs.lib.fix (pkgs.lib.extends overrideContrailPkgs allPackages);
 
     configuration = import ./configuration.nix pkgs;
 
@@ -26,7 +31,7 @@ let pkgs = import nixpkgs {};
 
 in rec {
   ci.hydraImage = import ./ci {inherit pkgs;};
-  contrail32Cw = with contrailPkgsCw.contrail; {
+  contrail32Cw = with contrailPkgsCw; {
     inherit api control vrouterAgent
             collector analyticsApi discovery
             queryEngine
@@ -58,7 +63,7 @@ in rec {
       command = "${contrail32Cw.analyticsApi}/bin/contrail-analytics-api --conf_file ${configuration.analytics-api}";
     }
   ];
-  debianPackages = import ./debian-packages.nix { contrailPkgs=contrailPkgsCw.contrail; inherit pkgs; };
+  debianPackages = import ./debian-packages.nix { contrailPkgs=contrailPkgsCw; inherit pkgs; };
 
   # Useful to dev Debian packages
   tools.installDebianPackages = lib.runUbuntuVmScript [
