@@ -24,13 +24,10 @@ let pkgs = import nixpkgs {};
         inherit name command;
         extraCommands = "mkdir -p var/log/contrail";
       };
-    # Take a list of image description and generate an attribute set
-    generateImages = images: builtins.listToAttrs (builtins.map (a:
-      { name = a.attr;
-        value = buildContrailImageWithPerp a.name a.command; }) images);
 
 in rec {
   ci.hydraImage = import ./ci {inherit pkgs;};
+ 
   contrail32Cw = with contrailPkgsCw; {
     inherit api control vrouterAgent
             collector analyticsApi discovery
@@ -40,32 +37,26 @@ in rec {
             webCore
             test
             vms;
-    };
-  images =  generateImages [
-    { attr = "contrailApi";
-      name = "opencontrail/api";
-      command = "${contrail32Cw.api}/bin/contrail-api --conf_file ${configuration.api}";
-    }
-    { attr = "contrailDiscovery";
-      name = "opencontrail/discovery";
-      command = "${contrail32Cw.discovery}/bin/contrail-discovery --conf_file ${configuration.discovery}";
-    }
-    { attr = "contrailControl";
-      name = "opencontrail/control";
-      command = "${contrail32Cw.control}/bin/contrail-control --conf_file ${configuration.control}";
-    }
-    { attr = "contrailCollector";
-      name = "opencontrail/collector";
-      command = "${contrail32Cw.collector}/bin/contrail-collector --conf_file ${configuration.collector}";
-    }
-    { attr = "contrailAnalyticsApi";
-      name = "opencontrail/analytics-api";
-      command = "${contrail32Cw.analyticsApi}/bin/contrail-analytics-api --conf_file ${configuration.analytics-api}";
-    }
-  ];
+  };
+
+  images = {
+    contrailApi = buildContrailImageWithPerp "opencontrail/api"
+      "${contrail32Cw.api}/bin/contrail-api --conf_file ${configuration.api}";
+    contrailDiscovery = buildContrailImageWithPerp "opencontrail/discovery"
+      "${contrail32Cw.discovery}/bin/contrail-discovery --conf_file ${configuration.discovery}";
+    contrailControl = buildContrailImageWithPerp "opencontrail/control"
+      "${contrail32Cw.control}/bin/contrail-control --conf_file ${configuration.control}";
+    contrailCollector = buildContrailImageWithPerp "opencontrail/collector"
+      "${contrail32Cw.collector}/bin/contrail-collector --conf_file ${configuration.collector}";
+    contrailAnalyticsApi = buildContrailImageWithPerp "opencontrail/analytics-api"
+      "${contrail32Cw.analyticsApi}/bin/contrail-analytics-api --conf_file ${configuration.analytics-api}";
+  };
+
   debianPackages = import ./debian-packages.nix { contrailPkgs=contrailPkgsCw; inherit pkgs; };
 
-  # Useful to dev Debian packages
+  # This build an Ubuntu vm where Debian packages are
+  # preinstalled. This is used to easily try generated Debian
+  # packages.
   tools.installDebianPackages = lib.runUbuntuVmScript [
     debianPackages.contrailVrouterUbuntu_3_13_0_83_generic
     debianPackages.contrailVrouterUserland
