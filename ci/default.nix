@@ -153,7 +153,10 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
         echo $BINARY_CACHE_KEY_SECRET > /var/lib/hydra/secret
         chmod 440 /var/lib/hydra/secret
         cp ${hydraConf} /var/lib/hydra/hydra.conf
+        # This could be deprecated since we specify the binary cache in the store_uri variable
         echo 'binary_cache_secret_key_file = /var/lib/hydra/secret' >> /var/lib/hydra/hydra.conf
+        # This is to sign the generated binary cache
+        sed -i 's|store_uri = ${binaryCacheUri}|store_uri = ${binaryCacheUri}?secret-key=/var/lib/hydra/secret|' /var/lib/hydra/hydra.conf
       fi
 
       if [ "$BINARY_CACHE_KEY_PUBLIC" != "" ]; then
