@@ -5,13 +5,18 @@ discovery = pkgs.writeTextFile {
   name = "contrail-discovery.conf";
   text = ''
     [DEFAULTS]
+
     zk_server_ip=10.0.0.8
     zk_server_port=2181
+
     listen_ip_addr=0.0.0.0
     listen_port=5998
+
     log_local=True
     log_level=SYS_NOTICE
+
     cassandra_server_list = 10.0.0.2:9160
+
     # minimim time to allow client to cache service information (seconds)
     ttl_min=300
 
@@ -37,16 +42,21 @@ api = pkgs.writeTextFile {
   name = "contrail-api.conf";
   text = ''
     [DEFAULTS]
+
     log_level = SYS_NOTICE
     log_local = 1
+
     cassandra_server_list = 10.0.0.2:9160
+
     disc_server_ip = 10.0.0.4
     disc_server_port = 5998
 
     rabbit_port = 5672
     rabbit_server = 10.0.0.7
+
     listen_port = 8082
     listen_ip_addr = 0.0.0.0
+
     zk_server_port = 2181
     zk_server_ip = 10.0.0.8
 
@@ -92,7 +102,9 @@ collector = pkgs.writeTextFile {
     log_local=1
 
     cassandra_server_list = 10.0.0.2:9042
+
     zookeeper_server_list = 10.0.0.8:2181
+
     http_server_port = 8089
 
     [COLLECTOR]
@@ -115,11 +127,13 @@ collector = pkgs.writeTextFile {
 analytics-api = pkgs.writeTextFile {
   name = "contrail-analytics-api.conf";
   text = ''
-
     [DEFAULT]
+
     cassandra_server_list = 10.0.0.2:9042
+
     collectors = 127.0.0.1:8086
     http_server_port = 8090
+
     rest_api_port = 8081
     rest_api_ip = 0.0.0.0
 
@@ -141,5 +155,56 @@ analytics-api = pkgs.writeTextFile {
     redis_query_port=6379
     redis_uve_list = 127.0.0.1:6379
     '';   
+  };
+
+schema-transformer = pkgs.writeTextFile {
+  name = "contrail-schema.conf";
+  text = ''
+    [DEFAULTS]
+    log_file = /var/log/contrail/contrail-schema.log
+    log_local = 1
+    log_level = SYS_DEBUG
+
+    disc_server_ip = 10.0.0.4
+    disc_server_port = 5998
+
+    rabbit_port = 5672
+    rabbit_server = 10.0.0.7
+
+    zk_server_port = 2181
+    zk_server_ip = 10.0.0.8
+
+    cassandra_server_list = 10.0.0.2:9160
+
+    api_server_port = 8082
+    api_server_ip = 10.0.0.3
+    '';
+  };
+
+svc-monitor = pkgs.writeTextFile {
+  name = "contrail-svc-monitor.conf";
+  text = ''
+    [DEFAULTS]
+    log_file = /var/log/contrail/svc-monitor.log
+    log_level = SYS_DEBUG
+    log_local = 1
+
+    rabbit_port = 5672
+    rabbit_server = 10.0.0.7
+
+    zk_server_port = 2181
+    zk_server_ip = 10.0.0.8
+
+    cassandra_server_list = 10.0.0.2:9160
+
+    disc_server_port = 5998
+    disc_server_ip = 10.0.0.4
+
+    api_server_port = 8082
+    api_server_ip = 10.0.0.3
+   
+    [SCHEDULER]
+    aaa_mode = no-auth
+    '';
   };
 }		

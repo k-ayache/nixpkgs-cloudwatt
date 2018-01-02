@@ -31,7 +31,7 @@ in rec {
   contrail32Cw = with contrailPkgsCw; {
     inherit api control vrouterAgent
             collector analyticsApi discovery
-            queryEngine
+            queryEngine schemaTransformer svcMonitor
             configUtils vrouterUtils
             vrouterNetns vrouterPortControl
             webCore
@@ -50,6 +50,10 @@ in rec {
       "${contrail32Cw.collector}/bin/contrail-collector --conf_file ${configuration.collector}";
     contrailAnalyticsApi = buildContrailImageWithPerp "opencontrail/analytics-api"
       "${contrail32Cw.analyticsApi}/bin/contrail-analytics-api --conf_file ${configuration.analytics-api}";
+    contrailSchemaTransformer = buildContrailImageWithPerp "opencontrail/schema-transformer"
+      "${contrail32Cw.schemaTransformer}/bin/contrail-schema --conf_file ${configuration.schema-transformer}";   
+    contrailSvcMonitor = buildContrailImageWithPerp "opencontrail/svc-monitor"
+      "${contrail32Cw.svcMonitor}/bin/contrail-svc-monitor --conf_file ${configuration.svc-monitor}";
   };
 
   debianPackages = import ./debian-packages.nix { contrailPkgs=contrailPkgsCw; inherit pkgs; };
