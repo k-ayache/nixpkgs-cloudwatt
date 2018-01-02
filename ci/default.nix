@@ -129,7 +129,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
     perpInit = ''
       ${pkgs.findutils}/bin/find etc/perp -type d -exec chmod +t {} \;
     '';
-    
+
     # This is executed at container runtime
     hydraPreStart = pkgs.writeScript "hydraPreStart" ''
       # Hydra database schema initialisation
@@ -172,6 +172,13 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       fi
     '';
 
+    entrypoint = pkgs.writeScript "entrypoint" ''
+      #!${pkgs.bash}/bin/bash
+      set -e
+      ${hydraPreStart}
+      exec ${perp}/usr/sbin/perpd
+    '';
+
 in
   pkgs.dockerTools.buildImageWithNixDb rec {
     name = "hydra/master";
@@ -183,7 +190,7 @@ in
 
     contents = [
       pkgs.hydra
-      pkgs.nix pkgs.eject # eject provides 'more' which is required by nix-store
+      pkgs.nix
 
       # To manually initialize the database
       pkgs.postgresql93
@@ -191,7 +198,7 @@ in
       # Interactive mode
       pkgs.coreutils pkgs.bashInteractive pkgs.curl
 
-      (genPerpRcMain {name = "hydra-server"; executable = hydraServerCmd; preStartScript = hydraPreStart; })
+      (genPerpRcMain {name = "hydra-server"; executable = hydraServerCmd; })
       (genPerpRcMain {name = "hydra-queue-runner"; executable = hydraQueueRunnerCmd; })
       (genPerpRcMain {name = "hydra-evaluator"; executable = hydraEvaluator; })
       (genPerpRcMain {name = "nscd"; executable = "${pkgs.glibc.bin}/sbin/nscd -f ${nscdConf} -F"; })
@@ -204,7 +211,7 @@ in
       + containerInit + nixInit + hydraInit + nscdInit + perpInit + contrailBuildInit;
 
     config = {
-      Cmd = [ "${perp}/usr/sbin/perpd" ];
+      Cmd = [ "${entrypoint}" ];
       Env = [
         "HYDRA_DATA=/${hydraBaseDir}"
         "HYDRA_CONFIG=/${hydraBaseDir}/hydra.conf"
