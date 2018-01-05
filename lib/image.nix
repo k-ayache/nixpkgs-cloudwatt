@@ -72,7 +72,7 @@ rec {
   };
 
   # Build an image where 'command' is started by Perp
-  buildImageWithPerp = { name, command, extraCommands ? "" }: pkgs.dockerTools.buildImage {
+  buildImageWithPerp = { name, command, preStartScript, extraCommands ? "" }: pkgs.dockerTools.buildImage {
     inherit name;
     fromImage = pkgs.dockerTools.pullImage {
       imageName = "r.cwpriv.net/kubernetes/base";
@@ -80,7 +80,7 @@ rec {
       sha256 = "0gksw7l0mbdhmjvb0mvb48h5ay9qr7sqsxq4hs3cfla9kn73l5cd";
     };
     contents = [
-      (genPerpRcMain { name=builtins.replaceStrings ["/"] ["-"]  name; executable=command; })
+      (genPerpRcMain { name=builtins.replaceStrings ["/"] ["-"]  name; executable=command; preStartScript=preStartScript;})
     ];
     config = {
       Cmd = [ "/usr/sbin/perpd" ];
