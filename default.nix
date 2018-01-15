@@ -26,10 +26,13 @@ let pkgs = import nixpkgs {};
         extraCommands = "chmod u+w etc; mkdir -p var/log/contrail etc/contrail";
      };
 
-    callPackage = pkgs.lib.callPackageWith (cwPkgs // {inherit pkgs lib;});
+    callPackage = pkgs.lib.callPackageWith (
+      cwPkgs // { inherit pkgs lib; } // { inherit (pkgs) stdenv fetchurl; });
 
     cwPkgs = rec {
-      ci = callPackage ./ci { perp = deps.perp; };
+      ci = callPackage ./ci { };
+
+      perp = callPackage ./pkgs/perp { }; 
  
       contrail32Cw = with contrailPkgsCw; {
         inherit api control vrouterAgent
