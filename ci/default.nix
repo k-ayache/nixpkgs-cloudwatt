@@ -1,7 +1,6 @@
-{pkgs ? import <nixpkgs> {}}:
+{pkgs, lib, perp}:
 
-with import ../lib/image.nix pkgs;
-with import ../deps.nix pkgs;
+with lib;
 
 let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 -p 3000 --max_spare_servers 5 --max_servers 25 --max_requests 100 -d";
     hydraQueueRunnerCmd = "${pkgs.hydra}/bin/hydra-queue-runner -vvvvv --option build-use-substitutes true";
@@ -179,8 +178,8 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       exec ${perp}/usr/sbin/perpd
     '';
 
-in
-  pkgs.dockerTools.buildImageWithNixDb rec {
+in {
+  hydraImage = pkgs.dockerTools.buildImageWithNixDb rec {
     name = "hydra/master";
     fromImage = pkgs.dockerTools.pullImage {
       imageName = "r.cwpriv.net/kubernetes/base";
@@ -223,4 +222,5 @@ in
         "HYDRA_ADMIN_PASSWORD="
       ];
     };
-  }
+  };
+}
