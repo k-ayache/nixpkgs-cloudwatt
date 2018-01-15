@@ -7,17 +7,6 @@ let pkgs = import nixpkgs {};
     lib =  import ./lib pkgs;
     deps =  import ./deps.nix pkgs;
 
-    contrailAllPackages = import (contrail + "/all-packages.nix") { inherit pkgs nixpkgs; };
-
-    # Override sources attribute to use the Cloudwatt repositories instead of Contrail repositories
-    overrideContrailPkgs = self: super: {
-      sources = super.sources32 // (import ./sources.nix { inherit pkgs; });
-      contrailVersion = self.contrail32;
-      thirdPartyCache = super.thirdPartyCache.overrideAttrs(oldAttrs:
-        { outputHash = "1rvj0dkaw4jbgmr5rkdw02s1krw1307220iwmf2j0p0485p7d3h2"; });
-    };
-    contrailPkgsCw = pkgs.lib.fix (pkgs.lib.extends overrideContrailPkgs contrailAllPackages);
-
     configuration = import ./configuration.nix pkgs;
 
     buildContrailImageWithPerp = name: command: preStartScript:
@@ -33,16 +22,10 @@ let pkgs = import nixpkgs {};
       ci = callPackage ./ci { };
 
       perp = callPackage ./pkgs/perp { }; 
- 
-      contrail32Cw = with contrailPkgsCw; {
-        inherit api control vrouterAgent
-                collector analyticsApi discovery
-                queryEngine schemaTransformer svcMonitor
-                configUtils vrouterUtils
-                vrouterNetns vrouterPortControl
-                webCore
-                test
-                vms;
+
+      contrail32Cw = callPackage ./pkgs/contrail32Cw {
+        contrailPath = contrail;
+        nixpkgsPath = nixpkgs;
       };
 
       images = {
@@ -62,7 +45,7 @@ let pkgs = import nixpkgs {};
           "${contrail32Cw.svcMonitor}/bin/contrail-svc-monitor --conf_file ${configuration.svc-monitor}";
       };
 
-      debianPackages = callPackage ./debian-packages.nix { contrailPkgs=contrailPkgsCw; };
+      debianPackages = callPackage ./debian-packages.nix { contrailPkgs=contrail32Cw; };
 
   images = {
     contrailApi = buildContrailImageWithPerp "opencontrail/api"
