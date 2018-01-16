@@ -2,11 +2,11 @@ pkgs:
 
 {
 discovery = pkgs.writeTextFile {
-  name = "contrail-discovery.conf";
+  name = "contrail-discovery.conf.ctmpl";
   text = ''
     [DEFAULTS]
 
-    zk_server_ip=10.0.0.8
+    zk_server_ip=zookeeper
     zk_server_port=2181
 
     listen_ip_addr=0.0.0.0
@@ -15,7 +15,7 @@ discovery = pkgs.writeTextFile {
     log_local=True
     log_level=SYS_NOTICE
 
-    cassandra_server_list = 10.0.0.2:9160
+    cassandra_server_list = cassandra:9160
 
     # minimim time to allow client to cache service information (seconds)
     ttl_min=300
@@ -39,57 +39,70 @@ discovery = pkgs.writeTextFile {
   };
 
 api = pkgs.writeTextFile {
-  name = "contrail-api.conf";
+  name = "contrail-api.conf.ctmpl";
   text = ''
-    [DEFAULTS]
 
+    [DEFAULTS]
+    log_file = /var/log/contrail/api.log
     log_level = SYS_NOTICE
     log_local = 1
 
-    cassandra_server_list = 10.0.0.2:9160
-
-    disc_server_ip = 10.0.0.4
+    cassandra_server_list = cassandra:9160
+    disc_server_ip = discovery
     disc_server_port = 5998
 
     rabbit_port = 5672
-    rabbit_server = 10.0.0.7
+    rabbit_server = openstack-queue
+    rabbit_user = api
+
+    {{ with secret "secret/api" -}}
+    rabbit_password= {{ .Data.queue_password}}
+    {{- end }}
+
+    rabbit_vhost= openstack
 
     listen_port = 8082
     listen_ip_addr = 0.0.0.0
 
     zk_server_port = 2181
-    zk_server_ip = 10.0.0.8
+    zk_server_ip = zookeeper
 
     [IFMAP_SERVER]
     ifmap_listen_ip = 0.0.0.0
     ifmap_listen_port = 8443
-    ifmap_credentials = api-server:api-server
+
+    {{ with secret "secret/api" -}}
+    ifmap_credentials = {{ .Data.ifmap_password}}:api-server
+    {{- end }}
     '';
   };
 
 control = pkgs.writeTextFile {
-  name = "contrail-control.conf";
+  name = "contrail-control.conf.ctmpl";
   text = ''
     [DEFAULT]
     log_file = /var/log/contrail/control.log
     log_local = 1
     log_level = SYS_DEBUG
 
-    collectors=10.0.0.12:8086
+    #collectors=collector:8086
 
     [IFMAP]
-    server_url= https://10.0.0.3:8443
-    password = api-server
+    server_url= https://api:8443
+
+    {{ with secret "secret/control" -}}
+    password ={{ .Data.ifmap_password}}
+    {{- end }}
     user = api-server
 
     [DISCOVERY]
     port = 5998
-    server = 10.0.0.4
+    server = discovery
     '';
   };
 
 collector = pkgs.writeTextFile {
-  name = "contrail-collector.conf";
+  name = "contrail-collector.conf.ctmpl";
   text = ''
     [DEFAULT]
     analytics_data_ttl = 48
@@ -101,9 +114,9 @@ collector = pkgs.writeTextFile {
     log_level=SYS_DEBUG
     log_local=1
 
-    cassandra_server_list = 10.0.0.2:9042
+    cassandra_server_list = cassandra:9042
 
-    zookeeper_server_list = 10.0.0.8:2181
+    zookeeper_server_list = zookeeper:2181
 
     http_server_port = 8089
 
@@ -113,25 +126,25 @@ collector = pkgs.writeTextFile {
 
     [DISCOVERY]
     port = 5998
-    server = 10.0.0.4
+    server = discovery
 
     [REDIS]
-    server = 127.0.0.1
+    server = redis
     port   = 6379
 
     [API_SERVER]
-    api_server_list = 10.0.0.3:8082
+    api_server_list = api:8082
     '';
   };
 
 analytics-api = pkgs.writeTextFile {
-  name = "contrail-analytics-api.conf";
+  name = "contrail-analytics-api.conf.ctmpl";
   text = ''
     [DEFAULT]
 
-    cassandra_server_list = 10.0.0.2:9042
+    cassandra_server_list = cassandra:9042
 
-    collectors = 127.0.0.1:8086
+    collectors = collector:8086
     http_server_port = 8090
 
     rest_api_port = 8081
@@ -141,48 +154,55 @@ analytics-api = pkgs.writeTextFile {
     log_level = SYS_DEBUG
     log_file = /var/log/contrail/contrail-analytics-api.log
 
-    api_server = 10.0.0.3:8082
+    api_server = api:8082
     aaa_mode = no-auth
     partitions = 0
 
     [DISCOVERY]
-    disc_server_ip = 10.0.0.4
+    disc_server_ip = discovery
     disc_server_port = 5998
 
     [REDIS]
-    server= 127.0.0.1
+    server= redis
     redis_server_port=6379
     redis_query_port=6379
-    redis_uve_list = 127.0.0.1:6379
+    redis_uve_list = redis:6379
     '';   
   };
 
 schema-transformer = pkgs.writeTextFile {
-  name = "contrail-schema.conf";
+  name = "contrail-schema.conf.ctmpl";
   text = ''
     [DEFAULTS]
     log_file = /var/log/contrail/contrail-schema.log
     log_local = 1
     log_level = SYS_DEBUG
 
-    disc_server_ip = 10.0.0.4
+    disc_server_ip = discovery
     disc_server_port = 5998
 
     rabbit_port = 5672
-    rabbit_server = 10.0.0.7
+    rabbit_server = openstack-queue
+    rabbit_user = schema
+
+    {{ with secret "secret/schema" -}}
+    rabbit_password= {{ .Data.queue_password}}
+    {{- end }}
+
+    rabbit_vhost= openstack
 
     zk_server_port = 2181
-    zk_server_ip = 10.0.0.8
+    zk_server_ip = zookeeper
 
-    cassandra_server_list = 10.0.0.2:9160
+    cassandra_server_list = cassandra:9160
 
     api_server_port = 8082
-    api_server_ip = 10.0.0.3
+    api_server_ip = api
     '';
   };
 
 svc-monitor = pkgs.writeTextFile {
-  name = "contrail-svc-monitor.conf";
+  name = "contrail-svc-monitor.conf.ctmpl";
   text = ''
     [DEFAULTS]
     log_file = /var/log/contrail/svc-monitor.log
@@ -190,18 +210,24 @@ svc-monitor = pkgs.writeTextFile {
     log_local = 1
 
     rabbit_port = 5672
-    rabbit_server = 10.0.0.7
+    rabbit_server = openstack-queue
+    rabbit_user = svc-monitor
 
+    {{ with secret "secret/svc-monitor" -}}
+    rabbit_password= {{ .Data.queue_password}}
+    {{- end }}
+
+    rabbit_vhost= openstack
     zk_server_port = 2181
-    zk_server_ip = 10.0.0.8
+    zk_server_ip = zookeeper
 
-    cassandra_server_list = 10.0.0.2:9160
+    cassandra_server_list = cassandra:9160
 
     disc_server_port = 5998
-    disc_server_ip = 10.0.0.4
+    disc_server_ip = discovery
 
     api_server_port = 8082
-    api_server_ip = 10.0.0.3
+    api_server_ip = api
    
     [SCHEDULER]
     aaa_mode = no-auth
