@@ -118,4 +118,34 @@ EOF
 cat data.json
 mycurl --silent -X PUT $URL/jobset/$PROJECT_NAME/$JOBSET_NAME -d @data.json -b hydra-cookie.txt
 
+JOBSET_NAME="security"
+echo -e "\nCreating jobset security-fixes:"
+cat >data.json <<EOF
+{
+  "description": "Build master branch of nixpkgs-cloudwatt by using HEAD of nixpkgs 17.09",
+  "checkinterval": "86400",
+  "enabled": "1",
+  "visible": "1",
+  "nixexprinput": "cloudwatt",
+  "nixexprpath": "jobset.nix",
+  "inputs": {
+    "cloudwatt": {
+      "value": "https://github.com/nlewo/nixpkgs-cloudwatt master keepDotGit",
+      "type": "git"
+    },
+    "nixpkgs": {
+      "value": "https://github.com/NixOS/nixpkgs-channels nixos-17.09",
+      "type": "git"
+    },
+    "bootstrap_pkgs": {
+      "value": "https://github.com/NixOS/nixpkgs a0e6a891ee21a6dcf3da35169794cc20b110ce05",
+      "type": "git"
+    }
+  }
+}
+EOF
+cat data.json
+mycurl --silent -X PUT $URL/jobset/$PROJECT_NAME/$JOBSET_NAME -d @data.json -b hydra-cookie.txt
+
+
 rm -f data.json hydra-cookie.txt
