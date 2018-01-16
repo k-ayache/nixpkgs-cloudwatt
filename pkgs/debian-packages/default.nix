@@ -1,10 +1,6 @@
-{ pkgs, contrailPkgs }:
+{ pkgs, contrailPkgs, lib, deps }:
 
 let debianPackageVersion = "3.2-3";
-
-    lib =  import ./lib pkgs;
-    deps = import ./deps.nix pkgs;
-
     contrailVrouterUbuntu = kernel: lib.mkDebianPackage rec {
       name = "contrail-vrouter-module-${kernel.version}";
       version = debianPackageVersion;

@@ -15,7 +15,7 @@
 
 let
   pkgs = import nixpkgs {};
-  lib = import ./lib pkgs;
+  lib = import ./pkgs/lib pkgs;
   default = import ./default.nix { inherit contrail nixpkgs; };
   getCommitId = pkgs.runCommand "nixpkgs-cloudwatt-commit-id" { buildInputs = [ pkgs.git ]; } ''
     git -C ${cloudwatt} rev-parse HEAD > $out
@@ -32,8 +32,8 @@ in
           { pushHydraImage = lib.dockerPushImage default.ci.hydraImage commitId; };
   contrail32Cw = default.contrail32Cw;
   debianPackages = pkgs.lib.mapAttrs (n: v: lib.debianPackageBuildProduct v) default.debianPackages;
-  images = pkgs.lib.mapAttrs (n: v: lib.dockerImageBuildProduct v) default.images;
+  dockerImages = pkgs.lib.mapAttrs (n: v: lib.dockerImageBuildProduct v) default.dockerImages;
 } // pkgs.lib.optionalAttrs pushToDockerRegistry {
-       pushImages = genDockerPushJobs default.images; }
+       pushDockerImages = genDockerPushJobs default.images; }
   // pkgs.lib.optionalAttrs publishToAptly {
-       publishPackages = genDebPublishJobs default.debianPackages; }
+       publishDebianPackages = genDebPublishJobs default.debianPackages; }
