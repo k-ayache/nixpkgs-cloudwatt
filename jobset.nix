@@ -34,6 +34,6 @@ in
   debianPackages = pkgs.lib.mapAttrs (n: v: lib.debianPackageBuildProduct v) default.debianPackages;
   dockerImages = pkgs.lib.mapAttrs (n: v: lib.dockerImageBuildProduct v) default.dockerImages;
 } // pkgs.lib.optionalAttrs pushToDockerRegistry {
-       pushDockerImages = genDockerPushJobs default.images; }
+       pushDockerImages = genDockerPushJobs default.dockerImages; }
   // pkgs.lib.optionalAttrs publishToAptly {
        publishDebianPackages = genDebPublishJobs default.debianPackages; }
