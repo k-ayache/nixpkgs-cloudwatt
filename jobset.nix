@@ -30,9 +30,12 @@ in
   inherit (default) contrail32Cw debianPackages dockerImages;
 
   ci = { hydraImage = default.ci.hydraImage; }
-       // pkgs.lib.optionalAttrs pushToDockerRegistry
-          { pushHydraImage = lib.dockerPushImage default.ci.hydraImage commitId; };
-} // pkgs.lib.optionalAttrs pushToDockerRegistry {
-       pushDockerImages = genDockerPushJobs default.dockerImages; }
-  // pkgs.lib.optionalAttrs publishToAptly {
-       publishDebianPackages = genDebPublishJobs default.debianPackages; }
+       // pkgs.lib.optionalAttrs pushToDockerRegistry {
+         pushHydraImage = lib.dockerPushImage default.ci.hydraImage commitId; };
+}
+
+// pkgs.lib.optionalAttrs pushToDockerRegistry {
+  pushDockerImages = genDockerPushJobs default.dockerImages; }
+
+// pkgs.lib.optionalAttrs publishToAptly {
+  publishDebianPackages = genDebPublishJobs default.debianPackages; }
