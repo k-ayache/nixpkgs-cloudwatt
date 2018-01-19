@@ -27,12 +27,11 @@ let
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.publishDebianPkg v)) drvs;
 in
 {
+  inherit (default) contrail32Cw debianPackages dockerImages;
+
   ci = { hydraImage = lib.dockerImageBuildProduct default.ci.hydraImage; }
        // pkgs.lib.optionalAttrs pushToDockerRegistry
           { pushHydraImage = lib.dockerPushImage default.ci.hydraImage commitId; };
-  contrail32Cw = default.contrail32Cw;
-  debianPackages = pkgs.lib.mapAttrs (n: v: lib.debianPackageBuildProduct v) default.debianPackages;
-  dockerImages = pkgs.lib.mapAttrs (n: v: lib.dockerImageBuildProduct v) default.dockerImages;
 } // pkgs.lib.optionalAttrs pushToDockerRegistry {
        pushDockerImages = genDockerPushJobs default.dockerImages; }
   // pkgs.lib.optionalAttrs publishToAptly {

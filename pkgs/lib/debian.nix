@@ -47,17 +47,6 @@ rec {
     cp package.deb $out
   '';
 
-  debianPackageBuildProduct = pkg:
-    let
-      name = "debian-package-" + (pkgs.lib.removeSuffix ".deb" pkg.name);
-    in
-      pkgs.runCommand name {} ''
-        mkdir $out
-        ln -s ${pkg.out} $out/${pkg.name}
-        mkdir $out/nix-support
-        echo "file deb ${pkg.out}" > $out/nix-support/hydra-build-products
-      '';
-
   debianPackagePublish = pkgs.stdenv.mkDerivation rec {
     name = "debian-package-publish.sh";
     src = ./debian-package-publish.sh;
