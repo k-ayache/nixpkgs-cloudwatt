@@ -8,9 +8,9 @@ let pkgs = import nixpkgs {};
     deps =  import ./pkgs/deps.nix pkgs;
 
     callPackage = pkgs.lib.callPackageWith (
-      cwPkgs // { inherit pkgs lib deps callPackage; } // { inherit (pkgs) stdenv fetchurl; });
+      pkgs // cwPkgs // { inherit pkgs lib deps callPackage; });
     callPackages = pkgs.lib.callPackagesWith (
-      cwPkgs // { inherit pkgs lib deps callPackage; } // { inherit (pkgs) stdenv fetchurl; });
+      pkgs // cwPkgs // { inherit pkgs lib deps callPackage; });
 
     cwPkgs = rec {
       ci = callPackage ./ci { };
