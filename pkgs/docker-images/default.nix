@@ -1,4 +1,4 @@
-{ pkgs, lib, contrail32Cw }:
+{ pkgs, lib, contrail32Cw, locksmith }:
 
 let
   configuration = import ./configuration.nix pkgs;
@@ -32,4 +32,12 @@ in
   contrailSvcMonitor = buildContrailImageWithPerp "opencontrail/svc-monitor"
     "${contrail32Cw.svcMonitor}/bin/contrail-svc-monitor --conf_file /etc/contrail/contrail-svc-monitor.conf"
     ''consul-template-wrapper -- -once  -template="${configuration.svc-monitor}:/etc/contrail/contrail-svc-monitor.conf"'';
+
+  locksmithWorker = lib.buildImageWithPerp {
+    name = "locksmith/worker";
+    command = "${locksmith}/bin/vault-fernet-locksmith -vault-token-file=/run/vault-token/vault-token -renew-vault-token -lock -consul-creds=secret/locksmith/consul -health -alsologtostderr ";
+    preStartScript = ''
+      export https_proxy=http://http-proxy.localdomain:8123
+      export CONSUL_ADDR=consul.localdomain:8500
+      ''; };
 }
