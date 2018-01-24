@@ -1,0 +1,19 @@
+version: "2"
+
+networks:
+    default:
+        external:
+            name: "dockercompose_cloudwatt"
+
+services:
+    "gremlin-server":
+        image: "gremlin/server:latest"
+        dns: 172.18.10.10
+        dns_search: "dev0.loc.cloudwatt.net"
+        environment:
+            - "service=gremlin-server"
+            - "VAULT_TOKEN=$VAULT_TOKEN"
+        labels:
+            - "SERVICE_8182_NAME=gremlin-server"
+        ports:
+            - "8182:8182"
