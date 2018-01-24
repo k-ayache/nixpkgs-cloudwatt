@@ -48,7 +48,7 @@ To interactively run a contrail all-in-one VM
 
 Jobs are classic Nix expressions, so to test them, you just have to build them:
 ```
-% nix-build jobset.nix -A pushImages.contrailApi
+% nix-build jobset.nix -A dockerImages.contrailApi --arg cloudwatt $PWD
 ```
 Note `pushImages` expressions uses environment variables to provide registry credentials.
 
