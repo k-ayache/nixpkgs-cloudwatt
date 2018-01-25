@@ -12,7 +12,7 @@ buildGoPackage rec {
     inherit rev;
     owner = "aevox";
     repo = "vault-fernet-locksmith";
-    sha256 = "0q8sl6nd956hsh7bdnblydy1n2ql7fl9jcrl3zxgbcwb50rz293a";
+    sha256 = "00wvkir1qga4467zfn4g0finagjhikc4f0s9gzqzidql0zdv6zdv";
   };
 
   buildFlagsArray = ''

@@ -35,9 +35,6 @@ in
 
   locksmithWorker = lib.buildImageWithPerp {
     name = "locksmith/worker";
-    command = "${locksmith}/bin/vault-fernet-locksmith -vault-token-file=/run/vault-token/vault-token -renew-vault-token -lock -consul-creds=secret/locksmith/consul -health -alsologtostderr ";
-    preStartScript = ''
-      export https_proxy=http://http-proxy.localdomain:8123
-      export CONSUL_ADDR=consul.localdomain:8500
-      ''; };
+    command = "${locksmith}/bin/vault-fernet-locksmith";
+    preStartScript = ""; };
 }
