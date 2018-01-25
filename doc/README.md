@@ -40,3 +40,24 @@ To publish a Debian package, we have to manually increase the version
 defined in `jobset.nix`. We could not use hashes for the version
 because we need a ordered version element and we don't want to use the
 date in order to let the version number determinist.
+
+### How to test Docker image publish jobs
+
+Currently, the Docker registry url and credential are provided to the
+job by using environment variables. We then have to run Nix with these
+environment variables (if the Nix deamon is used, you must provide
+them to it). If these environment variables are not provided, the
+default values points to a local Docker registry. So to locally test
+push jobs, you can start a docker registry by using Docker:
+
+```
+docker run -d -p 5000:5000 registry
+
+```
+
+Once the docker registry is up and running, we can run the publish job:
+```
+nix-build jobset.nix -A pushDockerImages.contrailApi --arg cloudwatt $PWD --arg pushToDockerRegistry true
+```
+
+We can then explore the registry and pull the image from it.

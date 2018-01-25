@@ -45,13 +45,13 @@ To interactively run a contrail all-in-one VM
 ```
 
 ### To test Hydra jobs
-
 Jobs are classic Nix expressions, so to test them, you just have to build them:
 ```
 % nix-build jobset.nix -A dockerImages.contrailApi --arg cloudwatt $PWD
 ```
 Note `pushImages` expressions uses environment variables to provide registry credentials.
 
+To publish a Docker image, [see this doc](doc).
 
 ### How external repositories are managed
 
