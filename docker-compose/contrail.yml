@@ -14,9 +14,11 @@ services:
       - "service=cassandra"
       - "VAULT_TOKEN=$VAULT_TOKEN"
     labels:
-      - "SERVICE_NAME=opencontrail-cassandra"
       - "SERVICE_9160_NAME=opencontrail-config-cassandra"
       - "SERVICE_9042_NAME=opencontrail-analytics-cassandra"
+      - "SERVICE_7000_IGNORE=true"
+      - "SERVICE_7001_IGNORE=true"
+      - "SERVICE_7199_IGNORE=true"
     ports:
       - "9160:9160"
       - "9042:9042"
@@ -29,8 +31,9 @@ services:
       - "service=zookeeper"
       - "VAULT_TOKEN=$VAULT_TOKEN"
     labels:
-      - "SERVICE_NAME=opencontrail-zookeeper"
       - "SERVICE_2181_NAME=opencontrail-config-zookeeper"
+      - "SERVICE_2888_IGNORE=true"
+      - "SERVICE_3888_IGNORE=true"
     ports:
       - "2181:2181"
 
@@ -54,9 +57,9 @@ services:
       - "service=api"
       - "VAULT_TOKEN=$VAULT_TOKEN"
     labels:
-      - "SERVICE_NAME=opencontrail-api"
       - "SERVICE_8082_NAME=opencontrail-api"
       - "SERVICE_8443_NAME=opencontrail-ifmap"
+      - "SERVICE_8084_IGNORE=true"
     ports:
       - "8082:8082"
       - "8443:8443"
@@ -88,12 +91,13 @@ services:
       - "service=control"
       - "VAULT_TOKEN=$VAULT_TOKEN"
     labels:
-      - "SERVICE_NAME=opencontrail-control"
       - "SERVICE_8083_NAME=opencontrail-control"
+      - "SERVICE_5222_IGNORE=true"
+      - "SERVICE_5269_IGNORE=true"
     ports:
       - "8083:8083"
-      - "5269:5269"
       - "5222:5222"
+      - "5269:5269"
     depends_on:
       - api
 
@@ -133,8 +137,8 @@ services:
       - "service=analytics-api"
       - "VAULT_TOKEN=$VAULT_TOKEN"
     labels:
-      - "SERVICE_NAME=opencontrail-analytics-api"
       - "SERVICE_8081_NAME=opencontrail-analytics-api"
+      - "SERVICE_8090_IGNORE=true"
     ports:
       - "8081:8081"
       - "8090:8090"
@@ -150,8 +154,8 @@ services:
       - "service=collector"
       - "VAULT_TOKEN=$VAULT_TOKEN"
     labels:
-      - "SERVICE_NAME=openconttail-collector"
       - "SERVICE_8086_NAME=opencontrail-collector"
+      - "SERVICE_8089_IGNORE=true"
     ports:
       - "8086:8086"
       - "8089:8089"
