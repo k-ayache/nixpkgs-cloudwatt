@@ -1,0 +1,9 @@
+{
+    "log_level": "SYS_INFO",
+    "api": {
+        "log_level": "SYS_DEBUG"
+    },
+    "schema_transformer": {
+        "log_level": "SYS_DEBUG"
+    }
+}

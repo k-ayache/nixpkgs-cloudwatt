@@ -1,0 +1,160 @@
+version: "2"
+
+networks:
+  default:
+    external:
+      name: "dockercompose_cloudwatt"
+
+services:
+  "cassandra":
+    image: "cassandra:2.1.9"
+    dns: 172.18.10.10
+    dns_search: "dev0.loc.cloudwatt.net"
+    environment:
+      - "service=cassandra"
+      - "VAULT_TOKEN=$VAULT_TOKEN"
+    labels:
+      - "SERVICE_NAME=opencontrail-cassandra"
+      - "SERVICE_9160_NAME=opencontrail-config-cassandra"
+      - "SERVICE_9042_NAME=opencontrail-analytics-cassandra"
+    ports:
+      - "9160:9160"
+      - "9042:9042"
+
+  "zookeeper":
+    image: "zookeeper"
+    dns: 172.18.10.10
+    dns_search: "dev0.loc.cloudwatt.net"
+    environment:
+      - "service=zookeeper"
+      - "VAULT_TOKEN=$VAULT_TOKEN"
+    labels:
+      - "SERVICE_NAME=opencontrail-zookeeper"
+      - "SERVICE_2181_NAME=opencontrail-config-zookeeper"
+    ports:
+      - "2181:2181"
+
+  "redis":
+    image: "redis"
+    dns: 172.18.10.10
+    dns_search: "dev0.loc.cloudwatt.net"
+    environment:
+      - "service=redis"
+      - "VAULT_TOKEN=$VAULT_TOKEN"
+    labels:
+      - "SERVICE_NAME=opencontrail-redis"
+    ports:
+      - "6379:6379"
+
+  "api":
+    image: "opencontrail/api:latest"
+    dns: 172.18.10.10
+    dns_search: "dev0.loc.cloudwatt.net"
+    environment:
+      - "service=api"
+      - "VAULT_TOKEN=$VAULT_TOKEN"
+    labels:
+      - "SERVICE_NAME=opencontrail-api"
+      - "SERVICE_8082_NAME=opencontrail-api"
+      - "SERVICE_8443_NAME=opencontrail-ifmap"
+    ports:
+      - "8082:8082"
+      - "8443:8443"
+      - "8084:8084"
+    depends_on:
+      - zookeeper
+      - cassandra
+
+  "discovery":
+    image: "opencontrail/discovery:latest"
+    dns: 172.18.10.10
+    dns_search: "dev0.loc.cloudwatt.net"
+    environment:
+      - "service=discovery"
+      - "VAULT_TOKEN=$VAULT_TOKEN"
+    labels:
+      - "SERVICE_NAME=opencontrail-discovery"
+    ports:
+      - "5998:5998"
+    depends_on:
+      - api
+
+  "control":
+    image: "opencontrail/control:latest"
+    hostname: control
+    dns: 172.18.10.10
+    dns_search: "dev0.loc.cloudwatt.net"
+    environment:
+      - "service=control"
+      - "VAULT_TOKEN=$VAULT_TOKEN"
+    labels:
+      - "SERVICE_NAME=opencontrail-control"
+      - "SERVICE_8083_NAME=opencontrail-control"
+    ports:
+      - "8083:8083"
+      - "5269:5269"
+      - "5222:5222"
+    depends_on:
+      - api
+
+  "schema":
+    image: "opencontrail/schema-transformer:latest"
+    dns: 172.18.10.10
+    dns_search: "dev0.loc.cloudwatt.net"
+    environment:
+      - "service=schema"
+      - "VAULT_TOKEN=$VAULT_TOKEN"
+    labels:
+      - "SERVICE_NAME=opencontrail-schema-transformer"
+    ports:
+      - "8087:8087"
+    depends_on:
+      - api
+
+  "svc-monitor":
+    image: "opencontrail/svc-monitor:latest"
+    dns: 172.18.10.10
+    dns_search: "dev0.loc.cloudwatt.net"
+    environment:
+      - "service=svc-monitor"
+      - "VAULT_TOKEN=$VAULT_TOKEN"
+    labels:
+      - "SERVICE_NAME=opencontrail-svc-monitor"
+    ports:
+      - "8088:8088"
+    depends_on:
+      - api
+
+  "analytics-api":
+    image: "opencontrail/analytics-api:latest"
+    dns: 172.18.10.10
+    dns_search: "dev0.loc.cloudwatt.net"
+    environment:
+      - "service=analytics-api"
+      - "VAULT_TOKEN=$VAULT_TOKEN"
+    labels:
+      - "SERVICE_NAME=opencontrail-analytics-api"
+      - "SERVICE_8081_NAME=opencontrail-analytics-api"
+    ports:
+      - "8081:8081"
+      - "8090:8090"
+    depends_on:
+      - api
+      - redis
+
+  "collector":
+    image: "opencontrail/collector:latest"
+    dns: 172.18.10.10
+    dns_search: "dev0.loc.cloudwatt.net"
+    environment:
+      - "service=collector"
+      - "VAULT_TOKEN=$VAULT_TOKEN"
+    labels:
+      - "SERVICE_NAME=openconttail-collector"
+      - "SERVICE_8086_NAME=opencontrail-collector"
+    ports:
+      - "8086:8086"
+      - "8089:8089"
+    depends_on:
+      - api
+      - redis
