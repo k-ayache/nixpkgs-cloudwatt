@@ -84,7 +84,6 @@ services:
 
   "control":
     image: "opencontrail/control:latest"
-    hostname: control
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
