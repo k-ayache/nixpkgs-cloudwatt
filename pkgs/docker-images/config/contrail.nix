@@ -2,7 +2,7 @@ pkgs:
 
 let
 
-  contrailServices = {
+  services = {
     api = {
       name = "api";
       dns = "opencontrail-api.service";
@@ -42,11 +42,11 @@ let
     };
   };
 
-  contrailConfig = conf: ''
+  config = conf: ''
     {{ $opencontrail := keyOrDefault "/config/opencontrail/data" "{}" | parseJSON -}}
   '' + pkgs.lib.generators.toINI {} conf;
 
-  contrailLogConfig = service: {
+  logConfig = service: {
     log_level = ''{{- if $opencontrail.${service.name}.log_level }}
                     {{- $opencontrail.${service.name}.log_level }}
                   {{- else if $opencontrail.log_level }}
@@ -57,43 +57,43 @@ let
     log_local = 1;
   };
 
-  contrailIPList = { service, port ? 0, sep ? " "}: ''
+  ipList = { service, port ? 0, sep ? " "}: ''
     {{- range $index, $data := service "${service}" -}}
       {{- if $index }}${sep}{{ end }}{{- $data.Address -}}${if port > 0 then ":" + toString port else ""}
     {{- end }}'';
 
-  contrailSecret = secret: ''
+  secret = secret: ''
     {{- with secret "secret/opencontrail" -}}
       {{- .Data.${secret} }}
     {{- end }}'';
 
-  contrailCassandraConfig = {
-    cassandra_server_list = contrailIPList {
+  cassandraConfig = {
+    cassandra_server_list = ipList {
       service = "opencontrail-config-cassandra";
     };
   };
 
-  contrailCassandraAnalyticsConfig = {
-    cassandra_server_list = contrailIPList {
+  cassandraAnalyticsConfig = {
+    cassandra_server_list = ipList {
       service = "opencontrail-analytics-cassandra";
       port = 9042;
     };
   };
 
-  contrailRabbitConfig = {
-    rabbit_server = contrailIPList {
+  rabbitConfig = {
+    rabbit_server = ipList {
       service = "opencontrail-queue";
       sep = ", ";
     };
     rabbit_port = 5672;
     rabbit_user = "opencontrail";
-    rabbit_password = contrailSecret "queue_password";
+    rabbit_password = secret "queue_password";
     rabbit_vhost = "opencontrail";
   };
 
-  contrailZookeeperConfig = {
+  zookeeperConfig = {
     zk_server_port = 2181;
-    zk_server_ip = contrailIPList {
+    zk_server_ip = ipList {
       service = "opencontrail-config-zookeeper";
       sep = ", ";
     };
@@ -103,12 +103,12 @@ let
 
 in {
 
-  contrailDiscovery = pkgs.writeTextFile {
+  discovery = pkgs.writeTextFile {
     name = "contrail-discovery.conf.ctmpl";
-    text = contrailConfig {
+    text = config {
       DEFAULTS = {
         listen_ip_addr = containerIP;
-        listen_port = contrailServices.discovery.port;
+        listen_port = services.discovery.port;
         # minimim time to allow client to cache service information (seconds)
         ttl_min = 300;
         # maximum time to allow client to cache service information (seconds)
@@ -120,8 +120,8 @@ in {
         # use short TTL for agressive rescheduling if all services are not up
         ttl_short = 1;
       }
-      // contrailCassandraConfig
-      // contrailLogConfig contrailServices.api;
+      // cassandraConfig
+      // logConfig services.api;
 
       DNS-SERVER = {
         policy = "fixed";
@@ -129,58 +129,58 @@ in {
     };
   };
 
-  contrailApi = pkgs.writeTextFile {
+  api = pkgs.writeTextFile {
     name = "contrail-api.conf.ctmpl";
-    text = contrailConfig {
+    text = config {
       DEFAULTS = {
         listen_ip_addr = containerIP;
         # FIXME, the code is publishing ifmap_server_ip instead of listen_ip_addr to the discovery
         ifmap_server_ip = containerIP;
-        listen_port = contrailServices.api.port;
+        listen_port = services.api.port;
 
-        disc_server_ip = contrailServices.discovery.dns;
-        disc_server_port = contrailServices.discovery.port;
+        disc_server_ip = services.discovery.dns;
+        disc_server_port = services.discovery.port;
       }
-      // contrailCassandraConfig
-      // contrailRabbitConfig
-      // contrailZookeeperConfig
-      // contrailLogConfig contrailServices.api;
+      // cassandraConfig
+      // rabbitConfig
+      // zookeeperConfig
+      // logConfig services.api;
 
       IFMAP_SERVER = {
         ifmap_listen_ip = containerIP;
-        ifmap_listen_port = contrailServices.ifmap.port;
-        ifmap_credentials = "ifmap:" + contrailSecret "ifmap_password";
+        ifmap_listen_port = services.ifmap.port;
+        ifmap_credentials = "ifmap:" + secret "ifmap_password";
       };
     };
   };
 
-  contrailSchemaTransformer = pkgs.writeTextFile {
+  schemaTransformer = pkgs.writeTextFile {
     name = "contrail-schema.conf.ctmpl";
-    text = contrailConfig {
+    text = config {
       DEFAULTS = {
-        api_server_ip = contrailServices.api.dns;
-        disc_server_ip = contrailServices.discovery.dns;
-        disc_server_port = contrailServices.discovery.port;
+        api_server_ip = services.api.dns;
+        disc_server_ip = services.discovery.dns;
+        disc_server_port = services.discovery.port;
       }
-      // contrailLogConfig contrailServices.schemaTransformer
-      // contrailCassandraConfig
-      // contrailRabbitConfig
-      // contrailZookeeperConfig;
+      // logConfig services.schemaTransformer
+      // cassandraConfig
+      // rabbitConfig
+      // zookeeperConfig;
     };
   };
 
-  contrailSvcMonitor = pkgs.writeTextFile {
+  svcMonitor = pkgs.writeTextFile {
     name = "contrail-svc-monitor.conf.ctmpl";
-    text = contrailConfig {
+    text = config {
       DEFAULTS = {
-        api_server_ip = contrailServices.api.dns;
-        disc_server_ip = contrailServices.discovery.dns;
-        disc_server_port = contrailServices.discovery.port;
+        api_server_ip = services.api.dns;
+        disc_server_ip = services.discovery.dns;
+        disc_server_port = services.discovery.port;
       }
-      // contrailLogConfig contrailServices.svcMonitor
-      // contrailCassandraConfig
-      // contrailRabbitConfig
-      // contrailZookeeperConfig;
+      // logConfig services.svcMonitor
+      // cassandraConfig
+      // rabbitConfig
+      // zookeeperConfig;
 
       SCHEDULER = {
         aaa_mode = "no-auth";
@@ -188,74 +188,74 @@ in {
     };
   };
 
-  contrailControl = pkgs.writeTextFile {
+  control = pkgs.writeTextFile {
     name = "contrail-control.conf.ctmpl";
-    text = contrailConfig {
-      DEFAULT = contrailLogConfig contrailServices.control;
+    text = config {
+      DEFAULT = logConfig services.control;
 
       IFMAP = {
         user = "ifmap";
-        password = contrailSecret "ifmap_password";
+        password = secret "ifmap_password";
       };
 
       DISCOVERY = {
-        server = contrailServices.discovery.dns;
-        port = contrailServices.discovery.port;
+        server = services.discovery.dns;
+        port = services.discovery.port;
       };
     };
   };
 
-  contrailCollector = pkgs.writeTextFile {
+  collector = pkgs.writeTextFile {
     name = "contrail-collector.conf.ctmpl";
-    text = contrailConfig {
+    text = config {
       DEFAULT = {
         analytics_data_ttl = 48;
         analytics_flow_ttl = 48;
         analytics_statistics_ttl = 48;
         analytics_config_audit_ttl = 48;
       }
-      // contrailLogConfig contrailServices.collector
-      // contrailCassandraAnalyticsConfig;
+      // logConfig services.collector
+      // cassandraAnalyticsConfig;
 
       COLLECTOR = {
         server = containerIP;
-        port = contrailServices.collector.port;
+        port = services.collector.port;
       };
 
       DISCOVERY = {
-        server = contrailServices.discovery.dns;
-        port = contrailServices.discovery.port;
+        server = services.discovery.dns;
+        port = services.discovery.port;
       };
 
       REDIS = {
-        server = contrailServices.redis.dns;
-        port = contrailServices.redis.port;
+        server = services.redis.dns;
+        port = services.redis.port;
       };
     };
   };
 
-  contrailAnalyticsApi = pkgs.writeTextFile {
+  analyticsApi = pkgs.writeTextFile {
     name = "contrail-analytics-api.conf.ctmpl";
-    text = contrailConfig {
+    text = config {
       DEFAULT = {
         host_ip = containerIP;
         rest_api_ip = containerIP;
         aaa_mode = "no-auth";
         partitions = 0;
       }
-      // contrailLogConfig contrailServices.analyticsApi
-      // contrailCassandraAnalyticsConfig;
+      // logConfig services.analyticsApi
+      // cassandraAnalyticsConfig;
 
       DISCOVERY = {
-        disc_server_ip = contrailServices.discovery.dns;
-        disc_server_port = contrailServices.discovery.port;
+        disc_server_ip = services.discovery.dns;
+        disc_server_port = services.discovery.port;
       };
 
       REDIS = {
-        server = contrailServices.redis.dns;
-        redis_server_port = contrailServices.redis.port;
-        redis_query_port = contrailServices.redis.port;
-        redis_uve_list = contrailServices.redis.dns + ":" + toString contrailServices.redis.port;
+        server = services.redis.dns;
+        redis_server_port = services.redis.port;
+        redis_query_port = services.redis.port;
+        redis_uve_list = services.redis.dns + ":" + toString services.redis.port;
       };
     };
   };
