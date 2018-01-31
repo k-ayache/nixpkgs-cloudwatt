@@ -2,46 +2,6 @@ pkgs:
 
 let
 
-  services = {
-    api = {
-      name = "api";
-      dns = "opencontrail-api.service";
-      port = 8082;
-    };
-    ifmap = {
-      name = "ifmap";
-      dns = "opencontrail-ifmap.service";
-      port = 8443;
-    };
-    discovery = {
-      name = "discovery";
-      dns = "opencontrail-discovery.service";
-      port = 5998;
-    };
-    schemaTransformer = {
-      name = "schema_transformer";
-    };
-    svcMonitor = {
-      name = "svc_monitor";
-    };
-    control = {
-      name = "control";
-    };
-    collector = {
-      name = "collector";
-      dns = "opencontrail-collector.service";
-      port = 8086;
-    };
-    analyticsApi = {
-      name = "analytics_api";
-    };
-    redis = {
-      name = "redis";
-      dns = "opencontrail-redis.service";
-      port = 6379;
-    };
-  };
-
   config = conf: ''
     {{ $opencontrail := keyOrDefault "/config/opencontrail/data" "{}" | parseJSON -}}
   '' + pkgs.lib.generators.toINI {} conf;
@@ -101,7 +61,47 @@ let
 
   containerIP = ''{{- file "/my-ip" -}}'';
 
-in {
+in rec {
+
+  services = {
+    api = {
+      name = "api";
+      dns = "opencontrail-api.service";
+      port = 8082;
+    };
+    ifmap = {
+      name = "ifmap";
+      dns = "opencontrail-ifmap.service";
+      port = 8443;
+    };
+    discovery = {
+      name = "discovery";
+      dns = "opencontrail-discovery.service";
+      port = 5998;
+    };
+    schemaTransformer = {
+      name = "schema_transformer";
+    };
+    svcMonitor = {
+      name = "svc_monitor";
+    };
+    control = {
+      name = "control";
+    };
+    collector = {
+      name = "collector";
+      dns = "opencontrail-collector.service";
+      port = 8086;
+    };
+    analyticsApi = {
+      name = "analytics_api";
+    };
+    redis = {
+      name = "redis";
+      dns = "opencontrail-redis.service";
+      port = 6379;
+    };
+  };
 
   discovery = pkgs.writeTextFile {
     name = "contrail-discovery.conf.ctmpl";
