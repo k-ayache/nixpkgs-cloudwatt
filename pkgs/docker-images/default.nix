@@ -1,4 +1,4 @@
-{ pkgs, lib, tools, contrail32Cw, locksmith }:
+{ pkgs, lib, tools, contrail32Cw, locksmith, contrailPath, nixpkgs }:
 
 let
 
@@ -19,8 +19,11 @@ let
       extraCommands = "chmod u+w etc; mkdir -p var/log/contrail etc/contrail";
   };
 
+  contrailVrouter = import ./contrail-vrouter { pkgs_path = nixpkgs; contrailPkgs = contrail32Cw; contrailPath = contrailPath; };
+
 in
 {
+  inherit contrailVrouter;
 
   contrailApi = buildContrailImageWithPerp {
     name = "opencontrail/api";
