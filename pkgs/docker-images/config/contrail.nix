@@ -261,18 +261,18 @@ in rec {
   };
 
   vrouterAgent = pkgs.writeTextFile {
-    name = "contrail-agent.conf";
+    name = "contrail-vrouter-agent.conf";
     text = ''
       [DEFAULT]
       ble_flow_collection = 1
       log_file = /var/log/contrail/vrouter.log
       log_level = SYS_DEBUG
       log_local = 1
-      collectors= collector:8086
+      collectors= collector:${toString services.collector.port}
       [CONTROL-NODE]
       server = control
       [DISCOVERY]
-      port = 5998
+      port = ${toString services.discovery.port}
       server = discovery
       [FLOWS]
       max_vm_flows = 20

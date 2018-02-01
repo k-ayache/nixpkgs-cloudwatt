@@ -11,7 +11,7 @@
 with import (pkgs_path + "/nixos/lib/testing.nix") { system = builtins.currentSystem; };
 
 let
-  contrailVrouterAgentFilepath = "/run/contrail-vrouter.conf";
+  contrailVrouterAgentFilepath = "/run/contrail-vrouter-agent.conf";
 
   config = { pkgs, lib, config, ... }: {
     imports = [ (contrailPath + "/modules/compute-node.nix") ];
