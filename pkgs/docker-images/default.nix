@@ -19,7 +19,11 @@ let
       extraCommands = "chmod u+w etc; mkdir -p var/log/contrail etc/contrail";
   };
 
-  contrailVrouter = import ./contrail-vrouter { pkgs_path = nixpkgs; contrailPkgs = contrail32Cw; contrailPath = contrailPath; };
+  contrailVrouter = import ./contrail-vrouter {
+    inherit tools contrailPath;
+    pkgs_path = nixpkgs;
+    contrailPkgs = contrail32Cw;
+  };
 
 in
 {
