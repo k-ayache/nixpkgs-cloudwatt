@@ -73,6 +73,17 @@ in
     })
   ];
 
+  ubuntuKernelHeaders_3_13_0_141_generic = ubuntuKernelHeaders "3.13.0-141-generic" [
+    (pkgs.fetchurl {
+      url = http://fr.archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-141-generic_3.13.0-141.190_amd64.deb;
+      sha256 = "77534d51d1b98f683ef207a0f93a8c9ef349c1a1db9bc672950b7c22693d2fcd";
+    })
+    (pkgs.fetchurl {
+      url = http://fr.archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-141_3.13.0-141.190_all.deb;
+      sha256 = "0q3k5p0iihnnkc2vgcrkib7ix1v66ci2bpw1dq0f28sj3mxnbv41";
+    })
+  ];
+
   ubuntuKernelHeaders_4_4_0_101_generic = ubuntuKernelHeaders "4.4.0-101-generic" [
     (pkgs.fetchurl {
       url = http://fr.archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-101-generic_4.4.0-101.124_amd64.deb;
