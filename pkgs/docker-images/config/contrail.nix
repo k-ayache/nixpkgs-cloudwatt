@@ -262,24 +262,30 @@ in rec {
 
   vrouterAgent = pkgs.writeTextFile {
     name = "contrail-vrouter-agent.conf";
-    text = ''
-      [DEFAULT]
-      ble_flow_collection = 1
-      log_file = /var/log/contrail/vrouter.log
-      log_level = SYS_DEBUG
-      log_local = 1
-      collectors= collector:${toString services.collector.port}
-      [CONTROL-NODE]
-      server = control
-      [DISCOVERY]
-      port = ${toString services.discovery.port}
-      server = discovery
-      [FLOWS]
-      max_vm_flows = 20
-      [METADATA]
-      metadata_proxy_secret = t96a4skwwl63ddk6
-      [TASK]
-      tbb_keepawake_timeout = 25
-    '';
+    text = pkgs.lib.generators.toINI {} {
+      DEFAULT = {
+        disable_flow_collection = 1;
+        log_file = "/var/log/contrail/vrouter.log";
+        log_level = "SYS_DEBUG";
+        log_local = 1;
+        collectors = "collector:" + toString services.collector.port;
+      };
+      CONTROL-NODE = {
+        server = "control";
+      };
+      DISCOVERY = {
+        port = toString services.discovery.port;
+        server = "discovery";
+      };
+      FLOWS = {
+        max_vm_flows = 20;
+      };
+      METADATA = {
+        metadata_proxy_secret = "t96a4skwwl63ddk6";
+      };
+      TASK = {
+        tbb_keepawake_timeout = 25;
+      };
+    };
   };
 }
