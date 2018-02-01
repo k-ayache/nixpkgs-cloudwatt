@@ -14,7 +14,6 @@ let
 
 in
   with contrailPkgsCw; {
-    lib.buildVrouter = vrouter;
     inherit api control vrouterAgent
             collector analyticsApi discovery
             queryEngine schemaTransformer svcMonitor
@@ -22,6 +21,6 @@ in
             vrouterNetns vrouterPortControl
             webCore
             test
-            vms
+            vms lib
             tools;
   }

@@ -161,3 +161,33 @@ services:
     depends_on:
       - api
       - redis
+
+  "vrouter-master":
+    image: "vrouter:latest"
+    dns: 172.18.10.10
+    dns_search: "dev0.loc.cloudwatt.net"
+    environment:
+      - "service=vrouter-master"
+      - START_VDE_SWITCH=1
+      - COMPUTE_NUMBER=1
+    devices:
+      - "/dev/kvm"
+    depends_on:
+      - api
+    volumes:
+      - ./vde-switch/:/tmp/vde/
+
+  "vrouter":
+    image: "vrouter:latest"
+    dns: 172.18.10.10
+    dns_search: "dev0.loc.cloudwatt.net"
+    devices:
+      - "/dev/kvm"
+    environment:
+      - "service=vrouter"
+      - COMPUTE_NUMBER=2
+    depends_on:
+      - api
+      - vrouter-master
+    volumes:
+      - ./vde-switch/:/tmp/vde/

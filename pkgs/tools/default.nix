@@ -10,7 +10,7 @@
   ];
 
   loadContrailImages = with dockerImages; pkgs.writeShellScriptBin "load-contrail-images" ''
-    for image in ${contrailApi} ${contrailDiscovery} ${contrailControl} ${contrailCollector} ${contrailAnalyticsApi} ${contrailSchemaTransformer} ${contrailSchemaTransformer} ${contrailSvcMonitor}
+    for image in ${contrailApi} ${contrailDiscovery} ${contrailControl} ${contrailCollector} ${contrailAnalyticsApi} ${contrailSchemaTransformer} ${contrailSchemaTransformer} ${contrailSvcMonitor} ${contrailVrouter} 
     do
       docker load -i $image
     done

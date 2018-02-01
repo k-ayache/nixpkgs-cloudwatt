@@ -23,7 +23,7 @@ let pkgs = import nixpkgs {};
       };
 
       debianPackages = callPackages ./pkgs/debian-packages { contrailPkgs = contrail32Cw; };
-      dockerImages = callPackages ./pkgs/docker-images { };
+      dockerImages = callPackages ./pkgs/docker-images { contrailPath = contrail; nixpkgs = nixpkgs; };
 
       tools = callPackages ./pkgs/tools { };
 
