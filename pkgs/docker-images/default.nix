@@ -23,6 +23,7 @@ let
     inherit tools contrailPath;
     pkgs_path = nixpkgs;
     contrailPkgs = contrail32Cw;
+    configFiles = config;
   };
 
 in

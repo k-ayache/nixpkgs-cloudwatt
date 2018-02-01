@@ -6,34 +6,12 @@
 # compute nodes uses their MAC address (provided by QEMU) to provision
 # their dataplane IP address and hostname.
 
-{ contrailPkgs, pkgs_path, contrailPath, tools }:
+{ contrailPkgs, pkgs_path, contrailPath, tools, configFiles }:
 
 with import (pkgs_path + "/nixos/lib/testing.nix") { system = builtins.currentSystem; };
 
 let
   contrailVrouterAgentFilepath = "/run/contrail-vrouter.conf";
-  agent = pkgs.writeTextFile {
-    name = "contrail-agent.conf";
-    text = ''
-      [DEFAULT]
-      ble_flow_collection = 1
-      log_file = /var/log/contrail/vrouter.log
-      log_level = SYS_DEBUG
-      log_local = 1
-      collectors= collector:8086
-      [CONTROL-NODE]
-      server = control
-      [DISCOVERY]
-      port = 5998
-      server = discovery
-      [FLOWS]
-      max_vm_flows = 20
-      [METADATA]
-      metadata_proxy_secret = t96a4skwwl63ddk6
-      [TASK]
-      tbb_keepawake_timeout = 25
-    '';
-  };
 
   config = { pkgs, lib, config, ... }: {
     imports = [ (contrailPath + "/modules/compute-node.nix") ];
@@ -78,7 +56,7 @@ let
           ip r add 192.168.2.0/24 dev $CONTRAIL_INTERFACE
 
           IP=$(ip a show $CONTRAIL_INTERFACE | grep "inet "| sed 's|.*inet \(.*\)/.* scope.*|\1|')
-          cp ${agent} ${contrailVrouterAgentFilepath}
+          cp ${configFiles.contrail.vrouterAgent} ${contrailVrouterAgentFilepath}
           cat >>${contrailVrouterAgentFilepath} <<EOF
           [VIRTUAL-HOST-INTERFACE]
           name = vhost0
