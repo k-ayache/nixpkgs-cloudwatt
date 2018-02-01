@@ -28,6 +28,8 @@ let pkgs = import nixpkgs {};
       tools = callPackages ./pkgs/tools { };
 
       locksmith = callPackage ./pkgs/vault-fernet-locksmith { };
+
+      waitFor = callPackage ./pkgs/wait-for {};
     };
 
 in cwPkgs

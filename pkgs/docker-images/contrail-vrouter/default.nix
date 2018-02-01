@@ -6,7 +6,7 @@
 # compute nodes uses their MAC address (provided by QEMU) to provision
 # their dataplane IP address and hostname.
 
-{ contrailPkgs, pkgs_path, contrailPath, tools, configFiles }:
+{ contrailPkgs, pkgs_path, contrailPath, configFiles, waitFor }:
 
 with import (pkgs_path + "/nixos/lib/testing.nix") { system = builtins.currentSystem; };
 
@@ -85,7 +85,7 @@ let
     echo "Start waiting for ports..."
     for i in control:5269 collector:8086 api:8082 discovery:5998; do
       echo Start waiting for $i...
-      ${tools.waitFor}/bin/wait-for $i -t 300
+      ${waitFor}/bin/wait-for $i -t 300
     done
 
     export QEMU_NET_OPTS=hostfwd=udp::51234-:51234,hostfwd=tcp::22-:22,hostfwd=tcp::8085-:8085,guestfwd=tcp:10.0.2.200:5998-tcp:discovery:5998,guestfwd=tcp:10.0.2.200:8082-tcp:api:8082,guestfwd=tcp:10.0.2.200:5269-tcp:control:5269

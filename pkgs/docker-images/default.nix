@@ -1,4 +1,4 @@
-{ pkgs, lib, tools, contrail32Cw, locksmith, contrailPath, nixpkgs }:
+{ pkgs, lib, contrail32Cw, locksmith, contrailPath, nixpkgs, waitFor }:
 
 let
 
@@ -20,7 +20,7 @@ let
   };
 
   contrailVrouter = import ./contrail-vrouter {
-    inherit tools contrailPath;
+    inherit waitFor contrailPath;
     pkgs_path = nixpkgs;
     contrailPkgs = contrail32Cw;
     configFiles = config;
@@ -52,7 +52,7 @@ in
     name = "opencontrail/control";
     command = "${contrail32Cw.control}/bin/contrail-control --conf_file /etc/contrail/contrail-control.conf";
     preStartScript = ''
-      ${tools.waitFor}/bin/wait-for \
+      ${waitFor}/bin/wait-for \
         ${config.contrail.services.discovery.dns}:${toString config.contrail.services.discovery.port}
       consul-template-wrapper -- -once \
         -template="${config.contrail.control}:/etc/contrail/contrail-control.conf"
@@ -63,7 +63,7 @@ in
     name = "opencontrail/collector";
     command = "${contrail32Cw.collector}/bin/contrail-collector --conf_file /etc/contrail/contrail-collector.conf";
     preStartScript = ''
-      ${tools.waitFor}/bin/wait-for \
+      ${waitFor}/bin/wait-for \
         ${config.contrail.services.discovery.dns}:${toString config.contrail.services.discovery.port}
       consul-template-wrapper -- -once \
         -template="${config.contrail.collector}:/etc/contrail/contrail-collector.conf"
