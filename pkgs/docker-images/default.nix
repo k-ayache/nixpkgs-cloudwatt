@@ -1,13 +1,16 @@
 { pkgs, lib, tools, contrail32Cw, locksmith }:
 
 let
+
   config = {
     contrail = import ./config/contrail.nix pkgs;
+    gremlin = import ./config/gremlin/config.nix { inherit pkgs contrail32Cw; };
   };
 
   buildContrailImageWithPerp = { name, command, preStartScript }:
     lib.buildImageWithPerp {
       inherit name command;
+      fromImage = lib.images.kubernetesBaseImage;
       preStartScript = ''
         # hack to populate the configuration with the container ip
         # with consul-template it is only possible to read a file
@@ -88,8 +91,29 @@ in
 
   locksmithWorker = lib.buildImageWithPerp {
     name = "locksmith/worker";
+    fromImage = lib.images.kubernetesBaseImage;
     command = "${locksmith}/bin/vault-fernet-locksmith";
     preStartScript = "";
+  };
+
+  gremlinServer = lib.buildImageWithPerps {
+    name = "gremlin/server";
+    fromImage = lib.images.javaJreImage;
+    services = [
+      { 
+        name = "gremlin-server"; 
+        command = "${config.gremlin.serverStart}/bin/gremlin-server";
+        chdir = "${contrail32Cw.tools.gremlinServer.gremlinServer}/opt";
+        preStartScript = ''
+          # We can't modify the parent image, so we do it at runtime
+          if [ -f /etc/prometheus/prometheus_jmx_java8.yml ] && ! grep -q 'metrics<name'
+          then
+            echo "- pattern: 'metrics<name=(.+)><>(.+):'" >> /etc/prometheus/prometheus_jmx_java8.yml
+          fi
+        '';
+      }
+      { name = "gremlin-sync"; command = "${config.gremlin.syncStart}/bin/gremlin-sync"; }
+    ];
   };
 
 }

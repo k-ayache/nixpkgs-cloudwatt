@@ -22,5 +22,6 @@ in
             vrouterNetns vrouterPortControl
             webCore
             test
-            vms;
+            vms
+            tools;
   }

@@ -23,5 +23,11 @@ contrail-up: dev-consul-data dev-vault-data
 contrail-clean:
 	@docker-compose -f contrail.yml down --volumes
 
+gremlin-up:
+	@docker-compose -f gremlin-server.yml up
+
+gremlin-clean:
+	@docker-compose -f gremlin-server.yml down --volumes
+
 print-%:
 	@echo '$($*)'

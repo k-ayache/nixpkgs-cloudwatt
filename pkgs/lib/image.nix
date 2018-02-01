@@ -37,7 +37,7 @@ rec {
       echo -n ${outputString} > $out
     '';
 
-  genPerpRcMain = { name, executable, preStartScript?"" }: pkgs.writeTextFile {
+  genPerpRcMain = { name, command, preStartScript ? "", chdir ? "" }: pkgs.writeTextFile {
     name = "${name}-rc.main";
     executable = true;
     destination = "/etc/perp/${name}/rc.main";
@@ -51,8 +51,11 @@ rec {
 
       ${preStartScript}
 
+      OPTIONS=""
+      ${if chdir != "" then ''OPTIONS="$OPTIONS -c ${chdir}"'' else ""}
+
       start() {
-        exec runtool ${executable}
+        exec runtool $OPTIONS ${command}
       }
 
       reset() {
@@ -64,21 +67,22 @@ rec {
   };
 
   # Build an image where 'command' is started by Perp
-  buildImageWithPerp = { name, command, preStartScript, extraCommands ? "" }: pkgs.dockerTools.buildImage {
-    inherit name;
-    fromImage = pkgs.dockerTools.pullImage {
-      imageName = "r.cwpriv.net/kubernetes/base";
-      imageTag = "16.04-c6e9c969951cf94b";
-      sha256 = "0gksw7l0mbdhmjvb0mvb48h5ay9qr7sqsxq4hs3cfla9kn73l5cd";
-    };
-    contents = [
-      (genPerpRcMain { name=builtins.replaceStrings ["/"] ["-"]  name; executable=command; preStartScript=preStartScript;})
+  buildImageWithPerp = { name, fromImage, command, preStartScript ? "", extraCommands ? "" }: buildImageWithPerps {
+    inherit name fromImage extraCommands;
+    services = [
+      { inherit preStartScript command; name = builtins.replaceStrings ["/"] ["-"] name; }
     ];
+  };
+
+  buildImageWithPerps = { name, fromImage ? null, services, extraCommands ? "" }: pkgs.dockerTools.buildImage {
+    inherit name fromImage;
     config = {
       Cmd = [ "/usr/sbin/perpd" ];
     };
+    contents = map genPerpRcMain services;
     extraCommands = ''
       ${pkgs.findutils}/bin/find etc/perp -type d -exec chmod +t {} \;
     '' + extraCommands;
   };
+
 }
