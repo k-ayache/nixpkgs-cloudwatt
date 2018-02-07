@@ -4,6 +4,30 @@ let
 
   dumpPath = "/tmp/dump.gson";
 
+  fsckConf = pkgs.writeTextFile {
+    name = "vars.ctmpl";
+    text = ''
+      {{ $openstack_region := env "openstack_region" -}}
+      {{ $catalog := key (printf "/config/openstack/catalog/%s/data" $openstack_region) | parseJSON -}}
+
+      export OS_AUTH_URL={{ $catalog.identity.internal_url }}
+      export OS_USERNAME=deployment
+      export OS_TENANT_NAME=deployment
+      {{ with secret "secret/openstack/users/deployment" -}}
+      export OS_PASSWORD={{ .Data.password }}
+      {{- end }}
+      export OS_ENDPOINT_TYPE=internalURL
+      export OS_AUTH_PLUGIN=v2password
+
+      export CONTRAIL_API_HOST=contrail-api
+
+      export GREMLIN_FSCK_SERVER=gremlin-server-pods.service:8182
+      export GREMLIN_FSCK_LOOP=1
+      export GREMLIN_FSCK_JSON=1
+      export GREMLIN_FSCK_ZK_SERVER=opencontrail-config-zookeeper.service:2181
+    '';
+  };
+
   syncConf = pkgs.writeTextFile {
     name = "vars.ctmpl";
     text = ''
@@ -54,6 +78,13 @@ in {
       -template "${syncConf}:/run/consul-template-wrapper/vars" && \
     source /run/consul-template-wrapper/vars && \
     ${contrail32Cw.tools.contrailGremlin}/bin/gremlin-sync
+  '';
+
+  fsckStart = pkgs.writeShellScriptBin "gremlin-fsck" ''
+    consul-template-wrapper -- -once \
+      -template "${fsckConf}:/run/consul-template-wrapper/vars" && \
+    source /run/consul-template-wrapper/vars && \
+    ${contrail32Cw.tools.contrailApiCliWithExtra}/bin/contrail-api-cli fsck
   '';
 
 }
