@@ -124,4 +124,10 @@ in
     ];
   };
 
+  gremlinFsck = lib.buildImageWithPerp {
+    name = "gremlin/fsck";
+    fromImage = lib.images.kubernetesBaseImage;
+    command = "${config.gremlin.fsckStart}/bin/gremlin-fsck";
+  };
+
 }
