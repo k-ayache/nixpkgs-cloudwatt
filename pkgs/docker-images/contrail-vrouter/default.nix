@@ -21,7 +21,9 @@ let
       networking.firewall.enable = false;
       services.openssh.enable = true;
       services.openssh.permitRootLogin = "yes";
-      users.extraUsers.root.password = "root";
+      services.openssh.extraConfig = "PermitEmptyPasswords yes";
+      users.extraUsers.root.password = "";
+
       virtualisation.graphics = false;
       virtualisation.memorySize = 1024;
 
