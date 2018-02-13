@@ -197,11 +197,11 @@ in {
       # Interactive mode
       pkgs.coreutils pkgs.bashInteractive pkgs.curl
 
-      (genPerpRcMain {name = "hydra-server"; executable = hydraServerCmd; })
-      (genPerpRcMain {name = "hydra-queue-runner"; executable = hydraQueueRunnerCmd; })
-      (genPerpRcMain {name = "hydra-evaluator"; executable = hydraEvaluator; })
-      (genPerpRcMain {name = "nscd"; executable = "${pkgs.glibc.bin}/sbin/nscd -f ${nscdConf} -F"; })
-      (genPerpRcMain {name = "nginx"; executable = "${pkgs.nginx}/bin/nginx -c ${nginxConf}"; })
+      (genPerpRcMain {name = "hydra-server"; command = hydraServerCmd; })
+      (genPerpRcMain {name = "hydra-queue-runner"; command = hydraQueueRunnerCmd; })
+      (genPerpRcMain {name = "hydra-evaluator"; command = hydraEvaluator; })
+      (genPerpRcMain {name = "nscd"; command = "${pkgs.glibc.bin}/sbin/nscd -f ${nscdConf} -F"; })
+      (genPerpRcMain {name = "nginx"; command = "${pkgs.nginx}/bin/nginx -c ${nginxConf}"; })
     ];
     extraCommands = ''
       # There is a bug in the docker builder
