@@ -1,27 +1,26 @@
 #!/usr/bin/env bash
 
-#check api 
+# check api
 curl -s localhost:5998/services.json | jq ' .services[] | select (.ep_type=="IfmapServer") | .oper_state=="up"'
-if [  $? -eq 1 ];  
+if [  $? -eq 1 ];
 then
   echo "error: api not ready"
-  exit 0
+  exit 1
 fi
 
 cp provision.json ./provision_file.json
 tmp=$(mktemp)
-for service in control vrouter-master vrouter
-do
+for service in control vrouter-master vrouter; do
   container=$(curl -s localhost:8500/v1/catalog/service/opencontrail-$service | jq -r ' .[].ServiceID | split(":") | .[1] ')
   ip="$(curl -s localhost:8500/v1/catalog/service/opencontrail-$service | jq -r .[].ServiceAddress)"
   hostname=$(docker inspect -f '{{.Config.Hostname}}' $container)
 
-  case $service in 
+  case $service in
     ("control")  jq --arg Ip "$ip" --arg Hostname "$hostname" '.provision."bgp-router" += [{"router-asn":64518,"router-ip":$Ip,"router-name":$Hostname}]' provision_file.json > "$tmp" && mv "$tmp" provision_file.json ;;
     ("vrouter-master") jq --arg Ip "$ip" --arg Hostname "$hostname" '.provision.vrouter += [{"vrouter-ip":"192.168.2.1","vrouter-name":"compute-01"}]' provision_file.json > "$tmp" && mv "$tmp" provision_file.json ;;
     ("vrouter")  jq --arg Ip "$ip" --arg Hostname "$hostname" '.provision.vrouter += [{"vrouter-ip":"192.168.2.2","vrouter-name":"compute-02"}]' provision_file.json > "$tmp" && mv "$tmp" provision_file.json ;;
 
-  esac    
+  esac
 done
 contrail-api-cli provision -f provision_file.json
 echo "provisioning done"
