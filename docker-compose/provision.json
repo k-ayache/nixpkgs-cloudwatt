@@ -1,0 +1,15 @@
+{  
+  "name": "test",
+  "namespace": "contrail_api_cli.provision",
+  "defaults": {  
+    "subnets": {"virtual-network-fqnames": ["default-domain:default-project:vn1"]},
+    "vn": {"project-fqname": "default-domain:default-project"}
+  },
+  "provision": {
+    "bgp-router": [], 
+    "subnets": [{"cidrs":["20.1.1.0/24"],"virtual-network-fqname":"default-domain:default-project:vn1"}],
+    "vn": [{"external":false,"virtual-network-name":"vn1"}],
+    "vrouter": []  
+  }
+}
+
