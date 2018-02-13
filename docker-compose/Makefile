@@ -23,6 +23,9 @@ contrail-up: dev-consul-data dev-vault-data
 contrail-clean:
 	@docker-compose -f contrail.yml down --volumes
 
+contrail-provision: 
+	@./provision; contrail-api-cli provision -f provision_file.json
+
 gremlin-up:
 	@docker-compose -f gremlin-server.yml up
 

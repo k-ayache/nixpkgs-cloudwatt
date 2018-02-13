@@ -170,6 +170,10 @@ services:
       - "service=vrouter-master"
       - START_VDE_SWITCH=1
       - COMPUTE_NUMBER=1
+    labels:
+      - "SERVICE_NAME=opencontrail-vrouter-master"
+    ports:
+      - "8085:8085"
     devices:
       - "/dev/kvm"
     depends_on:
@@ -186,6 +190,10 @@ services:
     environment:
       - "service=vrouter"
       - COMPUTE_NUMBER=2
+    labels:
+      - "SERVICE_NAME=opencontrail-vrouter"
+    ports:
+      - "7085:8085"
     depends_on:
       - api
       - vrouter-master
