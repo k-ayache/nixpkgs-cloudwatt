@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #check api 
 curl -s localhost:5998/services.json | jq ' .services[] | select (.ep_type=="IfmapServer") | .oper_state=="up"'
@@ -23,5 +23,5 @@ do
 
   esac    
 done
-
+contrail-api-cli provision -f provision_file.json
 echo "provisioning done"
