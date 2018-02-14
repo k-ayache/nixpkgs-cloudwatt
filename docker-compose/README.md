@@ -14,6 +14,8 @@ Follow instructions at https://git.corp.cloudwatt.com/applications/deployment/tr
 
 ## Start contrail
 
+First source `.docker-compose/vault.env` from the infrastructure directory, then:
+
     $ make contrail-up
 
 When you stop the deployment, you have to clean the containers before starting it again, run:
