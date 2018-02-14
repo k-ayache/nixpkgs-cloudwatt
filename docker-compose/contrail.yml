@@ -1,4 +1,4 @@
-version: "2"
+version: "2.2"
 
 networks:
   default:
@@ -84,6 +84,7 @@ services:
 
   "control":
     image: "opencontrail/control:latest"
+    scale: 2
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
@@ -94,9 +95,9 @@ services:
       - "SERVICE_5222_IGNORE=true"
       - "SERVICE_5269_IGNORE=true"
     ports:
-      - "8083:8083"
-      - "5222:5222"
-      - "5269:5269"
+      - "8083"
+      - "5222"
+      - "5269"
     depends_on:
       - api
 

@@ -18,9 +18,6 @@ First source `.docker-compose/vault.env` from the infrastructure directory, then
 
     $ make contrail-up
 
-When you stop the deployment, you have to clean the containers before starting it again, run:
-
-    $ make contrail-clean
 
 # Development
 
@@ -32,3 +29,15 @@ This means the JSON will be stored in the consul path `config/opencontrail/data`
 
 The images build and configuration can be found in the `../pkgs/docker-images/`
 directory.
+
+After deployment do the provisioning and test ping between the 2 compute nodes:
+
+    $ make contrail-provision
+    $ make contrail-test
+
+If you get ping succes your contrail build works mainly fine
+
+When you stop the deployment, you have to clean the containers before starting it again, run:
+
+    $ make contrail-clean
+
