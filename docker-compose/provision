@@ -16,7 +16,7 @@ for service in control vrouter-master vrouter; do
   hostname=$(docker inspect -f '{{.Config.Hostname}}' $container)
 
   case $service in
-    ("control")  jq --arg Ip "$ip" --arg Hostname "$hostname" '.provision."bgp-router" += [{"router-asn":64518,"router-ip":$Ip,"router-name":$Hostname}]' provision_file.json > "$tmp" && mv "$tmp" provision_file.json ;;
+    ("control")  jq --arg Ip "$ip" --arg Hostname "$hostname" '.provision."bgp-router" += [{"router-asn":64512,"router-ip":$Ip,"router-name":$Hostname}]' provision_file.json > "$tmp" && mv "$tmp" provision_file.json ;;
     ("vrouter-master") jq --arg Ip "$ip" --arg Hostname "$hostname" '.provision.vrouter += [{"vrouter-ip":"192.168.2.1","vrouter-name":"compute-01"}]' provision_file.json > "$tmp" && mv "$tmp" provision_file.json ;;
     ("vrouter")  jq --arg Ip "$ip" --arg Hostname "$hostname" '.provision.vrouter += [{"vrouter-ip":"192.168.2.2","vrouter-name":"compute-02"}]' provision_file.json > "$tmp" && mv "$tmp" provision_file.json ;;
 
