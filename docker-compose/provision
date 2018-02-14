@@ -10,6 +10,7 @@ fi
 
 cp provision.json ./provision_file.json
 tmp=$(mktemp)
+echo "prepare provisioning_file ..."
 for service in control vrouter-master vrouter
 do
   i=0
