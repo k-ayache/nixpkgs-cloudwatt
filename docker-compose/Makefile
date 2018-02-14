@@ -23,10 +23,10 @@ contrail-up: dev-consul-data dev-vault-data
 contrail-clean:
 	@docker-compose -f contrail.yml down --volumes
 
-contrail-provision: 
+contrail-provision:
 	@./provision
 
-contrail-test: 
+contrail-test:
 	@./check-contrail
 gremlin-up:
 	@docker-compose -f gremlin-server.yml up
