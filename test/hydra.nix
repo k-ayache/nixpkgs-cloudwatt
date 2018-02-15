@@ -23,7 +23,10 @@ let
       hydra = {
         image = builtins.baseNameOf hydraImage;
         environment = [ "HYDRA_DBI=dbi:Pg:dbname=postgres;host=postgres;user=postgres;"
-	                      "POSTGRES_PASSWORD=MYPWD" ];
+                        "POSTGRES_PASSWORD=MYPWD"
+                        "HYDRA_ADMIN_USERNAME=admin"
+                        "HYDRA_ADMIN_PASSWORD=admin"
+                      ];
         ports = [ "3000:3000" ];
         links = [ "postgres:postgres" ];
       };
@@ -35,13 +38,13 @@ let
       services.openssh.enable = true;
       services.openssh.permitRootLogin = "yes";
       users.extraUsers.root.password = "root";
-      
+
       virtualisation = { diskSize = 4960; memorySize = 1024; };
       virtualisation.docker.enable = true;
     };
   };
 
-  testScript = 
+  testScript =
   ''
     $machine->waitForUnit("network.target");
     $machine->waitForUnit("sockets.target");
@@ -53,4 +56,3 @@ let
 in
   makeTest { name = "hydra"; nodes = { inherit machine; }; testScript = testScript; }
    // { driverDockerCompose = runStack; }
-
