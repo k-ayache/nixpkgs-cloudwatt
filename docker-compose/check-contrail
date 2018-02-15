@@ -4,7 +4,7 @@ vm=1
 for vrouter in vrouter-master vrouter
 do
   ip="$(curl -s localhost:8500/v1/catalog/service/opencontrail-$vrouter | jq -r .[].ServiceAddress)"
-
+  echo "create namespace in vrouter$vm ..."
   ssh -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$ip "netns-daemon-start -n default-domain:default-project:vn1 -s api vm${vm}0"
   ((vm++))
 done
@@ -13,4 +13,5 @@ ip="$(curl -s localhost:8500/v1/catalog/service/opencontrail-vrouter | jq -r .[]
 add=$(ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$ip 'ip netns exec ns-vm20 ip a  | grep "inet\b" | awk '\''{print $2}'\'' | cut -d/ -f1')
 
 ip="$(curl -s localhost:8500/v1/catalog/service/opencontrail-vrouter-master | jq -r .[].ServiceAddress)"
+echo "ping from vrouter-master to vrouter"
 ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$ip ip netns exec ns-vm10 ping -c 2 $add  &> /dev/null && echo "ping success" || echo "ping failed"
