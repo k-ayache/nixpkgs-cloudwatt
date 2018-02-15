@@ -71,18 +71,8 @@ Note: if you don't provide this environment variable, binary caches
 ### Specifying databases credentials
 
 ```
-docker run -e "HYDRA_DBI=dbi:Pg:dbname=hydra;host=postgres;user=hydra;" hydra
+docker run -e "HYDRA_DBI=dbi:Pg:dbname=hydra;host=postgres;user=hydra;" -e POSTGRES_PASSWORD=my-password hydra
 ```
-
-If you have to set a password, you have to create a
-[`.pgpass`](https://www.postgresql.org/docs/9.3/static/libpq-pgpass.html)
-and mount it in the root directory.
-```
-echo "*:*:*:*:MYPWD" > pgpass
-chmod 600 pgpass
-docker run -v $PWD/pgpass:/root/.pgpass hydra
-```
-
 
 ### Set the number of parallel jobs
 

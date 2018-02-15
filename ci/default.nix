@@ -131,8 +131,20 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
     # This is executed at container runtime
     hydraPreStart = pkgs.writeScript "hydraPreStart" ''
+      # If Hydra credentials are provided, we create the admin account
+      if [ "$POSTGRES_PASSWORD" == "" ]; then
+        echo "You must set the POSTGRES_PASSWORD environment variable. Exiting."
+        exit 1
+      fi
+      echo "*:*:*:*:$POSTGRES_PASSWORD" > /root/.pgpass
+      chmod 600 /root/.pgpass
+
       # Hydra database schema initialisation
-      hydra-init
+      while ! hydra-init; do
+        echo "Failed to connect to the database. Retrying..."
+        sleep 1
+      done
+
       # If Hydra credentials are provided, we create the admin account
       if [ "$HYDRA_ADMIN_USERNAME" != "" ] && [ "$HYDRA_ADMIN_PASSWORD" != "" ]; then
         echo "Creating $HYDRA_ADMIN_USERNAME account with admin role..."
@@ -212,6 +224,9 @@ in {
     config = {
       Cmd = [ "${entrypoint}" ];
       Env = [
+        # hydra-queue-runner fails to start without this
+        "LOGNAME=none"
+
         "HYDRA_DATA=/${hydraBaseDir}"
         "HYDRA_CONFIG=/${hydraBaseDir}/hydra.conf"
         "HYDRA_DBI=dbi:Pg:dbname=hydra;host=postgres;user=hydra;"
@@ -220,6 +235,7 @@ in {
         "MAX_JOBS=1"
         "HYDRA_ADMIN_USERNAME="
         "HYDRA_ADMIN_PASSWORD="
+        "POSTGRES_PASSWORD="
       ];
     };
   };
