@@ -85,4 +85,35 @@ rec {
     '' + extraCommands;
   };
 
+  # This helper takes a Docker Compose file to generate a script that
+  # loads Docker images used by this stack and run docker compose.  Be
+  # careful, to provide the image, you have to use the basename of the
+  # output path. For instance:
+  #    ...
+  #    container = {
+  #      image = builtins.baseNameOf myImage;
+  #    ...
+  runDockerComposeStack = stack:
+    let
+      dockerComposeFile = pkgs.writeTextFile {
+        name = "docker-compose.yaml";
+        text = pkgs.lib.generators.toYAML {} stack;
+      };
+    in
+      pkgs.writeScript "run-docker-compose-stack" ''
+        images=$(cat ${pkgs.writeReferencesToFile dockerComposeFile} | grep -v ${dockerComposeFile})
+        for i in $images; do
+          echo "docker load -i $i ..."
+          imageRef=$(${pkgs.docker}/bin/docker load -i $i | grep "Loaded image" | sed 's/Loaded image: \(.*\)/\1/')
+          echo "docker tag $imageRef $(basename $i)"
+          ${pkgs.docker}/bin/docker tag $imageRef $(basename $i)
+        done
+        echo "docker-compose -f ${dockerComposeFile} up -d ..."
+        ${pkgs.docker_compose}/bin/docker-compose -f ${dockerComposeFile} up -d
+        echo
+        echo "To get container logs:"
+        echo "  ${pkgs.docker_compose}/bin/docker-compose -f ${dockerComposeFile} logs -f"
+        echo "To destroy the stack:"
+        echo "  ${pkgs.docker_compose}/bin/docker-compose -f ${dockerComposeFile} down"
+      '';
 }

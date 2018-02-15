@@ -30,6 +30,8 @@ let pkgs = import nixpkgs {};
       locksmith = callPackage ./pkgs/vault-fernet-locksmith { };
 
       waitFor = callPackage ./pkgs/wait-for {};
+
+      test.hydra = callPackage ./test/hydra.nix { pkgs_path = nixpkgs; hydraImage = ci.hydraImage; };
     };
 
 in cwPkgs
