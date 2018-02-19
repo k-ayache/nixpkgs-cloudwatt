@@ -37,7 +37,11 @@ rec {
       echo -n ${outputString} > $out
     '';
 
-  genPerpRcMain = { name, command, preStartScript ? "", chdir ? "" }: pkgs.writeTextFile {
+  oneShot = cmd: ''
+    ${pkgs.bash}/bin/bash -c "${cmd}; perpctl X $SVNAME"
+  '';
+
+  genPerpRcMain = { name, command, preStartScript ? "", chdir ? "", oneshot ? false }: pkgs.writeTextFile {
     name = "${name}-rc.main";
     executable = true;
     destination = "/etc/perp/${name}/rc.main";
@@ -55,7 +59,7 @@ rec {
       ${if chdir != "" then ''OPTIONS="$OPTIONS -c ${chdir}"'' else ""}
 
       start() {
-        exec runtool $OPTIONS ${command}
+        exec runtool $OPTIONS ${if oneshot then oneShot command else command}
       }
 
       reset() {
