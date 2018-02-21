@@ -1,4 +1,4 @@
-{pkgs, lib, perp}:
+{pkgs, lib, perp, makeWrapper, curl, stdenv, waitFor }:
 
 with lib;
 
@@ -9,6 +9,16 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
     binaryCacheUri = "file:///nix-cache/";
     hydraBaseDir = "var/lib/hydra/";
     hydraStatefulDir = "hydra";
+
+    createDeclarativeProjectScript = pkgs.stdenv.mkDerivation {
+      name = "create-declarative-project";
+      unpackPhase = ":";
+      buildInputs = [ makeWrapper ];
+      installPhase = "install -m755 -D ${./create-declarative-project.sh} $out/bin/create-declarative-project";
+      postFixup = ''wrapProgram "$out/bin/create-declarative-project" --prefix PATH ":" ${stdenv.lib.makeBinPath [ curl ]}'';
+    };
+
+    declarativeProjectName = "create-declarative-project";
 
     hydraConf = pkgs.writeText "hydra.conf" ''
       using_frontend_proxy 1
@@ -214,6 +224,12 @@ in {
       (genPerpRcMain {name = "hydra-evaluator"; command = hydraEvaluator; })
       (genPerpRcMain {name = "nscd"; command = "${pkgs.glibc.bin}/sbin/nscd -f ${nscdConf} -F"; })
       (genPerpRcMain {name = "nginx"; command = "${pkgs.nginx}/bin/nginx -c ${nginxConf}"; })
+      (genPerpRcMain {
+        name = declarativeProjectName;
+        preStartScript = "export NO_PROXY=localhost";
+        command = "${waitFor}/bin/wait-for localhost:3000 -- ${createDeclarativeProjectScript}/bin/create-declarative-project";
+        oneshot = true;
+      })
     ];
     extraCommands = ''
       # There is a bug in the docker builder
@@ -236,6 +252,10 @@ in {
         "HYDRA_ADMIN_USERNAME="
         "HYDRA_ADMIN_PASSWORD="
         "POSTGRES_PASSWORD="
+        "DECL_PROJECT_NAME="
+        "DECL_FILE="
+        "DECL_TYPE="
+        "DECL_VALUE="
       ];
     };
   };
