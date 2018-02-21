@@ -15,12 +15,12 @@ let
       hidden = false;
       inputs = {
         cloudwatt = {
-          value = "https://git.corp.cloudwatt.com/applications/nixpkgs-cloudwatt master keepDotGit";
+          value = "https://github.com/nlewo/nixpkgs-cloudwatt master keepDotGit";
           type = "git";
           emailresponsible = false;
         };
         bootstrap_pkgs = {
-          value = "https://git.corp.cloudwatt.com/applications/nixpkgs acd89daabcb47cb882bc72ffc2d01281ed1fecb8";
+          value = "https://github.com/NixOS/nixpkgs acd89daabcb47cb882bc72ffc2d01281ed1fecb8";
           type = "git";
           emailresponsible = false;
         };
@@ -49,12 +49,12 @@ let
       hidden = false;
       inputs = {
         cloudwatt = {
-          value = "https://git.corp.cloudwatt.com/applications/nixpkgs-cloudwatt master keepDotGit";
+          value = "https://github.com/nlewo/nixpkgs-cloudwatt master keepDotGit";
           type = "git";
           emailresponsible = false;
         };
         bootstrap_pkgs = {
-          value = "https://git.corp.cloudwatt.com/applications/nixpkgs acd89daabcb47cb882bc72ffc2d01281ed1fecb8";
+          value = "https://github.com/NixOS/nixpkgs acd89daabcb47cb882bc72ffc2d01281ed1fecb8";
           type = "git";
           emailresponsible = false;
         };
