@@ -122,6 +122,9 @@ in
       }
       { name = "gremlin-sync"; command = "${config.gremlin.syncStart}/bin/gremlin-sync"; }
     ];
+    contents = [
+      contrail32Cw.tools.contrailGremlin
+    ];
   };
 
   gremlinFsck = lib.buildImageWithPerp {
