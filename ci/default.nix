@@ -141,6 +141,11 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
     # This is executed at container runtime
     hydraPreStart = pkgs.writeScript "hydraPreStart" ''
+      # We fix missing hash and size otherwise hydra-queue-runner gets
+      # lot of troubles... (segfaults, freezes...)
+      # This can be removed with the release 18.03
+      nix-store --verify --check-contents
+
       # If Hydra credentials are provided, we create the admin account
       if [ "$POSTGRES_PASSWORD" == "" ]; then
         echo "You must set the POSTGRES_PASSWORD environment variable. Exiting."
