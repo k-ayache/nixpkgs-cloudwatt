@@ -195,6 +195,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
       if [ -e /dev/kvm ]; then
         chgrp nixbld /dev/kvm
+        chgrp g+rw /dev/kvm
       fi
     '';
 
