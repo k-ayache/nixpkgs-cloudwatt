@@ -3,7 +3,7 @@
   "hidden": false,
   "description": "Build master of nixpkgs-cloudwatt",
   "nixexprinput": "cloudwatt",
-  "nixexprpath": "ci/jobsets-declarative.nix",
+  "nixexprpath": "ci/jobsets-declarative-sec.nix",
   "checkinterval": 60,
   "schedulingshares": 100,
   "enableemail": false,
