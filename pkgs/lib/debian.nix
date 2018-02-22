@@ -69,10 +69,12 @@ rec {
            outputHashMode = "flat";
            outputHashAlgo = "sha256";
            outputHash = builtins.hashString "sha256" outputString;
+           impureEnvVars = pkgs.stdenv.lib.fetchers.proxyImpureEnvVars ++
+             [ "APTLY_URL" ];
          } ''
            mkdir packages
            ln -s ${package} packages/${package.name}
-           echo "Publishing ${package.name}..."
+           echo "Publishing ${package.name} to $APTLY_URL ..."
            debian-package-publish.sh -d trusty -r contrail-${package.version} packages
            echo -n ${outputString} > $out
          '';

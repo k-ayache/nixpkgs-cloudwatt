@@ -3,7 +3,7 @@
 set -e
 [ -n "${DEBUG}" ] && set -x
 
-aptly="http://aptly.int0.aub.cloudwatt.net/api"
+aptly=$APTLY_URL
 upload_directory=$(uuidgen)
 
 #-------------------------------------------------------------------------------
