@@ -5,15 +5,15 @@ rec {
   # REGISTRY_PASSWORD to specify the url and credentials of the
   # registry.
   # The commit ID is used to generate the image tag.
-  dockerPushImage = image: commitId:
+  dockerPushImage = image: commitId: unsetProxy:
     let
       imageRef = "${image.imageName}:${commitId}-${builtins.baseNameOf image.out}";
       jobName = with pkgs.lib; "push-" + (removeSuffix ".tar" (removeSuffix ".gz" image.name));
-      outputString = "Pushed image ${image.imageName} with content ${builtins.baseNameOf image.out}" ;
+      outputString = "Pushed image ${image.imageName} with content ${builtins.baseNameOf image.out}  ";
     in
       pkgs.runCommand jobName {
         buildInputs = with pkgs; [ jq skopeo ];
-        impureEnvVars = pkgs.stdenv.lib.fetchers.proxyImpureEnvVars ++
+        impureEnvVars = pkgs.lib.optionals (!unsetProxy) pkgs.stdenv.lib.fetchers.proxyImpureEnvVars ++
           [ "REGISTRY_URL" "REGISTRY_USERNAME" "REGISTRY_PASSWORD" ];
         outputHashMode = "flat";
         outputHashAlgo = "sha256";

@@ -34,6 +34,11 @@ let
           type = "boolean";
           emailresponsible = false;
         };
+        unsetProxyForSkopeo = {
+          value = "true";
+          type = "boolean";
+          emailresponsible = false;
+        };
       };
     };
   };

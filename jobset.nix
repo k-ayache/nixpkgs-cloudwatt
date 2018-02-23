@@ -11,6 +11,7 @@
 , pushToDockerRegistry ? false
 # Set it to true to publish Debian packages to Aptly
 , publishToAptly ? false
+, unsetProxyForSkopeo ? false
 }:
 
 let
@@ -22,7 +23,7 @@ let
   '';
   commitId = builtins.replaceStrings ["\n"] [""] (builtins.readFile getCommitId);
   genDockerPushJobs = drvs:
-    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.dockerPushImage v commitId)) drvs;
+    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.dockerPushImage v commitId unsetProxyForSkopeo)) drvs;
   genDebPublishJobs = drvs:
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.publishDebianPkg v)) drvs;
 in
