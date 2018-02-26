@@ -12,6 +12,7 @@
 # Set it to true to publish Debian packages to Aptly
 , publishToAptly ? false
 , unsetProxyForSkopeo ? false
+, unsetProxyForAptly ? false
 }:
 
 let
@@ -25,7 +26,7 @@ let
   genDockerPushJobs = drvs:
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.dockerPushImage v commitId unsetProxyForSkopeo)) drvs;
   genDebPublishJobs = drvs:
-    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.publishDebianPkg v)) drvs;
+    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.publishDebianPkg v unsetProxyForAptly)) drvs;
 in
 {
   inherit (default) contrail32Cw debianPackages dockerImages test;

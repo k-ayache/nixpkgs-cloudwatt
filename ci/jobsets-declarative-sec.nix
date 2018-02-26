@@ -39,6 +39,11 @@ let
           type = "boolean";
           emailresponsible = false;
         };
+        unsetProxyForAptly = {
+          value = "true";
+          type = "boolean";
+          emailresponsible = false;
+        };
       };
     };
   };
