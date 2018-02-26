@@ -20,6 +20,14 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
 
     declarativeProjectName = "create-declarative-project";
 
+    hydraEvalScript = pkgs.stdenv.mkDerivation {
+      name = "hydra-eval-script";
+      unpackPhase = ":";
+      buildInputs = [ makeWrapper ];
+      installPhase = "install -m755 -D ${./hydra-eval.sh} $out/bin/hydra-eval";
+      postFixup = ''wrapProgram "$out/bin/hydra-eval" --set NO_PROXY localhost --prefix PATH ":" ${stdenv.lib.makeBinPath [ curl ]}'';
+    };
+
     hydraConf = pkgs.writeText "hydra.conf" ''
       using_frontend_proxy 1
       base_uri http://example.com
@@ -218,6 +226,7 @@ in {
     contents = [
       pkgs.hydra
       pkgs.nix
+      hydraEvalScript
 
       # To manually initialize the database
       pkgs.postgresql93
