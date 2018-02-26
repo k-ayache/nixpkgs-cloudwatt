@@ -231,9 +231,6 @@ in {
       # To manually initialize the database
       pkgs.postgresql93
 
-      # Interactive mode
-      pkgs.coreutils pkgs.bashInteractive pkgs.curl
-
       (genPerpRcMain {name = "hydra-server"; command = hydraServerCmd; })
       (genPerpRcMain {name = "hydra-queue-runner"; command = hydraQueueRunnerCmd; })
       (genPerpRcMain {name = "hydra-evaluator"; command = hydraEvaluator; })
