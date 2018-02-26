@@ -39,27 +39,6 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       use-substitutes = 1
     '';
 
-    # We need nscd to workaround the bug https://github.com/NixOS/nix/issues/1536
-    # Once it is fixed, remove nscd
-    nscdConf = pkgs.writeText "nscd.conf" ''
-      server-user             root
-      threads                 1
-      paranoia                no
-      debug-level             0
-
-      enable-cache            hosts           yes
-      positive-time-to-live   hosts           600
-      negative-time-to-live   hosts           5
-      suggested-size          hosts           211
-      check-files             hosts           yes
-      persistent              hosts           no
-      shared                  hosts           yes
-    '';
-    nscdInit = ''
-      mkdir -p var/db/nscd
-      mkdir -p var/run/nscd
-    '';
-
     nixConf = pkgs.writeText "nix.conf" ''
       build-users-group = nixbld
       build-max-jobs = 1
@@ -234,7 +213,6 @@ in {
       (genPerpRcMain {name = "hydra-server"; command = hydraServerCmd; })
       (genPerpRcMain {name = "hydra-queue-runner"; command = hydraQueueRunnerCmd; })
       (genPerpRcMain {name = "hydra-evaluator"; command = hydraEvaluator; })
-      (genPerpRcMain {name = "nscd"; command = "${pkgs.glibc.bin}/sbin/nscd -f ${nscdConf} -F"; })
       (genPerpRcMain {name = "nginx"; command = "${pkgs.nginx}/bin/nginx -c ${nginxConf}"; })
       (genPerpRcMain {
         name = declarativeProjectName;
@@ -247,7 +225,7 @@ in {
       # There is a bug in the docker builder
       chmod a+w ../layer 
       ''
-      + containerInit + nixInit + hydraInit + nscdInit + perpInit + contrailBuildInit;
+      + containerInit + nixInit + hydraInit + perpInit + contrailBuildInit;
 
     config = {
       Cmd = [ "${entrypoint}" ];
