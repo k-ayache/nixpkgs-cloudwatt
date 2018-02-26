@@ -34,7 +34,7 @@ in
 
   ci = { hydraImage = default.ci.hydraImage; }
        // pkgs.lib.optionalAttrs pushToDockerRegistry {
-         pushHydraImage = lib.dockerPushImage default.ci.hydraImage commitId; };
+         pushHydraImage = lib.dockerPushImage default.ci.hydraImage commitId unsetProxyForSkopeo; };
 }
 
 // pkgs.lib.optionalAttrs pushToDockerRegistry {
