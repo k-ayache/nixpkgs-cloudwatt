@@ -44,6 +44,11 @@ let
           type = "boolean";
           emailresponsible = false;
         };
+        aptlyUrl = {
+          value = "http://aptly-api.sec.cloudwatt.com/api";
+          type = "string";
+          emailresponsible = false;
+        };
       };
     };
   };

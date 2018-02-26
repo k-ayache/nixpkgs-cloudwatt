@@ -61,17 +61,17 @@ rec {
     '';
   };
 
-  publishDebianPkg = package: unsetProxy:
-    let outputString = "${package.name} published";
+  publishDebianPkg = url: package: unsetProxy:
+    let outputString = "${package.name} published to ${url}";
     in pkgs.runCommand "publish-${package.name}"
          {
            buildInputs = [ debianPackagePublish ];
            outputHashMode = "flat";
            outputHashAlgo = "sha256";
            outputHash = builtins.hashString "sha256" outputString;
-           impureEnvVars = pkgs.lib.optionals (!unsetProxy) pkgs.stdenv.lib.fetchers.proxyImpureEnvVars ++
-             [ "APTLY_URL" ];
+           impureEnvVars = pkgs.lib.optionals (!unsetProxy) pkgs.stdenv.lib.fetchers.proxyImpureEnvVars;
          } ''
+           export APTLY_URL=${url}
            mkdir packages
            ln -s ${package} packages/${package.name}
            echo "Publishing ${package.name} to $APTLY_URL ..."

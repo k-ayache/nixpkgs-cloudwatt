@@ -13,6 +13,7 @@
 , publishToAptly ? false
 , unsetProxyForSkopeo ? false
 , unsetProxyForAptly ? false
+, aptlyUrl ? "http://aptly.int0.aub.cloudwatt.net/api"
 }:
 
 let
@@ -26,7 +27,7 @@ let
   genDockerPushJobs = drvs:
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.dockerPushImage v commitId unsetProxyForSkopeo)) drvs;
   genDebPublishJobs = drvs:
-    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.publishDebianPkg v unsetProxyForAptly)) drvs;
+    pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.publishDebianPkg aptlyUrl v unsetProxyForAptly)) drvs;
 in
 {
   inherit (default) contrail32Cw debianPackages dockerImages test;
