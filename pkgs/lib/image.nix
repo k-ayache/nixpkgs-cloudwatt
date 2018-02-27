@@ -71,23 +71,25 @@ rec {
   };
 
   # Build an image where 'command' is started by Perp
-  buildImageWithPerp = { name, fromImage, command, preStartScript ? "", extraCommands ? "" }: buildImageWithPerps {
-    inherit name fromImage extraCommands;
-    services = [
-      { inherit preStartScript command; name = builtins.replaceStrings ["/"] ["-"] name; }
-    ];
-  };
-
-  buildImageWithPerps = { name, fromImage ? null, services, extraCommands ? "" }: pkgs.dockerTools.buildImage {
-    inherit name fromImage;
-    config = {
-      Cmd = [ "/usr/sbin/perpd" ];
+  buildImageWithPerp = { name, fromImage, command, preStartScript ? "", contents ? [], extraCommands ? "" }:
+    buildImageWithPerps {
+      inherit name fromImage contents extraCommands;
+      services = [
+        { inherit preStartScript command; name = builtins.replaceStrings ["/"] ["-"] name; }
+      ];
     };
-    contents = map genPerpRcMain services;
-    extraCommands = ''
-      ${pkgs.findutils}/bin/find etc/perp -type d -exec chmod +t {} \;
-    '' + extraCommands;
-  };
+
+  buildImageWithPerps = { name, fromImage ? null, services, contents ? [], extraCommands ? "" }:
+    pkgs.dockerTools.buildImage {
+      inherit name fromImage;
+      config = {
+        Cmd = [ "/usr/sbin/perpd" ];
+      };
+      contents = map genPerpRcMain services ++ contents;
+      extraCommands = ''
+        ${pkgs.findutils}/bin/find etc/perp -type d -exec chmod +t {} \;
+      '' + extraCommands;
+    };
 
   # This helper takes a Docker Compose file to generate a script that
   # loads Docker images used by this stack and run docker compose.  Be
