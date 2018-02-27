@@ -25,26 +25,52 @@ pkgs
 
 ### Some Usage Examples
 
-Build a Docker image for the `contrail-api-server`
+#### Build a Docker image for the `contrail-api-server`
+
 ```
 % nix-build -A dockerImages.contrailApi
 % docker load -i result
 ```
 
-To run the contrail test
+#### Run the contrail test
+
 ```
 % nix-build -A contrail32Cw.test.allInOne
 % firefox result/log.html
 ```
 
-To interactively run a contrail all-in-one VM
+#### Interactively run a contrail all-in-one VM
+
 ```
 % nix-build -A contrail32Cw.test.allInOne.driver
 % QEMU_NET_OPTS="hostfwd=tcp::2222-:22" ./result/bin/nixos-run-vms
 % ssh -p 2222 root@localhost
 ```
 
+#### Push an image in a private namespace for testing purposes
+
+First create an account on https://portus.corp.cloudwatt.com/.
+
+Must be done only once:
+
+    % docker login r.cwpriv.net
+    % nix-build -A tools.pushImage
+    /nix/store/ppl41l4j6v5drdzk80676vvknnv9627b-push-image
+    % nix-env -i /nix/store/ppl41l4j6v5drdzk80676vvknnv9627b-push-image
+
+Then you can build any image, and upload it to you personal namespace in the registry:
+
+    % nix-build -A dockerImages.locksmithWorker
+    /nix/store/ihnp71p3gxlj9qf41pgs677prjv11q1w-docker-image-worker.tar.gz
+    % push-image /nix/store/ihnp71p3gxlj9qf41pgs677prjv11q1w-docker-image-worker.tar.gz jpbraun/locksmith:latest
+    Getting image source signatures
+    Copying blob sha256:b8d4d3025a405886d28d1978ccbb3b930c465d376353ec4d6aa016991f5eaad3
+     85.16 MB / 85.16 MB [=========================================================]
+    Copying blob sha256:34418e226e96622b1156e74c904f1e60089d04baa535939e5a36b41bdcfb1002
+    [...]
+
 ### To test Hydra jobs
+
 Jobs are classic Nix expressions, so to test them, you just have to build them:
 ```
 % nix-build jobset.nix -A dockerImages.contrailApi --arg cloudwatt $PWD

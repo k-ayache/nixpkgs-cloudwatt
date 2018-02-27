@@ -15,4 +15,13 @@
       docker load -i $image
     done
   '';
+
+  pushImage = pkgs.writeShellScriptBin "push-image" ''
+    PATH=$1
+    IMAGE_NAME=$2
+
+    ${pkgs.gzip}/bin/gzip -d $PATH -c > image.tar
+    ${pkgs.skopeo}/bin/skopeo --insecure-policy copy docker-archive:image.tar docker://r.cwpriv.net/$IMAGE_NAME
+  '';
+
 }
