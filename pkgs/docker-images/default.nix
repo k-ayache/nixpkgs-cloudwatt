@@ -108,10 +108,10 @@ in
     name = "gremlin/server";
     fromImage = lib.images.javaJreImage;
     services = [
-      { 
-        name = "gremlin-server"; 
+      {
+        name = "gremlin-server";
         command = "${config.gremlin.serverStart}/bin/gremlin-server";
-        chdir = "${contrail32Cw.tools.gremlinServer.gremlinServer}/opt";
+        chdir = "${contrail32Cw.tools.gremlinServer}/opt";
         preStartScript = ''
           # We can't modify the parent image, so we do it at runtime
           if [ -f /etc/prometheus/prometheus_jmx_java8.yml ] && ! grep -q 'metrics<name'

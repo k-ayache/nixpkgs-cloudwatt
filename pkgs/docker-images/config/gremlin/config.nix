@@ -70,7 +70,7 @@ in {
       export JAVA_OPTIONS="$JAVA_OPTIONS -Dcom.sun.management.jmxremote $PROM_OPTS"
     fi
     ${contrail32Cw.tools.contrailGremlin}/bin/gremlin-dump ${dumpPath} && \
-    ${contrail32Cw.tools.gremlinServer.gremlinServer}/bin/gremlin-server ${serverConf}
+    ${contrail32Cw.tools.gremlinServer}/bin/gremlin-server ${serverConf}
   '';
 
   syncStart = pkgs.writeShellScriptBin "gremlin-sync" ''
