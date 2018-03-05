@@ -23,7 +23,7 @@
     echo "Unzipping image..."
     ${pkgs.gzip}/bin/gzip -d $PATH -c > image.tar
     ${pkgs.skopeo}/bin/skopeo --insecure-policy copy docker-archive:image.tar docker://r.cwpriv.net/$IMAGE_NAME
-    rm -f image.tar
+    ${pkgs.coreutils}/bin/rm -f image.tar
   '';
 
 }
