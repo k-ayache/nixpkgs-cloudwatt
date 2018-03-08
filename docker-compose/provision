@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 
 # check api
-curl -s localhost:5998/services.json | jq ' .services[] | select (.ep_type=="IfmapServer") | .oper_state=="up"'
-if [  $? -eq 1 ];
-then
-  echo "error: api not ready"
-  exit 1
-fi
 
 cp provision.json ./provision_file.json
 tmp=$(mktemp)
@@ -27,5 +21,7 @@ do
     esac
   done
 done
-contrail-api-cli provision -f provision_file.json
+api_ip=$(curl -s localhost:8500/v1/catalog/service/opencontrail-api | jq -r .[0].ServiceAddress)
+echo "api address" $api_ip
+contrail-api-cli -H $api_ip provision -f provision_file.json
 echo "provisioning done"
