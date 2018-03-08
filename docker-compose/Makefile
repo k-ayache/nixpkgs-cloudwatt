@@ -19,6 +19,9 @@ dev-vault-data:
 
 contrail-up: dev-consul-data dev-vault-data
 	@docker-compose -f contrail.yml up
+contrail-scale: dev-consul-data dev-vault-data
+	@echo -e "\nAll services in contrail.yml will be recreated and api, control and discovery will be scaled ...\n"
+	@docker-compose -f contrail.yml up --scale api=2 --scale control=2 --scale discovery=2
 
 contrail-clean:
 	@docker-compose -f contrail.yml down --volumes
