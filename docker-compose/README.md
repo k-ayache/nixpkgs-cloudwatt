@@ -11,11 +11,39 @@
 ## Start the infrastructure
 
 Follow instructions at https://git.corp.cloudwatt.com/applications/deployment/tree/master/docker-compose
+Start:
+
+    $ make vault-init
+    $ source .docker-compose/vault.env
+    $ make infrastructure-up
+    $ make openstack-up
+
+## Start keystone
+
+Use the branch: https://git.corp.cloudwatt.com/docker/keystone-all to start keystone:
+
+    $ source `.docker-compose/vault.env` from the infrastructure directory
+    $ make dev-up
+
+## Create endpoinds:
+
+After keystone started go in applications/deployment/docker-compose and create endpoints using the following command:
+
+    $ make openstack-catalog
+
+## Create keystone user
+
+Access keystone-all directory and create keystone user:
+
+    $ make dev-service-user
 
 ## Start contrail
 
-First source `.docker-compose/vault.env` from the infrastructure directory, then:
+Access nixpkgs-cloudwatt/docker-compose
 
+    $ source `.docker-compose/vault.env` from the infrastructure directory
+    $ make dev-vault-data
+    $ make contrail-service-user
     $ make contrail-up
 
 
@@ -30,7 +58,7 @@ This means the JSON will be stored in the consul path `config/opencontrail/data`
 The images build and configuration can be found in the `../pkgs/docker-images/`
 directory.
 
-After deployment do the provisioning and test ping between the 2 compute nodes:
+After deployment, do the provisioning and test ping between the 2 compute nodes:
 
     $ make contrail-provision
     $ make contrail-test

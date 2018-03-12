@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
+set -e
+
 # create namespaces in each vrouter and check ping between them
 vm=1
 for vrouter in vrouter-master vrouter
 do
   ip="$(curl -s localhost:8500/v1/catalog/service/opencontrail-$vrouter | jq -r .[].ServiceAddress)"
   echo -e "create namespace in vrouter$vm ...\n"
-  ssh -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$ip "netns-daemon-start -n default-domain:default-project:vn1 -s api vm${vm}0"
+  ssh -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$ip "netns-daemon-start -U opencontrail -P development -s api -n default-domain:service:vn1 vm${vm}0"
   ((vm++))
 done
 #ping from  vrouter-master to vrouter
@@ -41,10 +43,10 @@ fi
 echo "check if api peering ..."
 
 ip=$(curl -s localhost:8500/v1/catalog/service/opencontrail-api | jq -r .[0].ServiceAddress)
-cmd1=$(contrail-api-cli -H $ip ls -l virtual-machine)
+cmd1=$(contrail-api-cli -H $ip --os-password development --os-auth-plugin v2password --os-auth-url http://localhost:35357/v2.0   --os-username opencontrail  --os-tenant-name service ls -l virtual-machine)
 
 ip=$(curl -s localhost:8500/v1/catalog/service/opencontrail-api | jq -r .[1].ServiceAddress)
-cmd2=$(contrail-api-cli -H $ip ls -l virtual-machine)
+cmd2=$(contrail-api-cli -H $ip --os-password development --os-auth-plugin v2password --os-auth-url http://localhost:35357/v2.0   --os-username opencontrail  --os-tenant-name service ls -l virtual-machine)
 
 if [ "$cmd1" = "$cmd2" ] ;
 then

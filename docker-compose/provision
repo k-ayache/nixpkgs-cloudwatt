@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # check api
 
 cp provision.json ./provision_file.json
@@ -21,7 +23,11 @@ do
     esac
   done
 done
-api_ip=$(curl -s localhost:8500/v1/catalog/service/opencontrail-api | jq -r .[0].ServiceAddress)
-echo "api address" $api_ip
-contrail-api-cli -H $api_ip provision -f provision_file.json
+container=$(curl -s localhost:8500/v1/catalog/service/opencontrail-api | jq -r ' .[0].ServiceID | split(":") | .[1] ')
+port_api=$(docker port $container | grep 8082 | cut -d: -f2)
+
+echo "create project service ..."
+contrail-api-cli --port $port_api --os-password development --os-auth-plugin v2password --os-auth-url http://localhost:35357/v2.0   --os-username opencontrail  --os-tenant-name service exec create_project.py
+
+contrail-api-cli --os-password development --os-auth-plugin v2password --os-auth-url http://localhost:35357/v2.0 --port $port_api --os-username opencontrail  --os-tenant-name service provision -f provision_file.json
 echo "provisioning done"

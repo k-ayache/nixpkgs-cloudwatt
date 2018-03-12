@@ -27,6 +27,8 @@ let
       virtualisation.graphics = false;
       virtualisation.memorySize = 1024;
 
+      environment.etc."contrail/vnc_api_lib.ini".source = configFiles.contrail.vncApiLibVrouter;
+
       contrail.vrouterAgent = {
         enable = true;
         configurationFilepath = contrailVrouterAgentFilepath;

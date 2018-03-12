@@ -56,6 +56,7 @@ services:
     environment:
       - "service=api"
       - "VAULT_TOKEN=$VAULT_TOKEN"
+      - "openstack_region=dev0"
     labels:
       - "SERVICE_8082_NAME=opencontrail-api"
       - "SERVICE_8443_NAME=opencontrail-ifmap"
@@ -107,6 +108,7 @@ services:
     environment:
       - "service=schema"
       - "VAULT_TOKEN=$VAULT_TOKEN"
+      - "openstack_region=dev0"
     labels:
       - "SERVICE_NAME=opencontrail-schema-transformer"
     ports:
@@ -121,6 +123,7 @@ services:
     environment:
       - "service=svc-monitor"
       - "VAULT_TOKEN=$VAULT_TOKEN"
+      - "openstack_region=dev0"
     labels:
       - "SERVICE_NAME=opencontrail-svc-monitor"
     ports:
@@ -152,6 +155,7 @@ services:
     environment:
       - "service=collector"
       - "VAULT_TOKEN=$VAULT_TOKEN"
+      - "openstack_region=dev0"
     labels:
       - "SERVICE_8086_NAME=opencontrail-collector"
       - "SERVICE_8089_IGNORE=true"

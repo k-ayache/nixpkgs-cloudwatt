@@ -66,7 +66,8 @@ in
       ${waitFor}/bin/wait-for \
         ${config.contrail.services.discovery.dns}:${toString config.contrail.services.discovery.port}
       consul-template-wrapper -- -once \
-        -template="${config.contrail.collector}:/etc/contrail/contrail-collector.conf"
+        -template="${config.contrail.collector}:/etc/contrail/contrail-collector.conf" \
+        -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
     '';
   };
 
@@ -84,7 +85,8 @@ in
     command = "${contrail32Cw.schemaTransformer}/bin/contrail-schema --conf_file /etc/contrail/contrail-schema-transformer.conf";
     preStartScript = ''
       consul-template-wrapper -- -once \
-        -template="${config.contrail.schemaTransformer}:/etc/contrail/contrail-schema-transformer.conf"
+        -template="${config.contrail.schemaTransformer}:/etc/contrail/contrail-schema-transformer.conf" \
+        -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
     '';
   };
 
@@ -93,7 +95,8 @@ in
     command = "${contrail32Cw.svcMonitor}/bin/contrail-svc-monitor --conf_file /etc/contrail/contrail-svc-monitor.conf";
     preStartScript = ''
       consul-template-wrapper -- -once \
-        -template="${config.contrail.svcMonitor}:/etc/contrail/contrail-svc-monitor.conf"
+        -template="${config.contrail.svcMonitor}:/etc/contrail/contrail-svc-monitor.conf" \
+        -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
     '';
   };
 
