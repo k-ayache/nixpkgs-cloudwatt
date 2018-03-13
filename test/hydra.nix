@@ -26,6 +26,10 @@ let
                         "POSTGRES_PASSWORD=MYPWD"
                         "HYDRA_ADMIN_USERNAME=admin"
                         "HYDRA_ADMIN_PASSWORD=admin"
+                        "DECL_PROJECT_NAME=cloudwatt"
+                        "DECL_FILE=ci/spec.json"
+                        "DECL_TYPE=git"
+                        "DECL_VALUE=https://github.com/nlewo/nixpkgs-cloudwatt master keepDotGit"
                       ];
         ports = [ "3000:3000" ];
         links = [ "postgres:postgres" ];
@@ -51,7 +55,8 @@ let
 
     $machine->succeed("${runStack}");
 
-    $machine->waitUntilSucceeds('[ $(curl -H "Content-Type: application/json" http://localhost:3000/) == "[]" ]');
+    # We check if the ".jobsets" jobset has been created
+    $machine->waitUntilSucceeds('curl -H "Content-Type: application/json" http://localhost:3000/jobset/cloudwatt/.jobsets');
   '';
 in
   makeTest { name = "hydra"; nodes = { inherit machine; }; testScript = testScript; }
