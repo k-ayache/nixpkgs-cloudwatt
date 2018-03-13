@@ -17,7 +17,8 @@ let pkgs = import nixpkgs {};
 
       perp = callPackage ./pkgs/perp { };
 
-      contrail32Cw = callPackages ./pkgs/contrail32Cw {
+      contrail32Cw = import ./pkgs/contrail32Cw {
+        inherit pkgs;
         contrailPath = contrail;
         nixpkgsPath = nixpkgs;
       };
