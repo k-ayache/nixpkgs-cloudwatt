@@ -28,9 +28,14 @@ let
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.dockerPushImage v commitId unsetProxyForSkopeo)) drvs;
   genDebPublishJobs = drvs:
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.publishDebianPkg aptlyUrl v unsetProxyForAptly)) drvs;
+
+  # Since lib.buildVrouter is not a derivation, Hydra generates an evaluation error
+  contrail32Cw = default.contrail32Cw // { lib.buildVrouter = {}; };
+
 in
 {
-  inherit (default) contrail32Cw debianPackages dockerImages test;
+  inherit (default) debianPackages dockerImages test;
+  inherit contrail32Cw;
 
   ci = { hydraImage = default.ci.hydraImage; }
        // pkgs.lib.optionalAttrs pushToDockerRegistry {
