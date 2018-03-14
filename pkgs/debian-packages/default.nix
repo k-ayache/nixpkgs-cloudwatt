@@ -22,6 +22,7 @@ in
   contrailVrouterUbuntu_3_13_0_112_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_3_13_0_112_generic;
   contrailVrouterUbuntu_3_13_0_125_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_3_13_0_125_generic;
   contrailVrouterUbuntu_3_13_0_141_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_3_13_0_141_generic;
+  contrailVrouterUbuntu_3_13_0_143_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_3_13_0_143_generic;
   contrailVrouterUbuntu_4_4_0_101_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_4_4_0_101_generic;
 
   contrailVrouterUserland = lib.mkDebianPackage rec {
