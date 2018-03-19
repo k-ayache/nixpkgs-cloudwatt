@@ -2,9 +2,10 @@ pkgs:
 
 let
 
-  config = conf: ''
+  config = headers: conf: ''
     {{ $opencontrail := keyOrDefault "/config/opencontrail/data" "{}" | parseJSON -}}
-  '' + pkgs.lib.generators.toINI {} conf;
+  '' + headers
+     + pkgs.lib.generators.toINI {} conf;
 
   logConfig = service: {
     log_level = ''{{- if $opencontrail.${service.name}.log_level }}
@@ -27,9 +28,10 @@ let
       {{- .Data.${secret} }}
     {{- end }}'';
 
-  catalogOpenstack = ''
+  catalogOpenstackHeader = ''
     {{ $openstack_region := env "openstack_region" -}}
-    {{ $catalog := key (printf "/config/openstack/catalog/%s/data" $openstack_region) | parseJSON -}}'';
+    {{ $catalog := key (printf "/config/openstack/catalog/%s/data" $openstack_region) | parseJSON -}}
+  '';
 
   identityAdminUrl = ''
     {{ with $catalog.identity.admin_url }}{{ . | regexReplaceAll "http://([^:/]+).*" "$1" }}{{ end }}'';
@@ -67,7 +69,6 @@ let
   };
 
   keystoneConfig = {
-    inherit catalogOpenstack;
     auth_host = identityAdminUrl;
     auth_port = 35357;
     auth_protocol = "http";
@@ -122,7 +123,7 @@ in rec {
 
   discovery = pkgs.writeTextFile {
     name = "contrail-discovery.conf.ctmpl";
-    text = config {
+    text = config "" {
       DEFAULTS = {
         listen_ip_addr = containerIP;
         listen_port = services.discovery.port;
@@ -148,7 +149,7 @@ in rec {
 
   api = pkgs.writeTextFile {
     name = "contrail-api.conf.ctmpl";
-    text = config {
+    text = config catalogOpenstackHeader {
       DEFAULTS = {
         listen_ip_addr = containerIP;
         # FIXME, the code is publishing ifmap_server_ip instead of listen_ip_addr to the discovery
@@ -164,9 +165,8 @@ in rec {
       // cassandraConfig
       // rabbitConfig
       // zookeeperConfig
-      // logConfig services.api
-      // keystoneConfig;
-
+      // logConfig services.api;
+      KEYSTONE = keystoneConfig;
       IFMAP_SERVER = {
         ifmap_listen_ip = containerIP;
         ifmap_listen_port = services.ifmap.port;
@@ -177,7 +177,7 @@ in rec {
 
   schemaTransformer = pkgs.writeTextFile {
     name = "contrail-schema.conf.ctmpl";
-    text = config {
+    text = config "" {
       DEFAULTS = {
         api_server_ip = services.api.dns;
         disc_server_ip = services.discovery.dns;
@@ -192,7 +192,7 @@ in rec {
 
   svcMonitor = pkgs.writeTextFile {
     name = "contrail-svc-monitor.conf.ctmpl";
-    text = config {
+    text = config "" {
       DEFAULTS = {
         api_server_ip = services.api.dns;
         disc_server_ip = services.discovery.dns;
@@ -211,7 +211,7 @@ in rec {
 
   control = pkgs.writeTextFile {
     name = "contrail-control.conf.ctmpl";
-    text = config {
+    text = config "" {
       DEFAULT = logConfig services.control;
 
       IFMAP = {
@@ -228,7 +228,7 @@ in rec {
 
   collector = pkgs.writeTextFile {
     name = "contrail-collector.conf.ctmpl";
-    text = config {
+    text = config "" {
       DEFAULT = {
         analytics_data_ttl = 48;
         analytics_flow_ttl = 48;
@@ -257,7 +257,7 @@ in rec {
 
   analyticsApi = pkgs.writeTextFile {
     name = "contrail-analytics-api.conf.ctmpl";
-    text = config {
+    text = config "" {
       DEFAULT = {
         host_ip = containerIP;
         rest_api_ip = containerIP;
