@@ -27,6 +27,13 @@ let
       {{- .Data.${secret} }}
     {{- end }}'';
 
+  catalogOpenstack = ''
+    {{ $openstack_region := env "openstack_region" -}}
+    {{ $catalog := key (printf "/config/openstack/catalog/%s/data" $openstack_region) | parseJSON -}}'';
+
+  identityAdminUrl = ''
+    {{ with $catalog.identity.admin_url }}{{ . | regexReplaceAll "http://([^:/]+).*" "$1" }}{{ end }}'';
+
   cassandraConfig = {
     cassandra_server_list = ipList {
       service = "opencontrail-config-cassandra";
@@ -57,6 +64,16 @@ let
       service = "opencontrail-config-zookeeper";
       sep = ", ";
     };
+  };
+
+  keystoneConfig = {
+    inherit catalogOpenstack;
+    auth_host = identityAdminUrl;
+    auth_port = 35357;
+    auth_protocol = "http";
+    admin_tenant_name = "service";
+    admin_user = "opencontrail";
+    admin_password = secret "service_password";
   };
 
   containerIP = ''{{- file "/my-ip" -}}'';
@@ -140,11 +157,15 @@ in rec {
 
         disc_server_ip = services.discovery.dns;
         disc_server_port = services.discovery.port;
+
+        auth = "keystone";
+        multi_tenancy = "True";
       }
       // cassandraConfig
       // rabbitConfig
       // zookeeperConfig
-      // logConfig services.api;
+      // logConfig services.api
+      // keystoneConfig;
 
       IFMAP_SERVER = {
         ifmap_listen_ip = containerIP;
