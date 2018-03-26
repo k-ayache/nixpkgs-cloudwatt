@@ -3,15 +3,15 @@
 let bootstrap_pkgs = import nixpkgs {};
 in {
   pkgs = bootstrap_pkgs.fetchFromGitHub {
-    owner = "nlewo";
+    owner = "NixOS";
     repo = "nixpkgs";
-    # Belong to the branch release-17.09-cloudwatt
-    rev = "9d080dba21ec31cc824ad896dd66bb1b9c8108ac";
-    sha256 = "14kc5dgjx1mpmwr3ha9gpw24mxk6c80x011q5aj9p6a4clj4h8ac";};
+    # Belong to the branch release-18.03-cloudwatt
+    rev = "bccc513396e6ea410cae660e64510f417653bbe4";
+    sha256 = "1h8j6h5spal06k4pnvcxmxpi2v6sm9b88snkq25pkdpyyci1zdwi";};
   contrail = bootstrap_pkgs.fetchFromGitHub {
     owner = "nlewo";
     repo = "nixpkgs-contrail";
     # Belong to the master branch
-    rev = "9c06f11b9bbd9c2c847d0658a7d4025e05320e0d";
-    sha256 = "0y7asv7vj5hmg6r65ybbknlx153wy81pwz8xp60wi9pwhfzdfs86";};
+    rev = "72c1c7b08fe32d1172790fe0e104da9371f18f9c";
+    sha256 = "0vkaqa9hi8bgrpasgj5m0qnsbabfp5qdlaf69pfqgbh7x79x9lg0";};
   }

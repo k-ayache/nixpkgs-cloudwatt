@@ -19,7 +19,7 @@ in
             queryEngine schemaTransformer svcMonitor
             configUtils vrouterUtils
             vrouterNetns vrouterPortControl
-            webCore
+            # webCore
             test
             vms lib
             tools;
