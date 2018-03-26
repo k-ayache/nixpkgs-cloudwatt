@@ -1,8 +1,6 @@
-{ pkgs, contrail32Cw }:
+{ pkgs, contrail32Cw, waitFor }:
 
-let
-
-  dumpPath = "/tmp/dump.gson";
+rec {
 
   fsckConf = pkgs.writeTextFile {
     name = "vars.ctmpl";
@@ -28,18 +26,14 @@ let
     '';
   };
 
-  syncConf = pkgs.writeTextFile {
-    name = "vars.ctmpl";
-    text = ''
-      export GREMLIN_SYNC_CASSANDRA_SERVERS=opencontrail-config-cassandra.service
-      export GREMLIN_SYNC_RABBIT_SERVER=opencontrail-queue.service:5672
-      {{ with secret "secret/opencontrail" -}}
-      export GREMLIN_SYNC_RABBIT_PASSWORD={{ .Data.queue_password }}
-      {{- end }}
-      export GREMLIN_SYNC_RABBIT_VHOST=opencontrail
-      export GREMLIN_SYNC_RABBIT_USER=opencontrail
-    '';
-  };
+  fsckPreStart = ''
+    consul-template-wrapper -- -once \
+      -template "${fsckConf}:/run/consul-template-wrapper/vars" && \
+    source /run/consul-template-wrapper/vars
+    ${waitFluentd}
+  '';
+
+  dumpPath = "/tmp/dump.gson";
 
   serverConf = pkgs.writeTextFile {
     name = "server.yaml";
@@ -60,31 +54,131 @@ let
     '';
   };
 
-in {
+  log4jProperties = pkgs.writeTextFile {
+    name = "log4j.properties";
+    text = ''
+      log4j.rootLogger=INFO, stdout
+      log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+      log4j.appender.stdout.layout=org.apache.log4j.EnhancedPatternLayout
+      log4j.appender.stdout.layout.ConversionPattern=%d{HH:mm:ss.SSS} %C{1} [%p] %m%n%throwable{0}
 
-  serverStart = pkgs.writeShellScriptBin "gremlin-server" ''
+      log4j.logger.org.apache.tinkerpop.gremlin.driver.Connection=OFF
+      log4j.logger.org.apache.tinkerpop.gremlin.driver.ConnectionPool=OFF
+    '';
+  };
+
+  serverPreStart = ''
     export GREMLIN_DUMP_CASSANDRA_SERVERS=opencontrail-config-cassandra.service
+    # We can't modify the parent image, so we do it at runtime
+    if [ -f /etc/prometheus/prometheus_jmx_java8.yml ] && ! grep -q 'metrics<name'
+    then
+      echo "- pattern: 'metrics<name=(.+)><>(.+):'" >> /etc/prometheus/prometheus_jmx_java8.yml
+    fi
     if [ -f /etc/default/prometheus_jmx ]
     then
       source /etc/default/prometheus_jmx
       export JAVA_OPTIONS="$JAVA_OPTIONS -Dcom.sun.management.jmxremote $PROM_OPTS"
     fi
-    ${contrail32Cw.tools.contrailGremlin}/bin/gremlin-dump ${dumpPath} && \
-    ${contrail32Cw.tools.gremlinServer}/bin/gremlin-server ${serverConf}
+    export JAVA_OPTIONS="$JAVA_OPTIONS -Dlog4j.configuration=file:${log4jProperties}"
+    ${waitFluentd}
+    ${contrail32Cw.tools.contrailGremlin}/bin/gremlin-dump ${dumpPath}
   '';
 
-  syncStart = pkgs.writeShellScriptBin "gremlin-sync" ''
+  syncConf = pkgs.writeTextFile {
+    name = "vars.ctmpl";
+    text = ''
+      export GREMLIN_SYNC_CASSANDRA_SERVERS=opencontrail-config-cassandra.service
+      export GREMLIN_SYNC_RABBIT_SERVER=opencontrail-queue.service:5672
+      {{ with secret "secret/opencontrail" -}}
+      export GREMLIN_SYNC_RABBIT_PASSWORD={{ .Data.queue_password }}
+      {{- end }}
+      export GREMLIN_SYNC_RABBIT_VHOST=opencontrail
+      export GREMLIN_SYNC_RABBIT_USER=opencontrail
+      export GREMLIN_SYNC_RABBIT_QUEUE=gremlin_sync.$HOSTNAME
+      export GREMLIN_LOG_NO_COLOR=1
+    '';
+  };
+
+  syncPreStart = ''
     consul-template-wrapper -- -once \
       -template "${syncConf}:/run/consul-template-wrapper/vars" && \
-    source /run/consul-template-wrapper/vars && \
-    ${contrail32Cw.tools.contrailGremlin}/bin/gremlin-sync
+    source /run/consul-template-wrapper/vars
+    ${waitFluentd}
   '';
 
-  fsckStart = pkgs.writeShellScriptBin "gremlin-fsck" ''
-    consul-template-wrapper -- -once \
-      -template "${fsckConf}:/run/consul-template-wrapper/vars" && \
-    source /run/consul-template-wrapper/vars && \
-    ${contrail32Cw.tools.contrailApiCliWithExtra}/bin/contrail-api-cli fsck
+  waitFluentd = ''
+    ${waitFor}/bin/wait-for 127.0.0.1:24225 -t 30 -q
   '';
+
+  fluentdServer = pkgs.writeTextFile {
+      name = "fluent.conf";
+      text = ''
+        <source>
+          @type named_pipe
+          path /tmp/gremlin-sync
+          time_format %H:%M:%S.%L
+          format /^(?<time>[^ ]+) (?<funcname>[^ ]+) \[(?<level>[^\]]+)\] (?<message>.*)$/
+          tag log.gremlin-sync
+        </source>
+
+        <source>
+          @type named_pipe
+          path /tmp/gremlin-server
+          time_format %H:%M:%S.%L
+          format /^(?<time>[^ ]+) (?<classname>[^ ]+) \[(?<level>[^\]]+)\] (?<message>.*)$/
+          tag log.gremlin-server
+        </source>
+
+        # used to check that fluentd is initialized
+        <source>
+          @type forward
+          port 24225
+        </source>
+
+        <filter>
+          @type generic_metadata
+        </filter>
+
+        <match log.**>
+          @type forward
+          time_as_integer true
+          <server>
+            name local
+            host fluentd.localdomain
+          </server>
+        </match>
+    '';
+  };
+
+  fluentdFsck = pkgs.writeTextFile {
+    name = "fluentd.conf";
+    text = ''
+        <source>
+          @type named_pipe
+          path /tmp/gremlin-fsck
+          format json
+          tag log.gremlin-fsck
+        </source>
+
+        # used to check that fluentd is initialized
+        <source>
+          @type forward
+          port 24225
+        </source>
+
+        <filter>
+          @type generic_metadata
+        </filter>
+
+        <match log.**>
+          @type forward
+          time_as_integer true
+          <server>
+            name local
+            host fluentd.localdomain
+          </server>
+        </match>
+    '';
+  };
 
 }

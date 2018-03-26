@@ -1,10 +1,10 @@
-{ pkgs, lib, contrail32Cw, locksmith, contrailPath, nixpkgs, waitFor }:
+{ pkgs, lib, contrail32Cw, locksmith, contrailPath, nixpkgs, waitFor, fluentdCw }:
 
 let
 
   config = {
     contrail = import ./config/contrail.nix pkgs;
-    gremlin = import ./config/gremlin/config.nix { inherit pkgs contrail32Cw; };
+    gremlin = import ./config/gremlin/config.nix { inherit pkgs contrail32Cw waitFor; };
   };
 
   buildContrailImageWithPerp = { name, command, preStartScript }:
@@ -110,27 +110,54 @@ in
     services = [
       {
         name = "gremlin-server";
-        command = "${config.gremlin.serverStart}/bin/gremlin-server";
+        preStartScript = config.gremlin.serverPreStart;
         chdir = "${contrail32Cw.tools.gremlinServer}/opt";
-        preStartScript = ''
-          # We can't modify the parent image, so we do it at runtime
-          if [ -f /etc/prometheus/prometheus_jmx_java8.yml ] && ! grep -q 'metrics<name'
-          then
-            echo "- pattern: 'metrics<name=(.+)><>(.+):'" >> /etc/prometheus/prometheus_jmx_java8.yml
-          fi
+        command = ''
+          rundeux ${contrail32Cw.tools.gremlinServer}/bin/gremlin-server ${config.gremlin.serverConf} :: ${pkgs.coreutils}/bin/tee /tmp/gremlin-server
         '';
       }
-      { name = "gremlin-sync"; command = "${config.gremlin.syncStart}/bin/gremlin-sync"; }
+      {
+        name = "gremlin-sync";
+        preStartScript = config.gremlin.syncPreStart;
+        command = ''
+          rundeux ${contrail32Cw.tools.contrailGremlin}/bin/gremlin-sync :: ${pkgs.coreutils}/bin/tee /tmp/gremlin-sync
+        '';
+      }
+      {
+        name = "fluentd";
+        preStartScript = ''
+          # named pipes to collect services logs
+          [ ! -p /tmp/gremlin-server ] && mkfifo /tmp/gremlin-server
+          [ ! -p /tmp/gremlin-sync ] && mkfifo /tmp/gremlin-sync
+        '';
+        command = "${fluentdCw}/bin/fluentd --no-supervisor -c ${config.gremlin.fluentdServer}";
+      }
     ];
     contents = [
       contrail32Cw.tools.contrailGremlin
     ];
   };
 
-  gremlinFsck = lib.buildImageWithPerp {
+  gremlinFsck = lib.buildImageWithPerps {
     name = "gremlin/fsck";
     fromImage = lib.images.kubernetesBaseImage;
-    command = "${config.gremlin.fsckStart}/bin/gremlin-fsck";
+    services = [
+      {
+        name = "gremlin-fsck";
+        preStartScript = config.gremlin.fsckPreStart;
+        command = ''
+          rundeux ${contrail32Cw.tools.contrailApiCliWithExtra}/bin/contrail-api-cli fsck :: ${pkgs.coreutils}/bin/tee /tmp/gremlin-fsck
+        '';
+      }
+      {
+        name = "fluentd";
+        preStartScript = ''
+          # named pipe to collect service logs
+          [ ! -p /tmp/gremlin-fsck ] && mkfifo /tmp/gremlin-fsck
+        '';
+        command = "${fluentdCw}/bin/fluentd --no-supervisor -c ${config.gremlin.fluentdFsck}";
+      }
+    ];
   };
 
 }
