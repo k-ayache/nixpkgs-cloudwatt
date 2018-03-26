@@ -4,7 +4,7 @@
 }:
 
 let pkgs = import nixpkgs {};
-    lib =  import ./pkgs/lib pkgs;
+    lib =  import ./pkgs/lib { inherit pkgs cwPkgs; };
     deps =  import ./pkgs/deps.nix pkgs;
 
     callPackage = pkgs.lib.callPackageWith (

@@ -4,7 +4,7 @@ let
 
   config = {
     contrail = import ./config/contrail.nix pkgs;
-    gremlin = import ./config/gremlin/config.nix { inherit pkgs contrail32Cw waitFor; };
+    gremlin = import ./config/gremlin/config.nix { inherit pkgs contrail32Cw; };
   };
 
   buildContrailImageWithPerp = { name, command, preStartScript }:
@@ -112,25 +112,26 @@ in
         name = "gremlin-server";
         preStartScript = config.gremlin.serverPreStart;
         chdir = "${contrail32Cw.tools.gremlinServer}/opt";
-        command = ''
-          rundeux ${contrail32Cw.tools.gremlinServer}/bin/gremlin-server ${config.gremlin.serverConf} :: ${pkgs.coreutils}/bin/tee /tmp/gremlin-server
-        '';
+        command = "${contrail32Cw.tools.gremlinServer}/bin/gremlin-server ${config.gremlin.serverConf}";
+        fluentd = {
+          source = {
+            type = "stdout";
+            time_format = "%H:%M:%S.%L";
+            format = ''/^(?<time>[^ ]+) (?<classname>[^ ]+) \[(?<level>[^\]]+)\] (?<message>.*)$/'';
+          };
+        };
       }
       {
         name = "gremlin-sync";
         preStartScript = config.gremlin.syncPreStart;
-        command = ''
-          rundeux ${contrail32Cw.tools.contrailGremlin}/bin/gremlin-sync :: ${pkgs.coreutils}/bin/tee /tmp/gremlin-sync
-        '';
-      }
-      {
-        name = "fluentd";
-        preStartScript = ''
-          # named pipes to collect services logs
-          [ ! -p /tmp/gremlin-server ] && mkfifo /tmp/gremlin-server
-          [ ! -p /tmp/gremlin-sync ] && mkfifo /tmp/gremlin-sync
-        '';
-        command = "${fluentdCw}/bin/fluentd --no-supervisor -c ${config.gremlin.fluentdServer}";
+        command = "${contrail32Cw.tools.contrailGremlin}/bin/gremlin-sync";
+        fluentd = {
+          source = {
+            type = "stdout";
+            time_format = "%H:%M:%S.%L";
+            format = ''/^(?<time>[^ ]+) (?<funcname>[^ ]+) \[(?<level>[^\]]+)\] (?<message>.*)$/'';
+          };
+        };
       }
     ];
     contents = [
@@ -145,17 +146,13 @@ in
       {
         name = "gremlin-fsck";
         preStartScript = config.gremlin.fsckPreStart;
-        command = ''
-          rundeux ${contrail32Cw.tools.contrailApiCliWithExtra}/bin/contrail-api-cli fsck :: ${pkgs.coreutils}/bin/tee /tmp/gremlin-fsck
-        '';
-      }
-      {
-        name = "fluentd";
-        preStartScript = ''
-          # named pipe to collect service logs
-          [ ! -p /tmp/gremlin-fsck ] && mkfifo /tmp/gremlin-fsck
-        '';
-        command = "${fluentdCw}/bin/fluentd --no-supervisor -c ${config.gremlin.fluentdFsck}";
+        command = "${contrail32Cw.tools.contrailApiCliWithExtra}/bin/contrail-api-cli fsck";
+        fluentd = {
+          source = {
+            type = "stdout";
+            format = "json";
+          };
+        };
       }
     ];
   };
