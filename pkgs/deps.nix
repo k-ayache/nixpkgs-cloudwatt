@@ -20,7 +20,7 @@ let
         ${pkgs.patchelf}/bin/patchelf --set-rpath ${pkgs.stdenv.glibc}/lib $out//usr/src/linux-headers-${version}/scripts/$i
       done
 
-      ln -sf $out/usr/src/linux-headers-${version} $out/lib/modules/${version}/build
+      ln -sfT $out/usr/src/linux-headers-${version} $out/lib/modules/${version}/build
     '';
   };
 in
