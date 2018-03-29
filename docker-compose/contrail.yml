@@ -61,9 +61,9 @@ services:
       - "SERVICE_8443_NAME=opencontrail-ifmap"
       - "SERVICE_8084_IGNORE=true"
     ports:
-      - "8082:8082"
-      - "8443:8443"
-      - "8084:8084"
+      - "8082"
+      - "8443"
+      - "8084"
     depends_on:
       - zookeeper
       - cassandra
@@ -78,13 +78,12 @@ services:
     labels:
       - "SERVICE_NAME=opencontrail-discovery"
     ports:
-      - "5998:5998"
+      - "5998"
     depends_on:
       - api
 
   "control":
     image: "opencontrail/control:latest"
-    scale: 2
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
@@ -194,7 +193,7 @@ services:
     labels:
       - "SERVICE_NAME=opencontrail-vrouter"
     ports:
-      - "7085:8085"
+      - "8085"
     depends_on:
       - api
       - vrouter-master

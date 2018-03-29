@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
+# create namespaces in each vrouter and check ping between them
 vm=1
 for vrouter in vrouter-master vrouter
 do
   ip="$(curl -s localhost:8500/v1/catalog/service/opencontrail-$vrouter | jq -r .[].ServiceAddress)"
-  echo "create namespace in vrouter$vm ..."
+  echo -e "create namespace in vrouter$vm ...\n"
   ssh -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$ip "netns-daemon-start -n default-domain:default-project:vn1 -s api vm${vm}0"
   ((vm++))
 done
@@ -14,4 +15,40 @@ add=$(ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$
 
 ip="$(curl -s localhost:8500/v1/catalog/service/opencontrail-vrouter-master | jq -r .[].ServiceAddress)"
 echo "ping from vrouter-master to vrouter"
-ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$ip ip netns exec ns-vm10 ping -c 2 $add  &> /dev/null && echo "ping success" || echo "ping failed"
+ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$ip ip netns exec ns-vm10 ping -c 2 $add  &> /dev/null && echo -e "ping success\n" || echo -e "ping failed\n"
+
+# check the peering of controllers
+
+if [ $(curl -s localhost:8500/v1/catalog/service/opencontrail-control | jq length) != 2 ]
+then
+  exit 0
+fi
+echo "check if controllers peering ..."
+
+ip=$(curl -s localhost:8500/v1/catalog/service/opencontrail-control | jq -r .[0].ServiceAddress)
+cmd1=$(contrail-introspect-cli controller-route  $ip default-domain:default-project:vn1:vn1)
+
+ip=$(curl -s localhost:8500/v1/catalog/service/opencontrail-control | jq -r .[1].ServiceAddress)
+cmd2=$(contrail-introspect-cli controller-route  $ip default-domain:default-project:vn1:vn1)
+
+if [ "$cmd1" = "$cmd2" ] ;
+then
+  echo -e "Yes, they are \n"
+else
+  echo -e "No, prefix routes in the different controllers are not the same\n"
+fi
+
+echo "check if api peering ..."
+
+ip=$(curl -s localhost:8500/v1/catalog/service/opencontrail-api | jq -r .[0].ServiceAddress)
+cmd1=$(contrail-api-cli -H $ip ls -l virtual-machine)
+
+ip=$(curl -s localhost:8500/v1/catalog/service/opencontrail-api | jq -r .[1].ServiceAddress)
+cmd2=$(contrail-api-cli -H $ip ls -l virtual-machine)
+
+if [ "$cmd1" = "$cmd2" ] ;
+then
+  echo -e "Yes, they are\n"
+else
+  echo -e "No, ressources in the different api are not the same\n"
+fi
