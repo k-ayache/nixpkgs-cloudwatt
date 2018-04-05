@@ -6,12 +6,12 @@ in {
     owner = "NixOS";
     repo = "nixpkgs";
     # Belong to the branch release-18.03-cloudwatt
-    rev = "bccc513396e6ea410cae660e64510f417653bbe4";
-    sha256 = "1h8j6h5spal06k4pnvcxmxpi2v6sm9b88snkq25pkdpyyci1zdwi";};
+    rev = "46adfec9f9295ecdd8b10578cd898ba0133d0278";
+    sha256 = "0lxys8g7px4ds4892pkvijhsyyh9chzmwck71m4vg6byh27i96v0";};
   contrail = bootstrap_pkgs.fetchFromGitHub {
     owner = "nlewo";
     repo = "nixpkgs-contrail";
     # Belong to the master branch
-    rev = "4a5b598d1e0dcb7c7c07e042e37fecc3b72c2d26";
-    sha256 = "1srijcmv7y9g4xpmfm55yh3210pzl0w8qdzzjfik72a2my6956ry";};
+    rev = "d5f922df2140fd76595cd953545040ad25e62df0";
+    sha256 = "1pp6gqqyyw89lvgs42csjqvk9f84p0s6f29s2w1f45xqjjr7l8ky";};
   }
