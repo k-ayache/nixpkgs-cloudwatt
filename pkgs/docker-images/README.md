@@ -57,6 +57,8 @@ With `lib.buildImageWithPerps` or `lib.buildImageWithPerp` you can provide a
 
 With this configuration `stdout` of the command will be captured by fluentd.
 The events will by tagged `log.bar` as `bar` is the image name and also the service name.
+However it is possible to change the tag by setting a `tag` attribute in the source
+definition.
 
 It works with multiple services as well:
 
@@ -126,6 +128,17 @@ For example to use syslog:
 
 Use the same options names as in fluentd configuration.
 
+### Predefined filters
+
+Only one filter is included by default:
+
+    <filter>
+      @type generic_metadata
+    </filter>
+
+This filter add some metadata on all log events: container id,
+application name, service name, kubernetes pod name...
+
 ### Adding custom filters
 
 By default no filtering is done but you can provide your own filters:
@@ -149,6 +162,21 @@ By default no filtering is done but you can provide your own filters:
         '';
       };
     }
+
+### Predefined outputs
+
+Currenlty outputs are not configurable. Here is the default configuration:
+
+    <match log.**>
+      @type forward
+      time_as_integer true
+      <server>
+        name local
+        host fluentd.localdomain
+      </server>
+    </match>
+
+All events are forwarded to fluentd.localdomain.
 
 ### Checking the result configuration
 

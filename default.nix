@@ -13,6 +13,7 @@ let pkgs = import nixpkgs {};
       pkgs // cwPkgs // { inherit pkgs lib deps callPackage; });
 
     cwPkgs = rec {
+
       ci = callPackage ./ci { };
 
       perp = callPackage ./pkgs/perp { };
@@ -37,6 +38,11 @@ let pkgs = import nixpkgs {};
       waitFor = callPackage ./pkgs/wait-for {};
 
       test.hydra = callPackage ./test/hydra.nix { pkgs_path = nixpkgs; hydraImage = ci.hydraImage; };
+
+      # to run these tests:
+      # nix-instantiate --eval --strict -A test.lib
+      test.lib = callPackage ./pkgs/lib/tests.nix {};
+
     };
 
 in cwPkgs

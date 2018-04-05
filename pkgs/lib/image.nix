@@ -1,117 +1,6 @@
-{ pkgs, cwPkgs }:
+{ pkgs, lib, ... }:
 
-let
-
-  enableFluentdForService = service: service ? fluentd && service.fluentd ? source && service.fluentd.source ? type;
-
-  captureServiceStdout = service:
-    service ? fluentd && service.fluentd ? source && captureSourceStdout service.fluentd.source;
-
-  captureSourceStdout = source:
-    source ? type && source.type == "stdout";
-
-  attrsToFluentd = s:
-    builtins.concatStringsSep "\n"
-      (pkgs.lib.mapAttrsToList (name: value:
-        # support for fluentd 1.x
-        if builtins.isAttrs value then
-          ''
-            <${name}>
-            ${attrsToFluentd value}
-            </${name}>
-          ''
-        else
-          "  ${if name == "type" then "@type" else name} ${value}"
-      ) s);
-
-  sanitizeFluentdSource = name: source:
-    if captureSourceStdout source then
-      source // {
-        type = "named_pipe";
-        path = "/tmp/${name}";
-        # format is required
-        format = if source ? format then source.format else "none";
-      }
-    else
-      source;
-
-  genFluentdSource = { name, fluentd ? {}, ... }@service:
-    if enableFluentdForService service then
-      ''
-        <source>
-        ${attrsToFluentd (sanitizeFluentdSource name fluentd.source)}
-          tag log.${name}
-        </source>
-      ''
-    else "";
-
-  genFluentdFilters = { fluentd ? {}, ... }:
-    if fluentd ? filters then
-      "${fluentd.filters}\n"
-    else
-      "";
-
-  genFluentdConf = services: pkgs.writeTextFile {
-    name = "fluentd.conf";
-    text = ''
-      # used to check that fluentd is initialized
-      <source>
-        @type forward
-        port 24225
-      </source>
-      ${pkgs.lib.concatStrings (map genFluentdSource services)}
-      <filter>
-        @type generic_metadata
-      </filter>
-      ${pkgs.lib.concatStrings (map genFluentdFilters services)}
-      <match log.**>
-        @type forward
-        time_as_integer true
-        <server>
-          name local
-          host fluentd.localdomain
-        </server>
-      </match>
-    '';
-  };
-
-  addFluentdService = services:
-    let
-      enableFluentd = builtins.any enableFluentdForService services;
-      newServiceCommand = s:
-        if captureServiceStdout s then
-          "rundeux ${s.command} :: ${pkgs.coreutils}/bin/tee /tmp/${s.name}"
-        else
-          s.command;
-      newService = s:
-        if enableFluentdForService s then
-          s // {
-            preStartScript = ''
-              ${s.preStartScript}
-              ${cwPkgs.waitFor}/bin/wait-for 127.0.0.1:24225 -t 30 -q
-            '';
-            command = newServiceCommand s;
-          }
-        else
-          s;
-      newServices = map newService services;
-      fluentdPreStart = pkgs.lib.concatStrings (map ({ name, fluentd ? {}, ... }@service:
-        if captureServiceStdout service then
-          "[ ! -p /tmp/${name} ] && mkfifo /tmp/${name}\n"
-        else
-          ""
-      ) services);
-    in
-      if enableFluentd then
-        newServices ++ [{
-          name = "fluentd";
-          preStartScript = fluentdPreStart;
-          command = "${cwPkgs.fluentdCw}/bin/fluentd --no-supervisor -c ${genFluentdConf services}";
-        }]
-      else
-        services;
-
-in rec {
+rec {
   # We use environment variables REGISTRY_URL, REGISTRY_USERNAME,
   # REGISTRY_PASSWORD to specify the url and credentials of the
   # registry.
@@ -214,7 +103,7 @@ in rec {
       config = {
         Cmd = [ "/usr/sbin/perpd" ];
       };
-      contents = map genPerpRcMain (addFluentdService services) ++ contents;
+      contents = map genPerpRcMain (lib.addFluentdService services) ++ contents;
       extraCommands = ''
         ${pkgs.findutils}/bin/find etc/perp -type d -exec chmod +t {} \;
       '' + extraCommands;

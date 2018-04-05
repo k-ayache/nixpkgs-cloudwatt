@@ -1,4 +1,4 @@
-pkgs:
+{ pkgs, ... }:
 
 with import ../deps.nix pkgs;
 
