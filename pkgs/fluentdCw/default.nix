@@ -4,5 +4,5 @@ let
   plugins = ./plugins;
 in
   writeShellScriptBin "fluentd" ''
-    ${fluentd}/bin/fluentd -p ${plugins} $@
+    exec ${fluentd}/bin/fluentd -p ${plugins} $@
   ''
