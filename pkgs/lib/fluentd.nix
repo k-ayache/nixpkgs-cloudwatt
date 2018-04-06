@@ -4,6 +4,8 @@ with builtins;
 
 rec {
 
+  enableFluentd = any enableFluentdForService;
+
   enableFluentdForService = pkgs.lib.hasAttrByPath [ "fluentd" "source" "type" ];
 
   captureServiceStdout = service:
@@ -102,7 +104,6 @@ rec {
 
   addFluentdService = services:
     let
-      enableFluentd = any enableFluentdForService services;
       newServiceCommand = s:
         if captureServiceStdout s then
           "rundeux ${s.command} :: ${pkgs.coreutils}/bin/tee /tmp/${s.name}"
@@ -127,12 +128,26 @@ rec {
           ""
       ) services);
     in
-      if enableFluentd then
-        newServices ++ [{
-          name = "fluentd";
-          preStartScript = fluentdPreStart;
-          command = "${cwPkgs.fluentdCw}/bin/fluentd --no-supervisor -c ${genFluentdConf services}";
-        }]
+      newServices ++ [{
+        name = "fluentd";
+        preStartScript = fluentdPreStart;
+        command = "${cwPkgs.fluentdCw}/bin/fluentd --no-supervisor -c ${genFluentdConf services}";
+      }];
+
+  # Insert fluentd in image
+  # 1. add fluentd package as a parent layer so that it is shared between images
+  # 2. add fluentd perp service and configuration
+  insertFluentd = imageDesc:
+    let
+      layer = pkgs.dockerTools.buildImage {
+        name = "fluentd";
+        fromImage = imageDesc.fromImage;
+        contents = [ cwPkgs.fluentdCw ];
+      };
+    in
+      if enableFluentd imageDesc.services then
+        imageDesc // { fromImage = layer; services = addFluentdService imageDesc.services; }
       else
-        services;
+        imageDesc;
+
 }
