@@ -12,7 +12,7 @@ rec {
   captureSourceStdout = source:
     source ? type && source.type == "stdout";
 
-  attrsToFluentd = s:
+  attrsToFluentd = set:
     concatStringsSep "\n"
       (pkgs.lib.mapAttrsToList (name: value:
         let
@@ -20,15 +20,19 @@ rec {
               else if isBool value then (if value == true then "true" else "false")
               else if isString value then value
               else if isAttrs value then attrsToFluentd value
+              else if isList value then map attrsToFluentd value
               else abort "attrsToFluentd: value not supported";
           n = if name == "type" then "@type" else name;
+          subSection = n: v: "  <${n}>\n${v}\n  </${n}>";
         in
           # support for fluentd 1.x
           if isAttrs value then
-            "  <${n}>\n${v}\n  </${n}>"
+            subSection n v
+          else if isList value then
+            concatStringsSep "\n" (map (subSection n) v)
           else
             "  ${n} ${v}"
-      ) s);
+      ) set);
 
   sanitizeFluentdSource = name: source:
     let
@@ -56,9 +60,19 @@ rec {
       ''
     else "";
 
-  genFluentdFilters = { fluentd ? {}, ... }:
+  genFluentdFilter = name: filter:
+    let
+      start = if filter ? tag then "<filter ${filter.tag}>" else "<filter log.${name}>";
+    in
+      ''
+        ${start}
+        ${attrsToFluentd (pkgs.lib.filterAttrs (n: v: n != "tag") filter)}
+        </filter>
+      '';
+
+  genFluentdFilters = { name, fluentd ? {}, ... }:
     if fluentd ? filters then
-      "${fluentd.filters}\n"
+      map (genFluentdFilter name) fluentd.filters
     else
       "";
 

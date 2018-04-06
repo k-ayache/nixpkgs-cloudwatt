@@ -127,4 +127,80 @@ runTests {
         expected = 3;
       };
 
+  testFilters = {
+    expr = lib.fluentd.genFluentdFilters {
+      name = "foo";
+      fluentd.filters = [
+        {
+          type = "grep";
+          regexp = [
+            {
+              key = "message";
+              pattern = "cool";
+            }
+            {
+              key = "hostname";
+              pattern = "^web\d+\.example\.com$";
+            }
+          ];
+        }
+        {
+          type = "parser";
+          key_name = "message";
+          parse = {
+            type = "regexp";
+            expression = ''
+              /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)$/'';
+            time_format = "%d/%b/%Y:%H:%M:%S %z";
+          };
+        }
+      ];
+    };
+    expected = [
+      ''
+        <filter log.foo>
+          <regexp>
+          key message
+          pattern cool
+          </regexp>
+          <regexp>
+          key hostname
+          pattern ^webd+.example.com$
+          </regexp>
+          @type grep
+        </filter>
+      ''
+      ''
+        <filter log.foo>
+          key_name message
+          <parse>
+          expression /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)$/
+          time_format %d/%b/%Y:%H:%M:%S %z
+          @type regexp
+          </parse>
+          @type parser
+        </filter>
+      ''
+    ];
+  };
+
+  testFilterTag = {
+    expr = lib.fluentd.genFluentdFilter "svc" {
+      type = "grep";
+      tag = "**";
+      regexp = {
+        key = "message";
+        pattern = "cool";
+      };
+    };
+    expected = ''
+      <filter **>
+        <regexp>
+        key message
+        pattern cool
+        </regexp>
+        @type grep
+      </filter>
+    '';
+  };
 }

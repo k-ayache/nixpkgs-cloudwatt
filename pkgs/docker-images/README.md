@@ -141,7 +141,7 @@ application name, service name, kubernetes pod name...
 
 ### Adding custom filters
 
-By default no filtering is done but you can provide your own filters:
+You can provide additional filters for your service.
 
     {
       name = "service2";
@@ -151,17 +151,64 @@ By default no filtering is done but you can provide your own filters:
           type = "syslog";
           port = 1234;
         };
-        filters = ''
-          <filter log.service2>
-            @type grep
-            <regexp>
-              key message
-              pattern cool
-            </regexp>
-          </filter>
-        '';
+        filters = [
+          {
+            type = "grep";
+            regexp = {
+              key = "message";
+              pattern = "cool";
+            };
+          }
+        ];
       };
     }
+
+This will create this filter:
+
+    <filter log.service2>
+      @type grep
+      <regexp>
+        key message
+        pattern cool
+      </regexp>
+    </filter>
+
+If `tag` attribute is ommited the filter default to `log.{service_name}`. To specify a different tag,
+define a `tag` attribute in the filter set. It is demonstrated below.
+
+In the the case of `grep` filter it is possible to define multiple regexp blocks:
+
+    <filter **>
+      @type grep
+      <regexp>
+        key message
+        pattern cool
+      </regexp>
+      <regexp>
+        key hostname
+        pattern ^web\d+\.example\.com$
+      </regexp>
+    </filter>
+
+With nix, it is impossible to use the same attribute in sets multiple times.
+You can use a list to declare multiple sections with the same tag:
+
+    filters = [
+      {
+        type = "grep";
+        tag = "**";
+        regexp = [
+          {
+            key = "message";
+            pattern = "cool";
+          }
+          {
+            key = "hostname";
+            pattern = "^web\d+\.example\.com$";
+          }
+        ];
+      }
+    ];
 
 ### Predefined outputs
 
@@ -169,6 +216,7 @@ Currenlty outputs are not configurable. Here is the default configuration:
 
     <match log.**>
       @type forward
+      # used for v0.12 - v0.14 compatibility
       time_as_integer true
       <server>
         name local
