@@ -1,4 +1,4 @@
-pkgs:
+{ pkgs, lib, ... }:
 
 rec {
   # We use environment variables REGISTRY_URL, REGISTRY_USERNAME,
@@ -41,7 +41,14 @@ rec {
     ${pkgs.bash}/bin/bash -c "${cmd}; perpctl X $SVNAME"
   '';
 
-  genPerpRcMain = { name, command, preStartScript ? "", chdir ? "", oneshot ? false }: pkgs.writeTextFile {
+  genPerpRcMain = {
+    name,
+    command,
+    preStartScript ? "",
+    chdir ? "",
+    oneshot ? false,
+    ...
+  }: pkgs.writeTextFile {
     name = "${name}-rc.main";
     executable = true;
     destination = "/etc/perp/${name}/rc.main";
@@ -71,11 +78,22 @@ rec {
   };
 
   # Build an image where 'command' is started by Perp
-  buildImageWithPerp = { name, fromImage, command, preStartScript ? "", contents ? [], extraCommands ? "" }:
+  buildImageWithPerp = {
+    name,
+    fromImage,
+    command,
+    preStartScript ? "",
+    contents ? [],
+    extraCommands ? "",
+    fluentd ? {},
+  }:
     buildImageWithPerps {
       inherit name fromImage contents extraCommands;
       services = [
-        { inherit preStartScript command; name = builtins.replaceStrings ["/"] ["-"] name; }
+        {
+          inherit preStartScript command fluentd;
+          name = builtins.replaceStrings ["/"] ["-"] name;
+        }
       ];
     };
 
@@ -85,7 +103,7 @@ rec {
       config = {
         Cmd = [ "/usr/sbin/perpd" ];
       };
-      contents = map genPerpRcMain services ++ contents;
+      contents = map genPerpRcMain (lib.addFluentdService services) ++ contents;
       extraCommands = ''
         ${pkgs.findutils}/bin/find etc/perp -type d -exec chmod +t {} \;
       '' + extraCommands;

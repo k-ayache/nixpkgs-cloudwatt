@@ -1,4 +1,4 @@
-{ pkgs, contrail32Cw, waitFor }:
+{ pkgs, contrail32Cw }:
 
 rec {
 
@@ -30,7 +30,6 @@ rec {
     consul-template-wrapper -- -once \
       -template "${fsckConf}:/run/consul-template-wrapper/vars" && \
     source /run/consul-template-wrapper/vars
-    ${waitFluentd}
   '';
 
   dumpPath = "/tmp/dump.gson";
@@ -80,7 +79,6 @@ rec {
       export JAVA_OPTIONS="$JAVA_OPTIONS -Dcom.sun.management.jmxremote $PROM_OPTS"
     fi
     export JAVA_OPTIONS="$JAVA_OPTIONS -Dlog4j.configuration=file:${log4jProperties}"
-    ${waitFluentd}
     ${contrail32Cw.tools.contrailGremlin}/bin/gremlin-dump ${dumpPath}
   '';
 
@@ -103,82 +101,6 @@ rec {
     consul-template-wrapper -- -once \
       -template "${syncConf}:/run/consul-template-wrapper/vars" && \
     source /run/consul-template-wrapper/vars
-    ${waitFluentd}
   '';
-
-  waitFluentd = ''
-    ${waitFor}/bin/wait-for 127.0.0.1:24225 -t 30 -q
-  '';
-
-  fluentdServer = pkgs.writeTextFile {
-      name = "fluent.conf";
-      text = ''
-        <source>
-          @type named_pipe
-          path /tmp/gremlin-sync
-          time_format %H:%M:%S.%L
-          format /^(?<time>[^ ]+) (?<funcname>[^ ]+) \[(?<level>[^\]]+)\] (?<message>.*)$/
-          tag log.gremlin-sync
-        </source>
-
-        <source>
-          @type named_pipe
-          path /tmp/gremlin-server
-          time_format %H:%M:%S.%L
-          format /^(?<time>[^ ]+) (?<classname>[^ ]+) \[(?<level>[^\]]+)\] (?<message>.*)$/
-          tag log.gremlin-server
-        </source>
-
-        # used to check that fluentd is initialized
-        <source>
-          @type forward
-          port 24225
-        </source>
-
-        <filter>
-          @type generic_metadata
-        </filter>
-
-        <match log.**>
-          @type forward
-          time_as_integer true
-          <server>
-            name local
-            host fluentd.localdomain
-          </server>
-        </match>
-    '';
-  };
-
-  fluentdFsck = pkgs.writeTextFile {
-    name = "fluentd.conf";
-    text = ''
-        <source>
-          @type named_pipe
-          path /tmp/gremlin-fsck
-          format json
-          tag log.gremlin-fsck
-        </source>
-
-        # used to check that fluentd is initialized
-        <source>
-          @type forward
-          port 24225
-        </source>
-
-        <filter>
-          @type generic_metadata
-        </filter>
-
-        <match log.**>
-          @type forward
-          time_as_integer true
-          <server>
-            name local
-            host fluentd.localdomain
-          </server>
-        </match>
-    '';
-  };
 
 }
