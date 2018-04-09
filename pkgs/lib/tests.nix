@@ -100,30 +100,31 @@ runTests {
     '';
   };
 
-  testAddFluentdService1 =
+  testInsertFluentd =
     let
-      services = [ { name = "svc"; } ];
-    in
-      {
-        expr = builtins.length (lib.fluentd.addFluentdService services);
-        expected = 1;
+      imageDesc = lib.fluentd.insertFluentd {
+        services = [
+          { name = "svc1"; }
+          { name = "svc2"; }
+        ];
       };
-
-  testAddFluentdService2 =
-    let
-      services = [ { name = "svc1"; } { name = "svc2";} ];
     in
       {
-        expr = builtins.length (lib.fluentd.addFluentdService services);
+        expr = builtins.length imageDesc.services;
         expected = 2;
       };
 
-  testAddFluentdService3 =
+  testInsertFluentd2 =
     let
-      services = [ { name = "svc1"; } { name = "svc2"; fluentd = { source = { type = "stdout"; }; }; } ];
+      imageDesc = lib.fluentd.insertFluentd {
+        services = [
+          { name = "svc1"; }
+          { name = "svc2"; fluentd = { source = { type = "stdout"; }; }; }
+        ];
+      };
     in
       {
-        expr = builtins.length (lib.fluentd.addFluentdService services);
+        expr = builtins.length imageDesc.services;
         expected = 3;
       };
 

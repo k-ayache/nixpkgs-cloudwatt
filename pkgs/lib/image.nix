@@ -97,17 +97,21 @@ rec {
       ];
     };
 
-  buildImageWithPerps = { name, fromImage ? null, services, contents ? [], extraCommands ? "" }:
-    pkgs.dockerTools.buildImage {
-      inherit name fromImage;
-      config = {
-        Cmd = [ "/usr/sbin/perpd" ];
+  buildImageWithPerps = { name, fromImage ? null, services, contents ? [], extraCommands ? "" }@args:
+    let
+      newArgs = lib.fluentd.insertFluentd args;
+    in
+      pkgs.dockerTools.buildImage {
+        inherit name;
+        fromImage = newArgs.fromImage;
+        config = {
+          Cmd = [ "/usr/sbin/perpd" ];
+        };
+        contents = map genPerpRcMain newArgs.services ++ contents;
+        extraCommands = ''
+          ${pkgs.findutils}/bin/find etc/perp -type d -exec chmod +t {} \;
+        '' + extraCommands;
       };
-      contents = map genPerpRcMain (lib.addFluentdService services) ++ contents;
-      extraCommands = ''
-        ${pkgs.findutils}/bin/find etc/perp -type d -exec chmod +t {} \;
-      '' + extraCommands;
-    };
 
   # This helper takes a Docker Compose file to generate a script that
   # loads Docker images used by this stack and run docker compose.  Be

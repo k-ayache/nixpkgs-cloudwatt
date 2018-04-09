@@ -18,8 +18,6 @@ let
 
     inherit (tools) runUbuntuVmScript;
 
-    inherit (fluentd) addFluentdService;
-
   };
 
 in lib
