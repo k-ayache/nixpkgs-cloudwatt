@@ -18,8 +18,8 @@
 
 let
   pkgs = import nixpkgs {};
-  lib = import ./pkgs/lib pkgs;
-  default = import ./default.nix { inherit contrail nixpkgs; };
+  cwPkgs = import ./default.nix { inherit contrail nixpkgs; };
+  lib = import ./pkgs/lib { inherit pkgs cwPkgs; };
   getCommitId = pkgs.runCommand "nixpkgs-cloudwatt-commit-id" { buildInputs = [ pkgs.git ]; } ''
     git -C ${cloudwatt} rev-parse HEAD > $out
   '';
@@ -30,20 +30,20 @@ let
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.publishDebianPkg aptlyUrl v unsetProxyForAptly)) drvs;
 
   # Since lib.buildVrouter is not a derivation, Hydra generates an evaluation error
-  contrail32Cw = default.contrail32Cw // { lib.buildVrouter = {}; };
+  contrail32Cw = cwPkgs.contrail32Cw // { lib.buildVrouter = {}; };
 
 in
 {
-  inherit (default) debianPackages dockerImages test;
+  inherit (cwPkgs) debianPackages dockerImages test;
   inherit contrail32Cw;
 
-  ci = { hydraImage = default.ci.hydraImage; }
+  ci = { hydraImage = cwPkgs.ci.hydraImage; }
        // pkgs.lib.optionalAttrs pushToDockerRegistry {
-         pushHydraImage = lib.dockerPushImage default.ci.hydraImage commitId unsetProxyForSkopeo; };
+         pushHydraImage = lib.dockerPushImage cwPkgs.ci.hydraImage commitId unsetProxyForSkopeo; };
 }
 
 // pkgs.lib.optionalAttrs pushToDockerRegistry {
-  pushDockerImages = genDockerPushJobs default.dockerImages; }
+  pushDockerImages = genDockerPushJobs cwPkgs.dockerImages; }
 
 // pkgs.lib.optionalAttrs publishToAptly {
-  publishDebianPackages = genDebPublishJobs default.debianPackages; }
+  publishDebianPackages = genDebPublishJobs cwPkgs.debianPackages; }
