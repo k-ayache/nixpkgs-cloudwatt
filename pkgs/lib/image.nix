@@ -37,45 +37,77 @@ rec {
       echo -n "${outputString}" > $out
     '';
 
-  oneShot = cmd: ''
-    ${pkgs.bash}/bin/bash -c "${cmd}; perpctl X $SVNAME"
-  '';
+  runOptions = args@{ chdir ? "", command, ... }:
+    args // {
+      command = ''
+        exec runtool ${pkgs.lib.optionalString (chdir != "") "-c ${chdir}"} ${command}
+      '';
+    };
 
-  genPerpRcMain = {
+  runOneShot = args@{ oneShot ? false, command, ... }:
+    if oneShot then
+      args // { command = "${pkgs.bash}/bin/bash -c '${command}'; perpctl X $SVNAME"; }
+    else args;
+
+  runAsUser = args@{ user ? "nobody", command, ... }:
+    if user != "nobody" && user != "root" then
+      abort "Only nobody and root users are supported."
+    else
+      args // { command = "runuid ${user} ${command}"; };
+
+  runPreScript = { preStartScript ? "", command, name, ... }@args:
+    let
+      start = pkgs.writeShellScriptBin "start-${name}" ''
+        set -e
+        ${preStartScript}
+        exec ${command}
+      '';
+    in
+      if preStartScript != "" then
+        args // { command = "${start}/bin/start-${name}"; }
+      else args;
+
+  runWithEnv = { environmentFile ? "", command, ... }@args:
+    if environmentFile != "" then
+      args // { command = "runenv ${environmentFile} ${command}"; }
+    else args;
+
+  genPerpRcMain = args@{
     name,
     command,
     preStartScript ? "",
     chdir ? "",
-    oneshot ? false,
+    oneShot ? false,
+    user ? "nobody",
+    environmentFile ? "",
     ...
-  }: pkgs.writeTextFile {
-    name = "${name}-rc.main";
-    executable = true;
-    destination = "/etc/perp/${name}/rc.main";
-    text = ''
-      #!${pkgs.bash}/bin/bash
+  }:
+    let
+      newArgs = runOptions (runOneShot (runAsUser (runPreScript (runWithEnv args))));
+    in
+      pkgs.writeTextFile {
+        name = "${name}-rc.main";
+        executable = true;
+        destination = "/etc/perp/${name}/rc.main";
+        text = ''
+          #!${pkgs.bash}/bin/bash
 
-      exec 2>&1
+          exec 2>&1
 
-      TARGET=$1
-      SVNAME=$2
+          TARGET=$1
+          SVNAME=$2
 
-      ${preStartScript}
+          start() {
+            ${newArgs.command}
+          }
 
-      OPTIONS=""
-      ${if chdir != "" then ''OPTIONS="$OPTIONS -c ${chdir}"'' else ""}
+          reset() {
+            exit 0
+          }
 
-      start() {
-        exec runtool $OPTIONS ${if oneshot then oneShot command else command}
-      }
-
-      reset() {
-        exit 0
-      }
-
-      eval $TARGET "$@"
-    '';
-  };
+          eval $TARGET "$@"
+        '';
+      };
 
   # Build an image where 'command' is started by Perp
   buildImageWithPerp = {
@@ -85,24 +117,33 @@ rec {
     preStartScript ? "",
     contents ? [],
     extraCommands ? "",
+    user ? "nobody",
+    environmentFile ? "",
     fluentd ? {},
   }:
     buildImageWithPerps {
       inherit name fromImage contents extraCommands;
       services = [
         {
-          inherit preStartScript command fluentd;
+          inherit preStartScript command user environmentFile fluentd;
           name = builtins.replaceStrings ["/"] ["-"] name;
         }
       ];
     };
 
-  buildImageWithPerps = { name, fromImage ? null, services, contents ? [], extraCommands ? "" }@args:
+  buildImageWithPerps = args@{
+    name,
+    fromImage ? null,
+    services,
+    contents ? [],
+    extraCommands ? "",
+    runAsRoot ? null
+  }:
     let
       newArgs = lib.fluentd.insertFluentd args;
     in
       pkgs.dockerTools.buildImage {
-        inherit name;
+        inherit name runAsRoot;
         fromImage = newArgs.fromImage;
         config = {
           Cmd = [ "/usr/sbin/perpd" ];

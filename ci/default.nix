@@ -88,7 +88,7 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       mkdir -p etc/ssl/certs
       ln -s ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt etc/ssl/certs/ca-certificates.crt
     '';
-    
+
     hydraInit = ''
       mkdir -p var/lib/hydra/
 
@@ -210,20 +210,21 @@ in {
       # To manually initialize the database
       pkgs.postgresql93
 
-      (genPerpRcMain {name = "hydra-server"; command = hydraServerCmd; })
-      (genPerpRcMain {name = "hydra-queue-runner"; command = hydraQueueRunnerCmd; })
-      (genPerpRcMain {name = "hydra-evaluator"; command = hydraEvaluator; })
-      (genPerpRcMain {name = "nginx"; command = "${pkgs.nginx}/bin/nginx -c ${nginxConf}"; })
+      (genPerpRcMain {name = "hydra-server"; command = hydraServerCmd; user = "root"; })
+      (genPerpRcMain {name = "hydra-queue-runner"; command = hydraQueueRunnerCmd; user = "root"; })
+      (genPerpRcMain {name = "hydra-evaluator"; command = hydraEvaluator; user = "root"; })
+      (genPerpRcMain {name = "nginx"; command = "${pkgs.nginx}/bin/nginx -c ${nginxConf}"; user = "root"; })
       (genPerpRcMain {
         name = declarativeProjectName;
         preStartScript = "export NO_PROXY=localhost";
         command = "${waitFor}/bin/wait-for localhost:3000 -- ${createDeclarativeProjectScript}/bin/create-declarative-project";
-        oneshot = true;
+        oneShot = true;
+        user = "root";
       })
     ];
     extraCommands = ''
       # There is a bug in the docker builder
-      chmod a+w ../layer 
+      chmod a+w ../layer
       ''
       + containerInit + nixInit + hydraInit + perpInit + contrailBuildInit;
 

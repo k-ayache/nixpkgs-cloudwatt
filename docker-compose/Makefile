@@ -42,11 +42,12 @@ contrail-provision:
 
 contrail-test:
 	@./check-contrail
+
 gremlin-up:
-	@docker-compose -f gremlin-server.yml up
+	@docker-compose -f gremlin.yml up
 
 gremlin-clean:
-	@docker-compose -f gremlin-server.yml down --volumes
+	@docker-compose -f gremlin.yml down --volumes
 
 print-%:
 	@echo '$($*)'
