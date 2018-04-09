@@ -5,6 +5,27 @@ bundlerEnv {
 
   pname = "fluentd";
   gemdir = ./.;
+  gemConfig = pkgs.defaultGemConfig // {
+    "cool.io" = attrs: {
+      dontStrip = false;
+    };
+    msgpack = attrs: {
+      buildInputs = [ pkgs.libmsgpack ];
+      dontStrip = false;
+    };
+    "http_parser.rb" = attrs: {
+      dontStrip = false;
+    };
+    mkfifo = attrs: {
+      dontStrip = false;
+    };
+    strptime = attrs: {
+      dontStrip = false;
+    };
+    "yajl-ruby" = attrs: {
+      dontStrip = false;
+    };
+  };
 
   meta = with pkgs.lib; {
     description = "A data collector";
