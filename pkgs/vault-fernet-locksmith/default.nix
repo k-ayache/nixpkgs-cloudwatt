@@ -3,7 +3,7 @@
 
 buildGoPackage rec {
   name = "vault-fernet-locksmith-${version}";
-  version = "0.1.1" ;
+  version = "0.2.0" ;
   rev = "v"+ version ;
 
   goPackagePath = "github.com/aevox/vault-fernet-locksmith";
@@ -12,7 +12,7 @@ buildGoPackage rec {
     inherit rev;
     owner = "aevox";
     repo = "vault-fernet-locksmith";
-    sha256 = "0vw8vqmc8h5cs4hsnxgc8s8q2jm52i8nmfcpxcg3j5xqjrkq1imh";
+    sha256 = "1s1i98xwk8a0krvpwif0s3hgg8n77j58p8836864sf2yjdl13c0d";
   };
 
   buildFlagsArray = ''

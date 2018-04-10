@@ -5,6 +5,7 @@ let
   config = {
     contrail = import ./config/contrail.nix pkgs;
     gremlin = import ./config/gremlin/config.nix { inherit pkgs contrail32Cw; };
+    locksmith = import ./config/locksmith/config.nix { inherit pkgs; };
   };
 
   buildContrailImageWithPerp = { name, command, preStartScript }:
@@ -103,8 +104,8 @@ in
   locksmithWorker = lib.buildImageWithPerp {
     name = "locksmith/worker";
     fromImage = lib.images.kubernetesBaseImage;
-    command = "${locksmith}/bin/vault-fernet-locksmith";
-    preStartScript = "";
+    command = "${locksmith}/bin/vault-fernet-locksmith -logtostderr -config-file-dir /run/consul-template-wrapper/etc/locksmith -config-file config";
+    preStartScript = config.locksmith.locksmithPreStart;
   };
 
   gremlinServer = lib.buildImageWithPerps {
