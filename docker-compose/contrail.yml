@@ -37,18 +37,6 @@ services:
     ports:
       - "2181:2181"
 
-  "redis":
-    image: "redis"
-    dns: 172.18.10.10
-    dns_search: "dev0.loc.cloudwatt.net"
-    environment:
-      - "service=redis"
-      - "VAULT_TOKEN=$VAULT_TOKEN"
-    labels:
-      - "SERVICE_NAME=opencontrail-redis"
-    ports:
-      - "6379:6379"
-
   "api":
     image: "opencontrail/api:latest"
     dns: 172.18.10.10
@@ -131,40 +119,29 @@ services:
     depends_on:
       - api
 
-  "analytics-api":
-    image: "opencontrail/analytics-api:latest"
+  "analytics":
+    image: "opencontrail/analytics:latest"
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
-      - "service=analytics-api"
-      - "VAULT_TOKEN=$VAULT_TOKEN"
-    labels:
-      - "SERVICE_8081_NAME=opencontrail-analytics-api"
-      - "SERVICE_8090_IGNORE=true"
-    ports:
-      - "8081:8081"
-      - "8090:8090"
-    depends_on:
-      - api
-      - redis
-
-  "collector":
-    image: "opencontrail/collector:latest"
-    dns: 172.18.10.10
-    dns_search: "dev0.loc.cloudwatt.net"
-    environment:
-      - "service=collector"
       - "VAULT_TOKEN=$VAULT_TOKEN"
       - "openstack_region=dev0"
     labels:
+      - "SERVICE_8081_NAME=opencontrail-analytics-api"
+      - "SERVICE_8090_IGNORE=true"
       - "SERVICE_8086_NAME=opencontrail-collector"
       - "SERVICE_8089_IGNORE=true"
+      - "SERVICE_8091_NAME=opencontrail-query-engine"
+      - "SERVICE_6379_NAME=opencontrail-redis"
     ports:
-      - "8086:8086"
-      - "8089:8089"
+      - "8081"
+      - "8090"
+      - "8086"
+      - "8089"
+      - "6379"
+      - "8091"
     depends_on:
       - api
-      - redis
 
   "vrouter-master":
     image: "vrouter:latest"
