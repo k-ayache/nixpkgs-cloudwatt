@@ -28,14 +28,14 @@ let
       {{- .Data.${secret} }}
     {{- end }}'';
 
-# Get the list of keys/values of openstack endpoints in JSON format 
+# Get the list of keys/values of openstack endpoints in JSON format
 
   catalogOpenstackHeader = ''
     {{ $openstack_region := env "openstack_region" -}}
     {{ $catalog := key (printf "/config/openstack/catalog/%s/data" $openstack_region) | parseJSON -}}
   '';
 
-# Get keystone admin endpoint from the endpoints list in $catalog 
+# Get keystone admin endpoint from the endpoints list in $catalog
   identityAdminHost = ''
     {{ with $catalog.identity.admin_url }}{{ . | regexReplaceAll "http://([^:/]+).*" "$1" }}{{ end }}'';
 
@@ -73,8 +73,7 @@ let
 
   keystoneConfig = {
     auth_host = identityAdminHost;
-    auth_port = ''{{ if ($catalog.identity.admin_url | printf "%q") | regexMatch "(http:[^:]+:[0-9]+.*)" }}35357{{ else }}80
-                  {{ end }}'';
+    auth_port = ''{{ if ($catalog.identity.admin_url | printf "%q") | regexMatch "(http:[^:]+:[0-9]+.*)" }}35357{{ else }}80{{ end }}'';
     auth_protocol = "http";
     admin_tenant_name = "service";
     admin_user = "opencontrail";
@@ -117,6 +116,10 @@ in rec {
     };
     analyticsApi = {
       name = "analytics_api";
+    };
+    queryEngine = {
+      name = "query_engine";
+      dns = "opencontrail-query-engine.service";
     };
     redis = {
       name = "redis";
@@ -284,7 +287,8 @@ in rec {
         };
 
         REDIS = {
-          server = services.redis.dns;
+          #server ip would be 127.0.0.1 or 0.0.0.0
+          server = "127.0.0.1";
           port = services.redis.port;
         };
       };
@@ -310,10 +314,31 @@ in rec {
         };
 
         REDIS = {
-          server = services.redis.dns;
+          #Analytics asks redis ip of container, so we have to bind in redis to ip container also
           redis_server_port = services.redis.port;
           redis_query_port = services.redis.port;
-          redis_uve_list = services.redis.dns + ":" + toString services.redis.port;
+        };
+      };
+    };
+  };
+
+  queryEngine = pkgs.writeTextFile {
+    name = "contrail-query-engine.conf.ctmpl";
+    text = config {
+      conf = {
+        DEFAULT = {
+          hostip = containerIP;
+        }
+        // logConfig services.queryEngine
+        // cassandraAnalyticsConfig;
+
+        DISCOVERY = {
+          server = services.discovery.dns;
+          port = services.discovery.port;
+        };
+
+        REDIS = {
+          port = services.redis.port;
         };
       };
     };
@@ -327,7 +352,7 @@ in rec {
         log_file = "/var/log/contrail/vrouter.log";
         log_level = "SYS_DEBUG";
         log_local = 1;
-        collectors = "collector:" + toString services.collector.port;
+        collectors = "analytics:" + toString services.collector.port;
       };
       CONTROL-NODE = {
         server = "control";
