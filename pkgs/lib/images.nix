@@ -4,8 +4,8 @@
 
   kubernetesBaseImage = pkgs.dockerTools.pullImage {
     imageName = "r.cwpriv.net/kubernetes/base";
-    imageTag = "16.04-c6e9c969951cf94b";
-    sha256 = "0gksw7l0mbdhmjvb0mvb48h5ay9qr7sqsxq4hs3cfla9kn73l5cd";
+    imageTag = "16.04-3a4f5ba7a528f04e";
+    sha256 = "0baj7ibdan6v1n0xvgna3iq0z84r7xs27jrpcmzwn0fs63ip27nz";
   };
 
   javaJreImage = pkgs.dockerTools.pullImage {
