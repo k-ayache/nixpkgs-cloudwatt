@@ -5,9 +5,9 @@ in {
   pkgs = bootstrap_pkgs.fetchFromGitHub {
     owner = "NixOS";
     repo = "nixpkgs";
-    # Belong to the branch release-18.03-cloudwatt
-    rev = "46adfec9f9295ecdd8b10578cd898ba0133d0278";
-    sha256 = "0lxys8g7px4ds4892pkvijhsyyh9chzmwck71m4vg6byh27i96v0";};
+    # Belong to the branch release-18.03
+    rev = "32f08fe6c502d04b6350364a626634d425706bb1";
+    sha256 = "0fjv0xbwqsajbil9vxlqkqf1iffr5f6cil0cc5wa5xwi7bm1rm9s";};
   contrail = bootstrap_pkgs.fetchFromGitHub {
     owner = "nlewo";
     repo = "nixpkgs-contrail";
