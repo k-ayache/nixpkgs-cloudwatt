@@ -187,6 +187,7 @@ in rec {
   schemaTransformer = pkgs.writeTextFile {
     name = "contrail-schema.conf.ctmpl";
     text = config {
+      headers = catalogOpenstackHeader;
       conf = {
         DEFAULTS = {
           api_server_ip = services.api.dns;
@@ -197,6 +198,7 @@ in rec {
         // cassandraConfig
         // rabbitConfig
         // zookeeperConfig;
+        KEYSTONE = keystoneConfig;
       };
     };
   };

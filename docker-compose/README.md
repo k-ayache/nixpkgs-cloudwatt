@@ -20,32 +20,35 @@ Start:
 
 ## Start keystone
 
-Use the branch: https://git.corp.cloudwatt.com/docker/keystone-all to start keystone:
+Clone https://git.corp.cloudwatt.com/docker/keystone-all to start keystone:
 
     $ source `.docker-compose/vault.env` from the infrastructure directory
+    $ docker pull r.cwpriv.net/keystone/all:9.0.0-682774535ef9e4fa
+    $ docker tag r.cwpriv.net/keystone/all:9.0.0-682774535ef9e4fa r.cwpriv.net/keystone/all:9.0.0-1
     $ make dev-up
 
 ## Create endpoinds:
 
-After keystone started go in applications/deployment/docker-compose and create endpoints using the following command:
+In applications/deployment/docker-compose create endpoints:
 
+    $ source `.docker-compose/vault.env` from the infrastructure directory
     $ make openstack-catalog
 
 ## Create keystone user
 
-Access keystone-all directory and create keystone user:
+In docker/keystone-all create keystone user:
 
+    $ source `.docker-compose/vault.env` from the infrastructure directory
     $ make dev-service-user
 
 ## Start contrail
 
-Access nixpkgs-cloudwatt/docker-compose
+In nixpkgs-cloudwatt/docker-compose:
 
     $ source `.docker-compose/vault.env` from the infrastructure directory
     $ make dev-vault-data
     $ make contrail-service-user
     $ make contrail-up
-
 
 # Development
 
