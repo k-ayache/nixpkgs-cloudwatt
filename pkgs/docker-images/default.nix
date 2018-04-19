@@ -14,25 +14,14 @@ let
         services = [
            {name = builtins.replaceStrings ["/"] ["-"] name;
             inherit command preStartScript;
-            fluentd = { source = { type = "stdout"; }; };
            }
         ];
     };
 
   buildContrailImageWithPerps = { name, services }:
     lib.buildImageWithPerps {
-      inherit name;
+      inherit name services;
       fromImage = lib.images.kubernetesBaseImage;
-      services = services ++ [
-        {name = "my-ip";
-         command  = ''
-           # hack to populate the configuration with the container ip
-           # with consul-template it is only possible to read a file
-           hostname --ip-address > /my-ip \
-           '';
-         oneshot = true;
-        }
-      ];
       extraCommands = "chmod u+w etc; mkdir -p var/log/contrail etc/contrail";
     };
 
@@ -43,6 +32,13 @@ let
     configFiles = config;
   };
 
+  my_ip  = ''
+    # hack to populate the configuration with the container ip
+    # with consul-template it is only possible to read a file
+    hostname --ip-address > /my-ip 
+    [[ -s /my_ip ]] || echo "my_ip file is empty or doesn't exist" 
+    '';
+
 in
 {
   inherit contrailVrouter;
@@ -50,7 +46,7 @@ in
   contrailApi = buildContrailImageWithPerp {
     name = "opencontrail/api";
     command = "${contrail32Cw.api}/bin/contrail-api --conf_file /etc/contrail/contrail-api.conf";
-    preStartScript = ''
+    preStartScript = my_ip + ''
       consul-template-wrapper -- -once \
         -template="${config.contrail.api}:/etc/contrail/contrail-api.conf"
     '';
@@ -59,7 +55,7 @@ in
   contrailDiscovery = buildContrailImageWithPerp {
     name = "opencontrail/discovery";
     command = "${contrail32Cw.discovery}/bin/contrail-discovery --conf_file /etc/contrail/contrail-discovery.conf";
-    preStartScript = ''
+    preStartScript = my_ip + ''
       consul-template-wrapper -- -once \
         -template="${config.contrail.discovery}:/etc/contrail/contrail-discovery.conf"
     '';
@@ -76,24 +72,34 @@ in
     '';
   };
 
-  contrailAnalytics = buildContrailImageWithPerps {
-    name = "opencontrail/analytics";
+  contrailAnalyticsApi = buildContrailImageWithPerps {
+    name = "opencontrail/analytics-api";
     services = [
       {
         name = "opencontrail-analytics-api";
         command = "${contrail32Cw.analyticsApi}/bin/contrail-analytics-api --conf_file /etc/contrail/contrail-analytics-api.conf";
-        preStartScript = ''
-         /usr/sbin/consul-template-wrapper --token-file=/run/vault-token-analytics-api/vault-token -- -once \
+        preStartScript = my_ip + ''
+         /usr/sbin/consul-template-wrapper -- -once \
          -template="${config.contrail.analyticsApi}:/etc/contrail/contrail-analytics-api.conf"
         '';
       }
       {
+        name = "redis-server";
+        command = "${pkgs.redis}/bin/redis-server";
+      }
+    ];
+  };
+
+  contrailCollector = buildContrailImageWithPerps {
+    name = "opencontrail/collector";
+    services = [
+      {
         name = "opencontrail-collector";
         command = "${contrail32Cw.collector}/bin/contrail-collector --conf_file /etc/contrail/contrail-collector.conf";
-        preStartScript = ''
+        preStartScript = my_ip + ''
           ${waitFor}/bin/wait-for \
             ${config.contrail.services.discovery.dns}:${toString config.contrail.services.discovery.port}
-         /usr/sbin/consul-template-wrapper --token-file=/run/vault-token-collector/vault-token -- -once \
+         /usr/sbin/consul-template-wrapper -- -once \
          -template="${config.contrail.collector}:/etc/contrail/contrail-collector.conf" \
          -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
         '';
@@ -102,17 +108,26 @@ in
         name = "redis-server";
         command = "${pkgs.redis}/bin/redis-server";
       }
-      {
-        name = "opencontrail-query-engine";
-        command = "${contrail32Cw.queryEngine}/bin/qed --conf_file /etc/contrail/contrail-query-engine.conf";
-        preStartScript = ''
-        /usr/sbin/consul-template-wrapper --token-file=/run/vault-token-query-engine/vault-token -- -once \
-        -template="${config.contrail.queryEngine}:/etc/contrail/contrail-query-engine.conf"
-        '';
-      }
     ];
   };
 
+  contrailQueryEngine = buildContrailImageWithPerps {
+    name = "opencontrail/query-engine";
+    services = [
+      {
+        name = "opencontrail-query-engine";
+        command = "${contrail32Cw.queryEngine}/bin/qed --conf_file /etc/contrail/contrail-query-engine.conf";
+        preStartScript = my_ip + ''
+        /usr/sbin/consul-template-wrapper -- -once \
+        -template="${config.contrail.queryEngine}:/etc/contrail/contrail-query-engine.conf"
+        '';
+      }
+      {
+        name = "redis-server";
+        command = "${pkgs.redis}/bin/redis-server";
+      }
+    ];
+  };
   contrailSchemaTransformer = buildContrailImageWithPerp {
     name = "opencontrail/schema-transformer";
     command = "${contrail32Cw.schemaTransformer}/bin/contrail-schema --conf_file /etc/contrail/contrail-schema-transformer.conf";
