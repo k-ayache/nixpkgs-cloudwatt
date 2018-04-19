@@ -83,8 +83,8 @@ in
         name = "opencontrail-analytics-api";
         command = "${contrail32Cw.analyticsApi}/bin/contrail-analytics-api --conf_file /etc/contrail/contrail-analytics-api.conf";
         preStartScript = ''
-        consul-template-wrapper -- -once \
-          -template="${config.contrail.analyticsApi}:/etc/contrail/contrail-analytics-api.conf"
+         /usr/sbin/consul-template-wrapper --token-file=/run/vault-token-analytics-api/vault-token -- -once \
+         -template="${config.contrail.analyticsApi}:/etc/contrail/contrail-analytics-api.conf"
         '';
       }
       {
@@ -93,9 +93,9 @@ in
         preStartScript = ''
           ${waitFor}/bin/wait-for \
             ${config.contrail.services.discovery.dns}:${toString config.contrail.services.discovery.port}
-          consul-template-wrapper -- -once \
-            -template="${config.contrail.collector}:/etc/contrail/contrail-collector.conf" \
-            -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
+         /usr/sbin/consul-template-wrapper --token-file=/run/vault-token-collector/vault-token -- -once \
+         -template="${config.contrail.collector}:/etc/contrail/contrail-collector.conf" \
+         -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
         '';
       }
       {
@@ -106,8 +106,8 @@ in
         name = "opencontrail-query-engine";
         command = "${contrail32Cw.queryEngine}/bin/qed --conf_file /etc/contrail/contrail-query-engine.conf";
         preStartScript = ''
-        consul-template-wrapper -- -once \
-          -template="${config.contrail.queryEngine}:/etc/contrail/contrail-query-engine.conf"
+        /usr/sbin/consul-template-wrapper --token-file=/run/vault-token-query-engine/vault-token -- -once \
+        -template="${config.contrail.queryEngine}:/etc/contrail/contrail-query-engine.conf"
         '';
       }
     ];
