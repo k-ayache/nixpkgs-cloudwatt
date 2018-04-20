@@ -38,6 +38,7 @@ let pkgs = import nixpkgs {};
       waitFor = callPackage ./pkgs/wait-for {};
 
       test.hydra = callPackage ./test/hydra.nix { pkgs_path = nixpkgs; hydraImage = ci.hydraImage; };
+      test.fluentd = callPackage ./test/fluentd.nix { pkgs_path = nixpkgs; cwPkgs = cwPkgs; };
 
       # to run these tests:
       # nix-instantiate --eval --strict -A test.lib

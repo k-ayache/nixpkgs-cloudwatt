@@ -113,7 +113,7 @@ rec {
         if enableFluentdForService s then
           s // {
             preStartScript = ''
-              ${s.preStartScript}
+              ${pkgs.lib.optionalString (s ? preStartScript) s.preStartScript}
               ${cwPkgs.waitFor}/bin/wait-for 127.0.0.1:24225 -t 30 -q
             '';
             command = newServiceCommand s;
