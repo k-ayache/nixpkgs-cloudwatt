@@ -29,8 +29,16 @@ let
     done
   '';
 
-  stdoutImage = lib.buildImageWithPerps {
-    name = "stdout-image";
+  syslogSvc = pkgs.writeShellScriptBin "syslog-svc" ''
+    while true
+    do
+      echo "<133>$0[$$]: syslog-svc" | nc -w1 -u localhost 1234
+      sleep 1
+    done
+  '';
+
+  testImage = lib.buildImageWithPerps {
+    name = "test-image";
     fromImage = lib.images.kubernetesBaseImage;
     services = [
       {
@@ -42,14 +50,25 @@ let
           };
         };
       }
+      {
+        name = "syslog-svc";
+        command = "${syslogSvc}/bin/syslog-svc";
+        fluentd = {
+          source = {
+            type = "syslog";
+            port = 1234;
+            format = "none";
+          };
+        };
+      }
     ];
   };
 
   runStack = lib.runDockerComposeStack {
     version = "2";
     services = {
-      stdoutSvc = {
-        image = builtins.baseNameOf stdoutImage;
+      test = {
+        image = builtins.baseNameOf testImage;
         network_mode = "host";
       };
     };
@@ -78,11 +97,13 @@ let
   };
 
   testScript = ''
-    $machine->waitForUnit("network.target");
-    $machine->waitForUnit("sockets.target");
+    $machine->waitForUnit("docker.service");
     $machine->waitForUnit("fluentd.service");
     $machine->succeed("${runStack}");
+    # fluentd has flush_interval set to 60s by default
+    $machine->sleep(60);
     $machine->waitUntilSucceeds("journalctl --unit fluentd --no-pager | grep stdout-svc");
+    $machine->waitUntilSucceeds("journalctl --unit fluentd --no-pager | grep syslog-svc");
   '';
 in
   makeTest { name = "fluentd"; nodes = { inherit machine; }; testScript = testScript; }
