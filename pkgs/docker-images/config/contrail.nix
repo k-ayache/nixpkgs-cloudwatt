@@ -117,7 +117,7 @@ in rec {
     analyticsApi = {
       name = "analytics_api";
     };
-    queryEngine = { 
+    queryEngine = {
       name = "query_engine";
       dns = "opencontrail-query-engine.service";
     };
@@ -302,7 +302,7 @@ in rec {
         DEFAULT = {
           host_ip = containerIP;
           rest_api_ip = containerIP;
-#          aaa_mode = "no-auth";
+          aaa_mode = "no-auth";
           partitions = 0;
         }
         // logConfig services.analyticsApi
