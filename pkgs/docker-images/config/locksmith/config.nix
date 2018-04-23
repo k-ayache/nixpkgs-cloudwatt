@@ -17,7 +17,7 @@ rec {
       secondary-vaults:
         - address: {{ index $secondaryVault "address" }}
           proxy: {{ index $secondaryVault "proxy" }}
-          {{ with secret "secret/locksmith" }}token: {{  .Data.secondaryVault.token }}{{ end }}
+          {{ with secret "secret/locksmith" }}token: {{  .Data.secondaryVaultToken }}{{ end }}
           token-renew: {{ "true" | or (index $secondaryVault "token-renew") }}
 
       ttl: {{ "120" | or (index $locksmith "ttl") }}
