@@ -40,6 +40,43 @@ Use `lib.buildImageWithPerps` helper:
         ];
     };
 
+Users
+-----
+
+By default the `command` will be run with the `nobody` user.
+
+To run the service as `root`, set `user` to `root`:
+
+    image = lib.buildImageWithPerp {
+        name = "foo/bar";
+        fromImage = lib.images.kubernetesBaseImage;
+        command = "${svc}/bin/svc";
+        user = "root";
+    }
+
+Only `root` and `nobody` users are supported.
+
+Environment
+-----------
+
+You can provide an environment file or directory for running the service. See `man runenv 8` for
+details. Basically you can provide a file where each line is of type: `var=value`. To provide the
+environment to the service, use the `environmentFile` attribute:
+
+    imageEnv = pkgs.writeTextFile {
+      name = "env";
+      text = ''
+        LOG_DEBUG=1
+      '';
+    }
+
+    image = lib.buildImageWithPerp {
+        name = "foo/bar";
+        fromImage = lib.images.kubernetesBaseImage;
+        command = "${svc}/bin/svc";
+        environmentFile = ${imageEnv};
+    };
+
 Fluentd integration
 -------------------
 

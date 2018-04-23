@@ -8,9 +8,9 @@ let
     locksmith = import ./config/locksmith/config.nix { inherit pkgs; };
   };
 
-  buildContrailImageWithPerp = { name, command, preStartScript }:
+  buildContrailImageWithPerp = { name, command, preStartScript, user }:
     lib.buildImageWithPerp {
-      inherit name command;
+      inherit name command user;
       fromImage = lib.images.kubernetesBaseImage;
       preStartScript = ''
         # hack to populate the configuration with the container ip
@@ -38,6 +38,7 @@ in
       consul-template-wrapper -- -once \
         -template="${config.contrail.api}:/etc/contrail/contrail-api.conf"
     '';
+    user = "root";
   };
 
   contrailDiscovery = buildContrailImageWithPerp {
@@ -47,6 +48,7 @@ in
       consul-template-wrapper -- -once \
         -template="${config.contrail.discovery}:/etc/contrail/contrail-discovery.conf"
     '';
+    user = "root";
   };
 
   contrailControl = buildContrailImageWithPerp {
@@ -58,6 +60,7 @@ in
       consul-template-wrapper -- -once \
         -template="${config.contrail.control}:/etc/contrail/contrail-control.conf"
     '';
+    user = "root";
   };
 
   contrailCollector = buildContrailImageWithPerp {
@@ -70,6 +73,7 @@ in
         -template="${config.contrail.collector}:/etc/contrail/contrail-collector.conf" \
         -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
     '';
+    user = "root";
   };
 
   contrailAnalyticsApi = buildContrailImageWithPerp {
@@ -79,6 +83,7 @@ in
       consul-template-wrapper -- -once \
         -template="${config.contrail.analyticsApi}:/etc/contrail/contrail-analytics-api.conf"
     '';
+    user = "root";
   };
 
   contrailSchemaTransformer = buildContrailImageWithPerp {
@@ -89,6 +94,7 @@ in
         -template="${config.contrail.schemaTransformer}:/etc/contrail/contrail-schema-transformer.conf" \
         -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
     '';
+    user = "root";
   };
 
   contrailSvcMonitor = buildContrailImageWithPerp {
@@ -99,6 +105,7 @@ in
         -template="${config.contrail.svcMonitor}:/etc/contrail/contrail-svc-monitor.conf" \
         -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
     '';
+    user = "root";
   };
 
   locksmithWorker = lib.buildImageWithPerp {
@@ -106,6 +113,7 @@ in
     fromImage = lib.images.kubernetesBaseImage;
     command = "${locksmith}/bin/vault-fernet-locksmith -logtostderr -config-file-dir /run/consul-template-wrapper/etc/locksmith -config-file config";
     preStartScript = config.locksmith.locksmithPreStart;
+    user = "root";
   };
 
   gremlinServer = lib.buildImageWithPerps {
@@ -128,6 +136,7 @@ in
       {
         name = "gremlin-sync";
         preStartScript = config.gremlin.syncPreStart;
+        environmentFile = "/run/consul-template-wrapper/env";
         command = "${contrail32Cw.tools.contrailGremlin}/bin/gremlin-sync";
         fluentd = {
           source = {
@@ -141,6 +150,11 @@ in
     contents = [
       contrail32Cw.tools.contrailGremlin
     ];
+    runAsRoot = ''
+      if [ -f /etc/prometheus/prometheus_jmx_java8.yml ]; then
+        echo "- pattern: 'metrics<name=(.+)><>(.+):'" >> /etc/prometheus/prometheus_jmx_java8.yml
+      fi
+    '';
   };
 
   gremlinFsck = lib.buildImageWithPerps {
@@ -150,6 +164,7 @@ in
       {
         name = "gremlin-fsck";
         preStartScript = config.gremlin.fsckPreStart;
+        environmentFile = "/run/consul-template-wrapper/env";
         command = "${contrail32Cw.tools.contrailApiCliWithExtra}/bin/contrail-api-cli fsck";
         fluentd = {
           source = {

@@ -2,34 +2,31 @@
 
 rec {
 
-  fsckConf = pkgs.writeTextFile {
-    name = "vars.ctmpl";
+  fsckEnv = pkgs.writeTextFile {
+    name = "env.ctmpl";
     text = ''
       {{ $openstack_region := env "openstack_region" -}}
       {{ $catalog := key (printf "/config/openstack/catalog/%s/data" $openstack_region) | parseJSON -}}
-
-      export OS_AUTH_URL={{ $catalog.identity.internal_url }}
-      export OS_USERNAME=deployment
-      export OS_TENANT_NAME=deployment
+      OS_AUTH_URL={{ $catalog.identity.internal_url }}
+      OS_USERNAME=deployment
+      OS_TENANT_NAME=deployment
       {{ with secret "secret/openstack/users/deployment" -}}
-      export OS_PASSWORD={{ .Data.password }}
+      OS_PASSWORD={{ .Data.password }}
       {{- end }}
-      export OS_ENDPOINT_TYPE=internalURL
-      export OS_AUTH_PLUGIN=v2password
+      OS_ENDPOINT_TYPE=internalURL
+      OS_AUTH_PLUGIN=v2password
 
-      export CONTRAIL_API_HOST=contrail-api
+      CONTRAIL_API_HOST=contrail-api
 
-      export GREMLIN_FSCK_SERVER=gremlin-server-pods.service:8182
-      export GREMLIN_FSCK_LOOP=1
-      export GREMLIN_FSCK_JSON=1
-      export GREMLIN_FSCK_ZK_SERVER=opencontrail-config-zookeeper.service:2181
+      GREMLIN_FSCK_SERVER=gremlin-server-pods.service:8182
+      GREMLIN_FSCK_LOOP=1
+      GREMLIN_FSCK_JSON=1
+      GREMLIN_FSCK_ZK_SERVER=opencontrail-config-zookeeper.service:2181
     '';
   };
 
   fsckPreStart = ''
-    consul-template-wrapper -- -once \
-      -template "${fsckConf}:/run/consul-template-wrapper/vars" && \
-    source /run/consul-template-wrapper/vars
+    consul-template-wrapper -- -once -template "${fsckEnv}:/run/consul-template-wrapper/env"
   '';
 
   dumpPath = "/tmp/dump.gson";
@@ -67,40 +64,33 @@ rec {
   };
 
   serverPreStart = ''
-    export GREMLIN_DUMP_CASSANDRA_SERVERS=opencontrail-config-cassandra.service
-    # We can't modify the parent image, so we do it at runtime
-    if [ -f /etc/prometheus/prometheus_jmx_java8.yml ] && ! grep -q 'metrics<name'
-    then
-      echo "- pattern: 'metrics<name=(.+)><>(.+):'" >> /etc/prometheus/prometheus_jmx_java8.yml
-    fi
     if [ -f /etc/default/prometheus_jmx ]
     then
       source /etc/default/prometheus_jmx
       export JAVA_OPTIONS="$JAVA_OPTIONS -Dcom.sun.management.jmxremote $PROM_OPTS"
     fi
     export JAVA_OPTIONS="$JAVA_OPTIONS -Dlog4j.configuration=file:${log4jProperties}"
+    export GREMLIN_DUMP_CASSANDRA_SERVERS=opencontrail-config-cassandra.service
     ${contrail32Cw.tools.contrailGremlin}/bin/gremlin-dump ${dumpPath}
   '';
 
-  syncConf = pkgs.writeTextFile {
-    name = "vars.ctmpl";
+  syncEnv = pkgs.writeTextFile {
+    name = "env.ctmpl";
     text = ''
-      export GREMLIN_SYNC_CASSANDRA_SERVERS=opencontrail-config-cassandra.service
-      export GREMLIN_SYNC_RABBIT_SERVER=opencontrail-queue.service:5672
+      GREMLIN_SYNC_CASSANDRA_SERVERS=opencontrail-config-cassandra.service
+      GREMLIN_SYNC_RABBIT_SERVER=opencontrail-queue.service:5672
       {{ with secret "secret/opencontrail" -}}
-      export GREMLIN_SYNC_RABBIT_PASSWORD={{ .Data.queue_password }}
+      GREMLIN_SYNC_RABBIT_PASSWORD={{ .Data.queue_password }}
       {{- end }}
-      export GREMLIN_SYNC_RABBIT_VHOST=opencontrail
-      export GREMLIN_SYNC_RABBIT_USER=opencontrail
-      export GREMLIN_SYNC_RABBIT_QUEUE=gremlin_sync.$HOSTNAME
-      export GREMLIN_LOG_NO_COLOR=1
+      GREMLIN_SYNC_RABBIT_VHOST=opencontrail
+      GREMLIN_SYNC_RABBIT_USER=opencontrail
+      GREMLIN_SYNC_RABBIT_QUEUE=gremlin_sync.$HOSTNAME
+      GREMLIN_LOG_NO_COLOR=1
     '';
   };
 
   syncPreStart = ''
-    consul-template-wrapper -- -once \
-      -template "${syncConf}:/run/consul-template-wrapper/vars" && \
-    source /run/consul-template-wrapper/vars
+    consul-template-wrapper -- -once -template "${syncEnv}:/run/consul-template-wrapper/env"
   '';
 
 }
