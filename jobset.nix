@@ -29,21 +29,28 @@ let
   genDebPublishJobs = drvs:
     pkgs.lib.mapAttrs' (n: v: pkgs.lib.nameValuePair (n) (lib.publishDebianPkg aptlyUrl v unsetProxyForAptly)) drvs;
 
-  # Since lib.buildVrouter is not a derivation, Hydra generates an evaluation error
-  contrail32Cw = cwPkgs.contrail32Cw // { lib.buildVrouter = {}; };
+  contrail32Cw = cwPkgs.contrail32Cw;
 
-in
-{
-  inherit (cwPkgs) debianPackages dockerImages test;
-  inherit contrail32Cw;
+  jobs = {
+    inherit (cwPkgs) debianPackages dockerImages test;
 
-  ci = { hydraImage = cwPkgs.ci.hydraImage; }
-       // pkgs.lib.optionalAttrs pushToDockerRegistry {
-         pushHydraImage = lib.dockerPushImage cwPkgs.ci.hydraImage commitId unsetProxyForSkopeo; };
-}
+    ci = { hydraImage = cwPkgs.ci.hydraImage; }
+         // pkgs.lib.optionalAttrs pushToDockerRegistry {
+           pushHydraImage = lib.dockerPushImage cwPkgs.ci.hydraImage commitId unsetProxyForSkopeo; };
+  }
+  // pkgs.lib.optionalAttrs pushToDockerRegistry {
+    pushDockerImages = genDockerPushJobs cwPkgs.dockerImages; }
+  // pkgs.lib.optionalAttrs publishToAptly {
+    publishDebianPackages = genDebPublishJobs cwPkgs.debianPackages; };
 
-// pkgs.lib.optionalAttrs pushToDockerRegistry {
-  pushDockerImages = genDockerPushJobs cwPkgs.dockerImages; }
+  excludedJobs = builtins.map (pkgs.lib.splitString ".") [
+    # These are not derivations
+    "test.lib"
+    "contrail32Cw.lib.buildVrouter"
+    # Upload fail because image is to big
+    "pushDockerImages.contrailVrouter"
+  ];
 
-// pkgs.lib.optionalAttrs publishToAptly {
-  publishDebianPackages = genDebPublishJobs cwPkgs.debianPackages; }
+in 
+  # We remove excluded jobs
+  builtins.foldl' (j: e: pkgs.lib.recursiveUpdate j (pkgs.lib.setAttrByPath e null)) jobs excludedJobs
