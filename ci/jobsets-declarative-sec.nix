@@ -78,7 +78,7 @@ let
     };
 
     testingWithPublish = {
-      description = "BBuild the testing-with-publish branch of nixpkgs-cloudwatt";
+      description = "Build the testing-with-publish branch of nixpkgs-cloudwatt";
       checkinterval = "60";
       enabled = "1";
       nixexprinput = "cloudwatt";
@@ -90,7 +90,7 @@ let
       hidden = false;
       inputs = {
         cloudwatt = {
-          value = "https://git.sec.cloudwatt.com/applications/nixpkgs-cloudwatt testing-and-publish keepDotGit";
+          value = "https://git.sec.cloudwatt.com/applications/nixpkgs-cloudwatt testing-with-publish keepDotGit";
           type = "git";
           emailresponsible = false;
         };
