@@ -1,4 +1,16 @@
-### Build and Use the Hydra container
+## To add a new jobset
+
+We have to modify the file `jobsets-declarative.nix` to add a jobset
+on the integration CI or to modify `jobsets-declarative-sec.nix` for
+the secure CI.
+
+The CI pulls this file to create the jobsets every minute.
+
+Note the json job file can be locally built and validated
+`nix-build ci/jobsets-declarative-sec.nix  --arg nixpkgs '<nixpkgs>' --arg declInput '{}' -Q | xargs cat | jq`
+
+
+## Build and Use the Hydra container
 
 First build the Hydra Docker image (from the `nixpkgs-cloudwatt` directory)
 ```
@@ -89,15 +101,23 @@ There are currently two directories that are stateful
   when the container restart.
 
 
-### [DEPRECATED] Creating a project and a jobset
+## How project and jobsets are created
 
-The script `create-declarative-jobset.sh` create a declarative
-project. The project description is specified in the `spec.json` file. This file
+We are using the Hydra declarative project feature that allows Hydra
+to create project and jobsets from description files provided in this
+repository.
 
+Basically, a declarative project contains a static Hydra jobset named
+`.jobsets`. This project and jobset are created at container start
+time and are configured with environment variables `DECL_*` (see
+above). The file `spec.json` is used to configure the jobset
+`.jobset`. This jobset contains a job that creates other jobsets of
+the project by evaluating the `jobsets-declarative.nix`.
 
-The script `create-jobset.sh` can be used to create a jobset to build
-expressions defined in the current repository. To set the hydra url,
-user credentials, set environment variables:
-```
-$ URL=YOUR-HYDRA USERNAME=admin PASSWORD=admin bash ci/create-project.sh
-```
+To create jobsets on the sec CI, edit files `spec-sec.json` and
+`jobsets-declarative-sec.nix`.
+
+Resources:
+
+- https://github.com/shlevy/declarative-hydra-example
+- https://github.com/NixOS/hydra/blob/master/doc/manual/declarative-projects.xml
