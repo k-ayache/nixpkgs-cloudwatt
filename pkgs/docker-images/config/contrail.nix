@@ -287,7 +287,6 @@ in rec {
         };
 
         REDIS = {
-          #server ip would be 127.0.0.1 or 0.0.0.0
           server = "127.0.0.1";
           port = services.redis.port;
         };
@@ -352,7 +351,6 @@ in rec {
         log_file = "/var/log/contrail/vrouter.log";
         log_level = "SYS_DEBUG";
         log_local = 1;
-        collectors = "analytics:" + toString services.collector.port;
       };
       CONTROL-NODE = {
         server = "control";

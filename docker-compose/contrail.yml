@@ -131,8 +131,8 @@ services:
       - "SERVICE_8090_IGNORE=true"
       - "SERVICE_8086_NAME=opencontrail-collector"
       - "SERVICE_8089_IGNORE=true"
-      - "SERVICE_8091_NAME=opencontrail-query-engine"
-      - "SERVICE_6379_NAME=opencontrail-redis"
+      - "SERVICE_8091_TGNORE=true"
+      - "SERVICE_6379_IGNORE=true"
     ports:
       - "8081:8081"
       - "8090:8090"
