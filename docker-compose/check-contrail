@@ -2,6 +2,23 @@
 
 set -e
 
+#Compare the number of control nodes in analytics and discovery
+
+echo -e "Compare the number of control nodes in analytics and discovery:"
+container=$(curl -s localhost:8500/v1/catalog/service/opencontrail-discovery | jq -r ' .[0].ServiceID | split(":") | .[1] ')
+port_discovery=$(docker port $container | grep 5998 | cut -d: -f2)
+
+l1=$(curl -s http://localhost:8081/analytics/uves/control-nodes | jq length)
+l2=$(curl -s localhost:$port_discovery/services.json | jq .services[].ep_type | grep xmpp-server | wc -l)
+if [ "$l1" -eq "$l2" ]
+then
+  echo -e "Number of control nodes in analytics is the same in discovery, and they are:\n"
+  curl -s http://localhost:8081/analytics/uves/control-nodes | jq .
+else
+  echo "Number of control nodes is not the same in analytics and discovery, something went wrong in analytics or control."
+  exit 1
+fi
+
 # create namespaces in each vrouter and check ping between them
 vm=1
 for vrouter in vrouter-master vrouter
@@ -23,7 +40,7 @@ ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$ip ip 
 
 if [ $(curl -s localhost:8500/v1/catalog/service/opencontrail-control | jq length) != 2 ]
 then
-  exit 0
+  exit 1
 fi
 echo "check if controllers peering ..."
 
