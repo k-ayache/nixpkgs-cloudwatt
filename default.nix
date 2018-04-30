@@ -37,6 +37,7 @@ let pkgs = import nixpkgs {};
 
       waitFor = callPackage ./pkgs/wait-for {};
 
+      openstackClient = callPackage ./pkgs/openstackclient {};
       test.hydra = callPackage ./test/hydra.nix { pkgs_path = nixpkgs; hydraImage = ci.hydraImage; };
       test.fluentd = callPackage ./test/fluentd.nix { pkgs_path = nixpkgs; cwPkgs = cwPkgs; };
       test.perp = callPackage ./test/perp.nix { pkgs_path = nixpkgs; };
