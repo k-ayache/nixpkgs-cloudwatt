@@ -281,3 +281,19 @@ Then starting `fluentd` with this configuration is quite simple:
     2018-04-04 16:47:20 +0200 [info]: parsing config file is succeeded path="/nix/store/bx78gynmzmlich02npdkzahm9s6fbxln-fluentd.conf"
     [...]
 
+
+How Docker images are pushed
+============================
+
+In `jobsets.nix`, push expressions are generated for all attributes of
+`dockerImages`. Each images is pushed two times to the registry to provide two kind of
+tags:
+- `commitID-outputSha-imageName`: can be used to find back the commit
+  id that produces the image. But it can differ accross CIs since
+  different commits can push the same images.
+- `outputSha`: this tag is stable accross CIs.
+
+It is recommanded to use the second tag in deployments. But it is
+still possible to find back the commit id. By querying the registry
+with the tag `outputSha`, it returns all tags of this image (included
+the tag `commitID-outputSha-imageName`).
