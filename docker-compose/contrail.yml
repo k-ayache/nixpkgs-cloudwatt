@@ -24,7 +24,7 @@ services:
       - "9042:9042"
 
   "zookeeper":
-    image: "zookeeper"
+    image: "zookeeper:3.4.11"
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
@@ -50,8 +50,8 @@ services:
       - "SERVICE_8443_NAME=opencontrail-ifmap"
       - "SERVICE_8084_IGNORE=true"
     ports:
-      - "8082"
-      - "8443"
+      - "8082:8082"
+      - "8443:8443"
       - "8084"
     depends_on:
       - zookeeper
@@ -67,7 +67,7 @@ services:
     labels:
       - "SERVICE_NAME=opencontrail-discovery"
     ports:
-      - "5998"
+      - "5998:5998"
     depends_on:
       - api
 
@@ -83,9 +83,9 @@ services:
       - "SERVICE_5222_IGNORE=true"
       - "SERVICE_5269_IGNORE=true"
     ports:
-      - "8083"
-      - "5222"
-      - "5269"
+      - "8083:8083"
+      - "5222:5222"
+      - "5269:5269"
     depends_on:
       - api
 
