@@ -5,9 +5,16 @@ rec {
   # REGISTRY_PASSWORD to specify the url and credentials of the
   # registry.
   # The commit ID is used to generate the image tag.
+  #
+  # We push the image two times, with and without the commit id. The
+  # tag with the commit id provides a way to find back which commit of
+  # nixpkgs-cloudwatt has been used to create this image while the tag
+  # without the commit id is a stable identifier across both CIs.
   dockerPushImage = image: commitId: unsetProxy:
     let
-      imageRef = "${image.imageName}:${commitId}-${builtins.baseNameOf image.out}";
+      imageRefWithCommitId = "${image.imageName}:${commitId}-${builtins.baseNameOf image.out}";
+      # Generate a ref such as imageName:outputPathHash
+      imageRef = image.imageName + ":" + pkgs.lib.removeSuffix ("-" + image.name) (builtins.baseNameOf image.out);
       jobName = with pkgs.lib; "push-" + (removeSuffix ".tar" (removeSuffix ".gz" image.name));
       outputString = "Pushed image ${image.imageName} with content ${builtins.baseNameOf image.out}  ";
     in
@@ -31,6 +38,8 @@ rec {
 
       echo "Ungunzip image (since skopeo doesn't support tgz image)..."
       gzip -d ${image.out} -c > image.tar
+      echo "Pushing unzipped image ${image.out} ($(du -hs image.tar | cut -f1)) to registry $REGISTRY_URL/${imageRefWithCommitId} ..."
+      skopeo --insecure-policy copy $DESTCREDS --dest-tls-verify=false --dest-cert-dir=/tmp docker-archive:image.tar docker://$REGISTRY_URL/${imageRefWithCommitId}
       echo "Pushing unzipped image ${image.out} ($(du -hs image.tar | cut -f1)) to registry $REGISTRY_URL/${imageRef} ..."
       skopeo --insecure-policy copy $DESTCREDS --dest-tls-verify=false --dest-cert-dir=/tmp docker-archive:image.tar docker://$REGISTRY_URL/${imageRef}
       skopeo --insecure-policy inspect $CREDS --tls-verify=false --cert-dir=/tmp docker://$REGISTRY_URL/${imageRef}
