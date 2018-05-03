@@ -28,6 +28,7 @@ let
       };
       phases = [ "unpackPhase" "patchPhase" "installPhase" "fixupPhase" ];
       patchPhase = ''
+        ${pkgs.gnused}/bin/sed -i 's!development/dnsmasq!eon/dnsmasq!' docker-compose/infrastructure.yml
         ${pkgs.gnused}/bin/sed -i 's/docker-compose -f infrastructure.yml up$/& -d/' docker-compose/Makefile
         ${pkgs.gnused}/bin/sed -i 's/docker-compose -f openstack.yml up$/& -d/' docker-compose/Makefile
         # speedup mysql/rabbitmq provisioning

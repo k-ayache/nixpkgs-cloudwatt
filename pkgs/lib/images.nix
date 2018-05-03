@@ -21,9 +21,9 @@
   };
 
   developmentDnsmaskImage = pkgs.dockerTools.pullImage {
-    imageName = "r.cwpriv.net/development/dnsmasq";
-    imageTag = "2.75-024c101a4eb107e6";
-    sha256 = "1rg6mnf6fwjqgh15fqf31rqxh4ggwb5cl5pd72d83z41yiv5ws46";
+    imageName = "r.cwpriv.net/eon/dnsmasq";
+    imageTag = "no-recursion";
+    sha256 = "1fwi8ibdzlwfv12d3v0fvrp069zis4lawiljcpxp1ns6nb2rgcqx";
   };
 
   developmentFluentdImage = pkgs.dockerTools.pullImage {
