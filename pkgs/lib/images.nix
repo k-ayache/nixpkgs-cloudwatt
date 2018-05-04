@@ -3,15 +3,15 @@
 {
 
   kubernetesBaseImage = pkgs.dockerTools.pullImage {
-    imageName = "r.cwpriv.net/kubernetes/base";
-    imageTag = "16.04-3a4f5ba7a528f04e";
-    sha256 = "0baj7ibdan6v1n0xvgna3iq0z84r7xs27jrpcmzwn0fs63ip27nz";
+    imageName = "docker-registry.sec.cloudwatt.com/kubernetes/base";
+    imageTag = "16.04-861a9e3cd4c7cb3e";
+    sha256 = "1q22fm4y5jc5bs6pcg6pcf26aaz6jqfdz5svv31ax2wmvza0r2l1";
   };
 
   javaJreImage = pkgs.dockerTools.pullImage {
-    imageName = "r.cwpriv.net/java/jre";
+    imageName = "docker-registry.sec.cloudwatt.com/java/jre";
     imageTag = "8-16.04-217a2260b5fb49b4";
-    sha256 = "1cq6lcyl9hpwdy7f53hminx2i0vp86zrbgglh2y27pf9ciaycql9";
+    sha256 = "13i6q99m8v9v64iz9qnd2svkgs7srlgnh9k54rgyrp8d8sjy6qaa";
   };
 
 }
