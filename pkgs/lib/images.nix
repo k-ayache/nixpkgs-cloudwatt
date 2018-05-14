@@ -23,7 +23,7 @@
   developmentDnsmaskImage = pkgs.dockerTools.pullImage {
     imageName = "r.cwpriv.net/eon/dnsmasq";
     imageTag = "no-recursion";
-    sha256 = "1fwi8ibdzlwfv12d3v0fvrp069zis4lawiljcpxp1ns6nb2rgcqx";
+    sha256 = "05aaky7qh5gav5z7lh20qfskvzzbsvx5m3ng7b09pvswljdh9gpj";
   };
 
   developmentFluentdImage = pkgs.dockerTools.pullImage {
