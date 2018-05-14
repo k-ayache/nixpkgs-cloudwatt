@@ -122,11 +122,6 @@ in rec {
       name = "query_engine";
       dns = "opencontrail-query-engine.service";
     };
-    redis = {
-      name = "redis";
-      dns = "opencontrail-redis.service";
-      port = 6379;
-    };
   };
 
   discovery = pkgs.writeTextFile {
@@ -286,11 +281,6 @@ in rec {
           server = services.discovery.dns;
           port = services.discovery.port;
         };
-
-        REDIS = {
-          server = "127.0.0.1";
-          port = services.redis.port;
-        };
       };
     };
   };
@@ -312,12 +302,6 @@ in rec {
           disc_server_ip = services.discovery.dns;
           disc_server_port = services.discovery.port;
         };
-
-        REDIS = {
-          #Analytics asks redis ip of container, so we have to bind in redis to ip container also
-          redis_server_port = services.redis.port;
-          redis_query_port = services.redis.port;
-        };
       };
     };
   };
@@ -335,10 +319,6 @@ in rec {
         DISCOVERY = {
           server = services.discovery.dns;
           port = services.discovery.port;
-        };
-
-        REDIS = {
-          port = services.redis.port;
         };
       };
     };
