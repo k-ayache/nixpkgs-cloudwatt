@@ -116,6 +116,7 @@ in rec {
     };
     analyticsApi = {
       name = "analytics_api";
+      dns = "opencontrail-analytics-api.service";
     };
     queryEngine = {
       name = "query_engine";
