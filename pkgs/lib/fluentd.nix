@@ -87,10 +87,10 @@ rec {
         port 24225
       </source>
       ${pkgs.lib.concatStrings (map genFluentdSource services)}
+      ${pkgs.lib.concatStrings (map genFluentdFilters services)}
       <filter>
         @type generic_metadata
       </filter>
-      ${pkgs.lib.concatStrings (map genFluentdFilters services)}
       <match log.**>
         @type forward
         time_as_integer true
@@ -106,7 +106,7 @@ rec {
     let
       newServiceCommand = s:
         if captureServiceStdout s then
-          "rundeux ${s.command} :: ${pkgs.coreutils}/bin/tee /tmp/${s.name}"
+          "rundeux ${pkgs.bash}/bin/bash -c 'exec 2>&1 ${s.command}' :: ${pkgs.coreutils}/bin/tee /tmp/${s.name}"
         else
           s.command;
       newService = s:

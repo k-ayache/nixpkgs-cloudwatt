@@ -6,6 +6,8 @@ GEM
       fluentd (>= 0.14.0)
     fluent-plugin-detect-exceptions (0.0.9)
       fluentd (>= 0.10)
+    fluent-plugin-multi-format-parser (1.0.0)
+      fluentd (>= 0.14.0, < 2)
     fluent-plugin-named_pipe (0.2.0)
       fluentd (>= 0.10.58)
       mkfifo
@@ -49,6 +51,7 @@ PLATFORMS
 DEPENDENCIES
   fluent-plugin-concat
   fluent-plugin-detect-exceptions
+  fluent-plugin-multi-format-parser
   fluent-plugin-named_pipe
   fluent-plugin-prometheus
   fluent-plugin-rewrite-tag-filter

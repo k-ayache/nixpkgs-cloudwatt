@@ -124,6 +124,7 @@ services:
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
+      - "service=analytics"
       - "VAULT_TOKEN=$VAULT_TOKEN"
       - "openstack_region=dev0"
     labels:

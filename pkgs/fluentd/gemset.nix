@@ -25,6 +25,15 @@
     };
     version = "0.0.9";
   };
+  fluent-plugin-multi-format-parser = {
+    dependencies = ["fluentd"];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "15xawrl6cc69arcsajd5f0l5flhyhnx2w91cd051y8hvhggy9kcs";
+      type = "gem";
+    };
+    version = "1.0.0";
+  };
   fluent-plugin-named_pipe = {
     dependencies = ["fluentd" "mkfifo"];
     source = {
