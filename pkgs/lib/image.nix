@@ -53,11 +53,6 @@ rec {
       '';
     };
 
-  runOneShot = args@{ oneShot ? false, command, ... }:
-    if oneShot then
-      args // { command = "${pkgs.bash}/bin/bash -c '${command}'; perpctl X $SVNAME"; }
-    else args;
-
   runAsUser = args@{ user ? "nobody", command, ... }:
     if user != "nobody" && user != "root" then
       abort "Only nobody and root users are supported."
@@ -92,7 +87,16 @@ rec {
     ...
   }:
     let
-      newArgs = runOptions (runOneShot (runAsUser (runPreScript (runWithEnv args))));
+      newArgs = runOptions (runAsUser (runPreScript (runWithEnv args)));
+      oneShotScript = pkgs.lib.optionalString oneShot ''
+        if [ -f /var/run/perp/${name}.already-run ]; then
+          echo "Disable the oneshot perp service ${name} since it has been already executed"
+          perpctl X $SVNAME
+          rm /var/run/perp/${name}.already-run
+          exit 0
+        fi
+        touch /var/run/perp/${name}.already-run
+      '';
     in
       pkgs.writeTextFile {
         name = "${name}-rc.main";
@@ -105,6 +109,8 @@ rec {
 
           TARGET=$1
           SVNAME=$2
+
+          ${oneShotScript}
 
           start() {
             ${newArgs.command}
