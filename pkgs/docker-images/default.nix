@@ -143,7 +143,7 @@ in
 
   gremlinServer = lib.buildImageWithPerps {
     name = "gremlin/server";
-    fromImage = lib.images.javaJreImage;
+    fromImage = lib.images.kubernetesBaseImage;
     services = [
       {
         name = "gremlin-server";
@@ -175,11 +175,6 @@ in
     contents = [
       contrail32Cw.tools.contrailGremlin
     ];
-    runAsRoot = ''
-      if [ -f /etc/prometheus/prometheus_jmx_java8.yml ]; then
-        echo "- pattern: 'metrics<name=(.+)><>(.+):'" >> /etc/prometheus/prometheus_jmx_java8.yml
-      fi
-    '';
   };
 
   gremlinFsck = lib.buildImageWithPerps {
