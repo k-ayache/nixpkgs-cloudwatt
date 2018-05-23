@@ -174,6 +174,25 @@ let
       ];
     }
 
+    # make sure a oneshot service is run exactly one time
+    rec {
+      name = "oneshot";
+      script = ''
+        echo "oneshot" >> /tmp/oneshot
+      '';
+      service = {
+        oneShot = true;
+      };
+
+      testScript = ''
+        $machine->succeed("sleep 6");
+        $machine->succeed("docker exec ${name} cat /tmp/oneshot | wc -l  | xargs test 1 -eq");
+        # A oneshot services can be reactivated and is then rexecuted exacltly onetime
+        $machine->succeed("docker exec ${name} perpctl A ${name}");
+        $machine->succeed("sleep 4");
+        $machine->succeed("docker exec ${name} cat /tmp/oneshot | wc -l  | xargs test 2 -eq");
+      '';
+    }
   ];
 
   mkImage = test:
@@ -204,9 +223,11 @@ let
 
   runImages = builtins.concatStringsSep "\n" (map runImage tests);
 
-  runTest = test@{ succeed ? [], fail ? [], ... }: builtins.concatStringsSep "\n"
-    ((map (e: "$machine->succeed(\"docker exec ${test.name} ${e}\");") succeed) ++
-     (map (e: "$machine->fail(\"docker exec ${test.name} ${e}\");") fail));
+  runTest = test@{ succeed ? [], fail ? [], testScript ? "", ... }:
+    testScript +
+    (builtins.concatStringsSep "\n"
+      ((map (e: "$machine->succeed(\"docker exec ${test.name} ${e}\");") succeed) ++
+       (map (e: "$machine->fail(\"docker exec ${test.name} ${e}\");") fail)));
 
   runTests = builtins.concatStringsSep "\n" (map runTest tests);
 
