@@ -187,7 +187,7 @@ let
       testScript = ''
         $machine->succeed("sleep 6");
         $machine->succeed("docker exec ${name} cat /tmp/oneshot | wc -l  | xargs test 1 -eq");
-        # A oneshot services can be reactivated and is then rexecuted exacltly onetime
+        # A oneshot service can be reactivated and is then reexecuted exactly onetime
         $machine->succeed("docker exec ${name} perpctl A ${name}");
         $machine->succeed("sleep 4");
         $machine->succeed("docker exec ${name} cat /tmp/oneshot | wc -l  | xargs test 2 -eq");
