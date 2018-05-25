@@ -5,7 +5,7 @@
 # Attribute Owner Repos Branch
 cat >/tmp/tmp.lst <<EOF
 controller cloudwatt contrail-controller R3.2-cloudwatt
-neutronPlugin cloudwatt contrail-neutron-plugin master
+neutronPlugin cloudwatt contrail-neutron-plugin R3.2-cloudwatt
 vrouter nlewo contrail-vrouter R3.2-cloudwatt
 EOF
 

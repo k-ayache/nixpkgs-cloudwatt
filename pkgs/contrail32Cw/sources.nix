@@ -4,23 +4,23 @@
 
 {pkgs}:
 {
-  # Head of branch R3.2-cloudwatt of repository github.com/cloudwatt/contrail-controller at 2018-01-26 10:53:37
+  # Head of branch R3.2-cloudwatt of repository github.com/cloudwatt/contrail-controller at 2018-05-25 15:58:57
   controller = pkgs.fetchFromGitHub {
     name = "controller";
     owner = "cloudwatt";
     repo = "contrail-controller";
-    rev = "ef73f51d1a5daea2f9875345bdf34b9a7c8b6cb2";
-    sha256 = "0pk2nid2l6l00f9d6gb2a9icahsmlhlb01k294925pn5rsffz6k6";
+    rev = "26a9e598b1e21d28e7c483550346af48fae70c72";
+    sha256 = "0nk9hw13mjjn86l1h4hxa0yax13irchjkbhch9asr65nqrm3598h";
   };
-  # Head of branch master of repository github.com/cloudwatt/contrail-neutron-plugin at 2018-01-26 10:53:55
+  # Head of branch R3.2-cloudwatt of repository github.com/cloudwatt/contrail-neutron-plugin at 2018-05-25 15:59:11
   neutronPlugin = pkgs.fetchFromGitHub {
-    name = "neutron-plugin";
+    name = "neutronPlugin";
     owner = "cloudwatt";
     repo = "contrail-neutron-plugin";
-    rev = "91a10d261184fec7bde8d9413f53151b094a64f1";
-    sha256 = "1c6rsgg6ld6mbg9x331chg2bwxwyagicnjpppm83qgak4i71v1vx";
+    rev = "6cc7dbc0246fbb9ab1c52a60f5a335e4dca7f692";
+    sha256 = "1v2011hmyvs069x51nz2zdb5d9iwg08a5qw0kqd27j1p5qddq34v";
   };
-  # Head of branch R3.2-cloudwatt of repository github.com/nlewo/contrail-vrouter at 2018-01-26 10:53:57
+  # Head of branch R3.2-cloudwatt of repository github.com/nlewo/contrail-vrouter at 2018-05-25 15:59:15
   vrouter = pkgs.fetchFromGitHub {
     name = "vrouter";
     owner = "nlewo";
