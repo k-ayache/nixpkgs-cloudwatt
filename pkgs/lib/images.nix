@@ -8,12 +8,6 @@
     sha256 = "1q22fm4y5jc5bs6pcg6pcf26aaz6jqfdz5svv31ax2wmvza0r2l1";
   };
 
-  javaJreImage = pkgs.dockerTools.pullImage {
-    imageName = "docker-registry.sec.cloudwatt.com/java/jre";
-    imageTag = "8-16.04-217a2260b5fb49b4";
-    sha256 = "13i6q99m8v9v64iz9qnd2svkgs7srlgnh9k54rgyrp8d8sjy6qaa";
-  };
-
   consulAgentImage = pkgs.dockerTools.pullImage {
     imageName = "r.cwpriv.net/consul/agent";
     imageTag = "0.7.1-b6fcd21809bc2d5d";

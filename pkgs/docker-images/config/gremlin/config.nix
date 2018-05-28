@@ -63,13 +63,27 @@ rec {
     '';
   };
 
+  prometheusJmxExporter = pkgs.fetchurl {
+    url = "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.10/jmx_prometheus_javaagent-0.10.jar";
+    sha256 = "0abyydm2dg5g57alpvigymycflgq4b3drw4qs7c65vn95yiaai5i";
+  };
+
+  prometheusJmxExporterConf = pkgs.writeTextFile {
+    name = "prometheus_jmx_java8.yml";
+    text = ''
+      ---
+      rules:
+      - pattern: 'java.nio<type=BufferPool, name=(\w+)><>(Count|MemoryUsed):'
+      - pattern: 'java.lang<type=GarbageCollector, name=(\w+)><>(\w+):'
+      - pattern: 'java.lang<type=Compilation><>(TotalCompilationTime):'
+      - pattern: 'java.lang<type=OperatingSystem><>(AvailableProcessors|CommittedVirtualMemorySize|FreePhysicalMemorySize|FreeSwapSpaceSize|MaxFileDescriptorCount|OpenFileDescriptorCount|ProcessCpuLoad|ProcessCpuTime|SystemCpuLoad|SystemLoadAverage|TotalPhysicalMemorySize|TotalSwapSpaceSize):'
+      - pattern: 'java.lang<type=Threading><>(CurrentThreadCpuTime|CurrentThreadUserTime):'
+      - pattern: 'metrics<name=(.+)><>(.+):'
+    '';
+  };
+
   serverPreStart = ''
-    if [ -f /etc/default/prometheus_jmx ]
-    then
-      source /etc/default/prometheus_jmx
-      export JAVA_OPTIONS="$JAVA_OPTIONS -Dcom.sun.management.jmxremote $PROM_OPTS"
-    fi
-    export JAVA_OPTIONS="$JAVA_OPTIONS -Dlog4j.configuration=file:${log4jProperties}"
+    export JAVA_OPTIONS="$JAVA_OPTIONS -Dlog4j.configuration=file:${log4jProperties} -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -javaagent:${prometheusJmxExporter}=1234:${prometheusJmxExporterConf}"
     export GREMLIN_DUMP_CASSANDRA_SERVERS=opencontrail-config-cassandra.service
     ${contrail32Cw.tools.contrailGremlin}/bin/gremlin-dump ${dumpPath}
   '';
