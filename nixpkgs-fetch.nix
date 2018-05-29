@@ -6,12 +6,12 @@ in {
     owner = "NixOS";
     repo = "nixpkgs";
     # Belong to the branch release-18.03
-    rev = "699bc1278efa0e621083e731302076e2deca8ccd";
-    sha256 = "19ci5s856zwbndldd6w5rhs1gzc7q350w8l2kpx94j790qh7v6nd";};
+    rev = "2ee48415afc58cb9043a2463e0bde1a91d46c09a";
+    sha256 = "1fca1mfpzb2r4ijxllrcyl8qzbws9wxlvqr3fsh4agrpkf68rci5";};
   contrail = bootstrap_pkgs.fetchFromGitHub {
     owner = "nlewo";
     repo = "nixpkgs-contrail";
     # Belong to the master branch
-    rev = "043fb365260c178622c0f18cf84b7ad7290e1a8b";
-    sha256 = "0cfmj0mqn2q6d4xvgjy9ix1lp6vyf9y0ypl4v6mnvqm5aq9m53cp";};
+    rev = "ec3008d56c7ba378de2e1a559bfca70827555cf4";
+    sha256 = "0vzy97vnnwk3gw29nc1j0h6r3ladd1wwj2ldm0gjnx0yg7skzbya";};
   }

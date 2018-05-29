@@ -37,6 +37,11 @@ rec {
       graphs: {
         graph: ${serverProperties}
       }
+      scriptEngines: {
+        gremlin-groovy: {
+          plugins: { org.apache.tinkerpop.gremlin.server.jsr223.GremlinServerGremlinPlugin: {},
+                     org.apache.tinkerpop.gremlin.tinkergraph.jsr223.TinkerGraphGremlinPlugin: {},
+                     org.apache.tinkerpop.gremlin.jsr223.ScriptFileGremlinPlugin: { files: [${serverScript}] }}}}
     '';
   };
 
@@ -47,6 +52,15 @@ rec {
       gremlin.tinkergraph.vertexIdManager=UUID
       gremlin.tinkergraph.graphFormat=graphson
       gremlin.tinkergraph.graphLocation=${dumpPath}
+    '';
+  };
+
+  serverScript = pkgs.writeTextFile {
+    name = "server.groovy";
+    text = ''
+      def globals = [:]
+
+      globals << [g : graph.traversal(), n : graph.traversal().withStrategies(SubgraphStrategy.build().vertices(hasNot('_missing').hasNot('_incomplete')).create())]
     '';
   };
 
