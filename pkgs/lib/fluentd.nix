@@ -74,7 +74,7 @@ rec {
 
   genFluentdFilters = { name, fluentd ? {}, ... }:
     if fluentd ? filters then
-      map (genFluentdFilter name) fluentd.filters
+      pkgs.lib.concatStrings (map (genFluentdFilter name) fluentd.filters
     else
       "";
 
