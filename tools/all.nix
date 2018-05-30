@@ -1,7 +1,7 @@
 with builtins;
 
 let pkgsCw = import ../jobset.nix { cloudwatt=./..; pushToDockerRegistry = true; publishToAptly = true; };
-    pkgs = (import <nixpkgs> {}).lib;
+    lib = (import <nixpkgs> {}).lib;
 
     # From an attributes set, recursively collect all derivations (such as Hydra)
     # This returns the list of all derivations

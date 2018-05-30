@@ -8,7 +8,8 @@ set +e
 
 tmp=$(mktemp)
 
-nix-instantiate all.nix | sed 's/!bin//g' | xargs nix-store -qR | uniq >$tmp
+nix-instantiate all.nix | sed 's/!bin//g' | xargs nix-store -qR | sort | uniq >$tmp
+
 
 cat $tmp | egrep -v "*.drv$"
 cat $tmp | egrep "*.drv$"  | xargs nix-store -q | cat
