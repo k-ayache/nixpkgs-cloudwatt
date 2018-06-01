@@ -237,6 +237,47 @@ let
 
   };
 
+  contrailProvision = pkgs.writeTextFile {
+    name = "provision.json";
+    text = ''
+      {
+          "name": "test",
+          "namespace": "contrail_api_cli.provision",
+          "defaults": {
+              "vn": {
+                  "project-fqname": "default-domain:service"
+              },
+              "lr": {
+                  "project-fqname": "default-domain:service"
+              }
+          },
+          "provision": {
+              "vn": [
+                  {
+                    "virtual-network-name": "vn1",
+                    "subnets": [
+                      "20.1.1.0/24"
+                    ]
+                  },
+                  {
+                    "virtual-network-name": "vn2",
+                    "subnets": [
+                      "20.2.2.0/24"
+                    ]
+                  }
+              ],
+              "lr": {
+                  "logical-router-name": "router",
+                  "vn-fqnames": [
+                    "default-domain:service:vn1",
+                    "default-domain:service:vn2"
+                  ]
+              }
+          }
+      }
+    '';
+  };
+
   controller = { config, ... }: {
     config = rec {
       services.openssh.enable = true;
@@ -284,6 +325,7 @@ let
         "keystone/admin-token.openrc".source = keystoneAdminTokenRc;
         "keystone/admin.openrc".source = keystoneAdminRc;
         "contrail/vnc_api_lib.ini".source = vncApiLib;
+        "contrail/provision.json".source = contrailProvision;
       };
 
     };
@@ -364,9 +406,8 @@ let
     # create service project
     $controller->succeed("source ${keystoneAdminRc} && contrail-api-cli exec contrail/create_project.py");
 
-    # add vn
-    $controller->succeed("source ${keystoneAdminRc} && contrail-api-cli --ns contrail_api_cli.provision add-vn --project-fqname default-domain:service vn1");
-    $controller->succeed("source ${keystoneAdminRc} && contrail-api-cli --ns contrail_api_cli.provision set-subnets --virtual-network-fqname default-domain:service:vn1 20.1.1.0/24");
+    # provision vns etc...
+    $controller->succeed("source ${keystoneAdminRc} && contrail-api-cli provision -f ${contrailProvision}");
 
     # check all vrouters are present
     $controller->waitUntilSucceeds("curl -s localhost:8081/analytics/uves/vrouters | jq '. | length' | grep -q 2");
@@ -374,8 +415,10 @@ let
     # test ping
     $vrouter1->succeed("netns-daemon-start -U opencontrail -P development -s controller -n default-domain:service:vn1 vm1");
     $vrouter2->succeed("netns-daemon-start -U opencontrail -P development -s controller -n default-domain:service:vn1 vm2");
+    $vrouter2->succeed("netns-daemon-start -U opencontrail -P development -s controller -n default-domain:service:vn2 vm3");
     $vrouter1->succeed("ip netns exec ns-vm1 ip a | grep -q 20.1.1.252");
     $vrouter1->succeed("ip netns exec ns-vm1 ping -c1 20.1.1.251");
+    $vrouter1->succeed("ip netns exec ns-vm1 ping -c1 20.2.2.252");
   '';
 
 in
