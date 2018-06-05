@@ -363,4 +363,56 @@ in rec {
       AUTHN_URL    = /v2.0/tokens
     '';
   };
+
+  fluentdForPythonService = {
+    source = {
+      type = "stdout";
+    };
+    filters = [
+      {
+        type = "parser";
+        key_name = "message";
+        parse = {
+          type = "multi_format";
+          pattern = [
+            {
+              format = "regexp";
+              expression = ''/^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?(.*)?$/'';
+            }
+            {
+              format = "regexp";
+              expression = ''/^(?<time>([^ ]+ ){3})\[(?<serive>[^\]]+)\]: (?<message>.*)$/'';
+            }
+            {
+              format = "none";
+            }
+          ];
+        };
+      }
+    ];
+  };
+
+  fluentdForCService = {
+    source = {
+      type = "stdout";
+    };
+    filters = [
+      {
+        type = "parser";
+        key_name = "message";
+        parse = {
+          type = "multi_format";
+          pattern = [
+            {
+              format = "regexp";
+              expression = ''/^(?<time>([^ ]+ ){4}) (?<idcontainer>[^ ]+) \[[^ ]+ (?<thread>[^,]+), [^ ]+(?<pid>[^\]]+)\]: (?<message>.*)$/'';
+            }
+            {
+              format = "none";
+            }
+          ];
+        };
+      }
+    ];
+  };
 }

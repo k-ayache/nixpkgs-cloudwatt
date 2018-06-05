@@ -39,58 +39,6 @@ let
     [[ ! -f /my-ip ]] && hostname --ip-address > /my-ip
     '';
 
-  fluentdPython = {
-    source = {
-      type = "stdout";
-    };
-    filters = [
-      {
-        type = "parser";
-        key_name = "message";
-        parse = {
-          type = "multi_format";
-          pattern = [
-            {
-              format = "regexp";
-              expression = ''/^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?(.*)?$/'';
-            }
-            {
-              format = "regexp";
-              expression = ''/^(?<time>([^ ]+ ){3})\[(?<serive>[^\]]+)\]: (?<message>.*)$/'';
-            }
-            {
-              format = "none";
-            }
-          ];
-        };
-      }
-    ];
-  };
-
-  fluentdC = {
-    source = {
-      type = "stdout";
-    };
-    filters = [
-      {
-        type = "parser";
-        key_name = "message";
-        parse = {
-          type = "multi_format";
-          pattern = [
-            {
-              format = "regexp";
-              expression = ''/^(?<time>([^ ]+ ){4}) (?<idcontainer>[^ ]+) \[[^ ]+ (?<thread>[^,]+), [^ ]+(?<pid>[^\]]+)\]: (?<message>.*)$/'';
-            }
-            {
-              format = "none";
-            }
-          ];
-        };
-      }
-    ];
-  };
-
 in
 {
   inherit contrailVrouter;
@@ -102,7 +50,7 @@ in
       consul-template-wrapper -- -once \
         -template="${config.contrail.api}:/etc/contrail/contrail-api.conf"
     '';
-    fluentd = fluentdPython;
+    fluentd = config.contrail.fluentdForPythonService;
     };
 
   contrailDiscovery = buildContrailImageWithPerp {
@@ -112,7 +60,7 @@ in
       consul-template-wrapper -- -once \
         -template="${config.contrail.discovery}:/etc/contrail/contrail-discovery.conf"
     '';
-    fluentd = fluentdPython;
+    fluentd = config.contrail.fluentdForPythonService;
     };
 
   contrailControl = buildContrailImageWithPerp {
@@ -124,7 +72,7 @@ in
       consul-template-wrapper -- -once \
         -template="${config.contrail.control}:/etc/contrail/contrail-control.conf"
     '';
-    fluentd = fluentdC;
+    fluentd = config.contrail.fluentdForCService;
   };
 
   contrailAnalytics = buildContrailImageWithPerps {
@@ -138,7 +86,7 @@ in
          -template="${config.contrail.analyticsApi}:/etc/contrail/contrail-analytics-api.conf"
         '';
         user = "root";
-        fluentd = fluentdPython;
+        fluentd = config.contrail.fluentdForPythonService;
       }
       {
         name = "opencontrail-collector";
@@ -151,7 +99,7 @@ in
          -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
         '';
         user = "root";
-        fluentd = fluentdC;
+        fluentd = config.contrail.fluentdForCService;
       }
       {
         name = "redis-server";
@@ -165,7 +113,7 @@ in
           -template="${config.contrail.queryEngine}:/etc/contrail/contrail-query-engine.conf"
           '';
         user = "root";
-        fluentd = fluentdC;
+        fluentd = config.contrail.fluentdForCService;
       }
     ];
   };
@@ -179,7 +127,7 @@ in
         -template="${config.contrail.schemaTransformer}:/etc/contrail/contrail-schema-transformer.conf" \
         -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
     '';
-    fluentd = fluentdPython;
+    fluentd = config.contrail.fluentdForPythonService;
   };
 
   contrailSvcMonitor = buildContrailImageWithPerp {
@@ -190,7 +138,7 @@ in
         -template="${config.contrail.svcMonitor}:/etc/contrail/contrail-svc-monitor.conf" \
         -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
     '';
-    fluentd = fluentdPython;
+    fluentd = config.contrail.fluentdForPythonService;
   };
 
   locksmithWorker = lib.buildImageWithPerp {
