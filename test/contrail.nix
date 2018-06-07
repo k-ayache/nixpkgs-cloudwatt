@@ -85,6 +85,7 @@ let
     cwPkgs.dockerImages.contrailDiscovery
     cwPkgs.dockerImages.contrailControl
     cwPkgs.dockerImages.contrailSchemaTransformer
+    cwPkgs.dockerImages.contrailSvcMonitor
     cwPkgs.dockerImages.contrailAnalytics
   ];
 
@@ -96,6 +97,10 @@ let
   keystoneProject = "openstack";
   keystoneUser = "admin";
   keystonePassword = "development";
+
+  publicNetName = "public";
+  publicNetPrefix = "10.0.0.0";
+  publicNetPrefixLen = 24;
 
   keystoneAdminTokenRc = pkgs.writeTextFile {
     name = "admin-token.openrc";
@@ -184,6 +189,9 @@ let
 
       [TASK]
       tbb_keepawake_timeout = 25
+
+      [SERVICE-INSTANCE]
+      netns_command=${contrailPkgs.vrouterNetns}/bin/opencontrail-vrouter-netns
     '';
   };
 
@@ -220,16 +228,17 @@ let
         contrailInterface = "eth2";
       };
 
-      systemd.services.provisionVrouter = {
+      # TODO: add in compute module
+      systemd.services.addVGW = {
         serviceConfig.Type = "oneshot";
         serviceConfig.RemainAfterExit = true;
         wantedBy = [ "multi-user.target" ];
         after = [ "contrailVrouterAgent.service" ];
         script = ''
-          ${cwPkgs.waitFor}/bin/wait-for controller:8082 -t 5000
-          source ${keystoneAdminRc}
-          ${contrailPkgs.tools.contrailApiCliWithExtra}/bin/contrail-api-cli --ns contrail_api_cli.provision \
-            add-vrouter --vrouter-ip 192.168.2.${ip} $HOSTNAME
+          ${cwPkgs.waitFor}/bin/wait-for localhost:9091
+          ${contrailPkgs.configUtils}/bin/provision_vgw_interface.py --oper create \
+              --interface vgw --subnets ${publicNetPrefix}/${toString publicNetPrefixLen} --routes 0.0.0.0/0 \
+              --vrf "default-domain:service:${publicNetName}:${publicNetName}"
         '';
       };
 
@@ -252,7 +261,31 @@ let
               }
           },
           "provision": {
+              "encaps": {
+                "modes": [
+                  "MPLSoGRE",
+                  "MPLSoUDP",
+                  "VXLAN"
+                ]
+              },
+              "vrouter": [
+                {
+                  "vrouter-ip": "192.168.2.2",
+                  "vrouter-name": "vrouter1"
+                },
+                {
+                  "vrouter-ip": "192.168.2.3",
+                  "vrouter-name": "vrouter2"
+                }
+              ],
               "vn": [
+                  {
+                    "virtual-network-name": "${publicNetName}",
+                    "subnets": [
+                      "${publicNetPrefix}/${toString publicNetPrefixLen}"
+                    ],
+                    "external": true
+                  },
                   {
                     "virtual-network-name": "vn1",
                     "subnets": [
@@ -271,7 +304,8 @@ let
                   "vn-fqnames": [
                     "default-domain:service:vn1",
                     "default-domain:service:vn2"
-                  ]
+                  ],
+                  "external-vn-fqname": "default-domain:service:${publicNetName}"
               }
           }
       }
@@ -289,6 +323,12 @@ let
       networking.hosts = {
         "127.0.1.1" = [ "identity-admin.dev0.loc.cloudwatt.net" "identity.dev0.loc.cloudwatt.net" ];
       };
+      # we ping the controller from contrail with an IP from the public network
+      # so the controller needs to know to send back packets. Destination can
+      # be either vrouter.
+      networking.interfaces.eth1.ipv4.routes = [
+        { address = publicNetPrefix; prefixLength = publicNetPrefixLen; via = "192.168.1.2"; }
+      ];
 
       virtualisation = {
         diskSize = 10000;
@@ -305,7 +345,6 @@ let
       # ];
 
       environment.systemPackages = [
-        pkgs.vim
         # deps for test script
         pkgs.docker_compose
         pkgs.gnumake
@@ -383,7 +422,7 @@ let
     }
 
     # start services, we don't start vrouter/vrouter-master/svc-monitor
-	$controller->succeed("source ${vaultEnv} && cd contrail && docker-compose -f contrail.yml up -d cassandra zookeeper api discovery control schema analytics");
+	$controller->succeed("source ${vaultEnv} && cd contrail && docker-compose -f contrail.yml up -d cassandra zookeeper api discovery control schema analytics svc-monitor");
 
     # check services state
     my @services = qw(ApiServer IfmapServer Collector OpServer);
@@ -409,16 +448,25 @@ let
     # provision vns etc...
     $controller->succeed("source ${keystoneAdminRc} && contrail-api-cli provision -f ${contrailProvision}");
 
-    # check all vrouters are present
+    # check all vrouters are present and functionnal
     $controller->waitUntilSucceeds("curl -s localhost:8081/analytics/uves/vrouters | jq '. | length' | grep -q 2");
+    $controller->waitUntilSucceeds("curl -s localhost:8081/analytics/uves/vrouter/*?cfilt=NodeStatus:process_status | jq -e '.[][].value.NodeStatus.process_status[] | select(.state == \"Functional\")'");
 
     # test ping
     $vrouter1->succeed("netns-daemon-start -U opencontrail -P development -s controller -n default-domain:service:vn1 vm1");
     $vrouter2->succeed("netns-daemon-start -U opencontrail -P development -s controller -n default-domain:service:vn1 vm2");
     $vrouter2->succeed("netns-daemon-start -U opencontrail -P development -s controller -n default-domain:service:vn2 vm3");
     $vrouter1->succeed("ip netns exec ns-vm1 ip a | grep -q 20.1.1.252");
+    # ping in same network
     $vrouter1->succeed("ip netns exec ns-vm1 ping -c1 20.1.1.251");
+    # ping through router
     $vrouter1->succeed("ip netns exec ns-vm1 ping -c1 20.2.2.252");
+    # check snat is properly scheduled on each vrouter
+    $vrouter1->waitUntilSucceeds("ip netns | grep -q vrouter");
+    $vrouter2->waitUntilSucceeds("ip netns | grep -q vrouter");
+    # ping controller via SNAT
+    # first ping may fails, but next one should succeed
+    $vrouter1->waitUntilSucceeds("ip netns exec ns-vm1 ping -c1 192.168.1.1");
   '';
 
 in
