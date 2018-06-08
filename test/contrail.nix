@@ -372,6 +372,33 @@ let
 
   vaultEnv = "infrastructure/docker-compose/.docker-compose/vault.env";
 
+  # we don't care about setting a correct tenant_id or user_id
+  # because is_admin is set to true
+  vncOpenstackRequest = pkgs.writeTextFile {
+    name = "request.json";
+    text = builtins.toJSON {
+      context = {
+        type = "network";
+        operation = "READALL";
+        tenant_id = "6d5e09f8e1194f928afece567b6e56f5";
+        user_id = "6d5e09f8e1194f928afece567b6e56f5";
+        request_id = "req-f79fa546-ec4c-4bcc-9f4d-b535974312b8";
+        is_admin = true;
+      };
+      data = {
+        fields = [];
+        filters = {};
+      };
+    };
+  };
+
+  checkVncOpenstack = pkgs.writeShellScriptBin "check-vnc_openstack" ''
+    source ${keystoneAdminRc}
+    export TOKEN=$(openstack token issue -f value -c id)
+    curl -i -X POST -H "X-Auth-Token: $TOKEN" -H "Content-type: application/json" \
+      --data @${vncOpenstackRequest} http://localhost:8082/neutron/network | grep -q '200 OK'
+  '';
+
   # working directory is /tmp
   testScript = ''
     my $ret;
@@ -447,6 +474,9 @@ let
 
     # provision vns etc...
     $controller->succeed("source ${keystoneAdminRc} && contrail-api-cli provision -f ${contrailProvision}");
+
+    # check vnc_openstack
+    $controller->succeed("${checkVncOpenstack}/bin/check-vnc_openstack");
 
     # check all vrouters are present and functionnal
     $controller->waitUntilSucceeds("curl -s localhost:8081/analytics/uves/vrouters | jq '. | length' | grep -q 2");
