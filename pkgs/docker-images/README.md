@@ -40,6 +40,28 @@ Use `lib.buildImageWithPerps` helper:
         ];
     };
 
+If services must be run in a particular order, you can set the `after` attribute
+in a service definition to wait for other services. `after` takes a list of service names:
+
+    services = [
+      {
+        name = "svc1";
+        command = [...];
+      }
+      {
+        name = "svc2";
+        command = [...];
+        after = [ "svc1" ]
+      }
+    ];
+
+If the service to wait for is oneshot, it will wait for the file `/var/run/perp/<service>.success`
+to be present. You don't need to create this file yourself, it is created once the oneshot service
+has executed successfuly.
+
+If the service to wait for is not oneshot, it checks that it has been up at least since 3s to
+make sure it is not broken and constantly restarting.
+
 Users
 -----
 
