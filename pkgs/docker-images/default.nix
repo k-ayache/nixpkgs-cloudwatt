@@ -48,10 +48,11 @@ in
     command = "${contrail32Cw.api}/bin/contrail-api --conf_file /etc/contrail/contrail-api.conf";
     preStartScript = my_ip + ''
       consul-template-wrapper -- -once \
-        -template="${config.contrail.api}:/etc/contrail/contrail-api.conf"
+        -template="${config.contrail.api}:/etc/contrail/contrail-api.conf" \
+        -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
     '';
     fluentd = config.contrail.fluentdForPythonService;
-    };
+  };
 
   contrailDiscovery = buildContrailImageWithPerp {
     name = "opencontrail/discovery";
@@ -61,7 +62,7 @@ in
         -template="${config.contrail.discovery}:/etc/contrail/contrail-discovery.conf"
     '';
     fluentd = config.contrail.fluentdForPythonService;
-    };
+  };
 
   contrailControl = buildContrailImageWithPerp {
     name = "opencontrail/control";
@@ -117,7 +118,6 @@ in
       }
     ];
   };
-
 
   contrailSchemaTransformer = buildContrailImageWithPerp {
     name = "opencontrail/schema-transformer";
