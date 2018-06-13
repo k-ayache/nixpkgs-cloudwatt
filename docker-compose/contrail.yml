@@ -42,6 +42,7 @@ services:
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
+      - "application=contrail"
       - "service=api"
       - "VAULT_TOKEN=$VAULT_TOKEN"
       - "openstack_region=dev0"
@@ -62,6 +63,7 @@ services:
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
+      - "application=contrail"
       - "service=discovery"
       - "VAULT_TOKEN=$VAULT_TOKEN"
     labels:
@@ -76,6 +78,7 @@ services:
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
+      - "application=contrail"
       - "service=control"
       - "VAULT_TOKEN=$VAULT_TOKEN"
     labels:
@@ -94,6 +97,7 @@ services:
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
+      - "application=contrail"
       - "service=schema"
       - "VAULT_TOKEN=$VAULT_TOKEN"
       - "openstack_region=dev0"
@@ -109,6 +113,7 @@ services:
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
+      - "application=contrail"
       - "service=svc-monitor"
       - "VAULT_TOKEN=$VAULT_TOKEN"
       - "openstack_region=dev0"
@@ -124,6 +129,7 @@ services:
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
+      - "application=contrail"
       - "service=analytics"
       - "VAULT_TOKEN=$VAULT_TOKEN"
       - "openstack_region=dev0"
@@ -149,6 +155,7 @@ services:
     dns: 172.18.10.10
     dns_search: "dev0.loc.cloudwatt.net"
     environment:
+      - "application=contrail"
       - "service=vrouter-master"
       - START_VDE_SWITCH=1
       - COMPUTE_NUMBER=1
@@ -170,6 +177,7 @@ services:
     devices:
       - "/dev/kvm"
     environment:
+      - "application=contrail"
       - "service=vrouter"
       - COMPUTE_NUMBER=2
     labels:
