@@ -377,11 +377,17 @@ in rec {
           pattern = [
             {
               format = "regexp";
-              expression = ''/^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?(.*)?$/'';
+              expression = ''/^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*) (?<response_time>\d+.\d+)(.*)?$/'';
+              time_format = ''%Y-%m-%d %H:%M:%S'';
             }
             {
               format = "regexp";
-              expression = ''/^(?<time>([^ ]+ ){3})\[(?<serive>[^\]]+)\]: (?<message>.*)$/'';
+              expression = ''/^(?<time>([^ ]+ ){3})[^\:]+: (?<message>.*)$/'';
+              time_format = ''%m/%d/%Y %I:%M:%S %p'';
+            }
+            {
+              format = "regexp";
+              expression = ''/^(?<level>\w+):(?<message>.*)$/'';
             }
             {
               format = "none";
@@ -405,7 +411,8 @@ in rec {
           pattern = [
             {
               format = "regexp";
-              expression = ''/^(?<time>([^ ]+ ){4}) (?<idcontainer>[^ ]+) \[[^ ]+ (?<thread>[^,]+), [^ ]+(?<pid>[^\]]+)\]: (?<message>.*)$/'';
+              expression = ''/^(?<time>[^:]+:[^:]+:[^:]+):[^\[]+\[[^ ]+ (?<thread>[^,]+), [^ ]+(?<pid>[^\]]+)\]: (?<message>.*)$/'';
+              time_format = ''%Y-%m-%d %a %H:%M:%S'';
             }
             {
               format = "none";
