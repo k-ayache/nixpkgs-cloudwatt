@@ -35,6 +35,8 @@ let pkgs = import nixpkgs {};
 
       locksmith = callPackage ./pkgs/vault-fernet-locksmith { };
 
+      skydive = callPackage ./pkgs/skydive {};
+
       waitFor = callPackage ./pkgs/wait-for {};
 
       openstackClient = callPackage ./pkgs/openstackclient {};
