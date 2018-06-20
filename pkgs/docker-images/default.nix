@@ -1,4 +1,4 @@
-{ pkgs, lib, contrail32Cw, locksmith, contrailPath, nixpkgs, waitFor, fluentdCw }:
+{ pkgs, lib, contrail32Cw, locksmith, contrailPath, nixpkgs, waitFor, fluentdCw, skydive }:
 
 let
 
@@ -6,6 +6,7 @@ let
     contrail = import ./config/contrail.nix pkgs;
     gremlin = import ./config/gremlin/config.nix { inherit pkgs contrail32Cw; };
     locksmith = import ./config/locksmith/config.nix { inherit pkgs; };
+    skydive = import ./config/skydive { inherit pkgs; };
   };
 
   buildContrailImageWithPerp = { name, command, preStartScript, fluentd}:
@@ -204,4 +205,13 @@ in
     ];
   };
 
+  skydiveAnalyzer = lib.buildImageWithPerp {
+    name = "skydive/analyzer";
+    fromImage = lib.images.kubernetesBaseImage;
+    command = "${skydive}/bin/skydive analyzer analyzer -c /run/consul-template-wrapper/skydive.yml";
+    preStartScript = ''
+      consul-template-wrapper --no-lock --no-vault -- -once \
+        -template "${config.skydive}:/run/consul-template-wrapper/skydive.yml"
+    '';
+  };
 }
