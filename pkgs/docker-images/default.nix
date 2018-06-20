@@ -80,41 +80,46 @@ in
     name = "opencontrail/analytics";
     services = [
       {
-        name = "opencontrail-analytics-api";
-        command = "${contrail32Cw.analyticsApi}/bin/contrail-analytics-api --conf_file /etc/contrail/contrail-analytics-api.conf";
-        preStartScript = my_ip + ''
-         /usr/sbin/consul-template-wrapper --token-file=/run/vault-token-analytics-api/vault-token -- -once \
-         -template="${config.contrail.analyticsApi}:/etc/contrail/contrail-analytics-api.conf"
+        name = "consul-template";
+        oneShot = true;
+        preStartScript = my_ip;
+        command = ''
+          /usr/sbin/consul-template-wrapper -- -once \
+            -template="${config.contrail.analyticsApi}:/etc/contrail/contrail-analytics-api.conf" \
+            -template="${config.contrail.collector}:/etc/contrail/contrail-collector.conf" \
+            -template="${config.contrail.queryEngine}:/etc/contrail/contrail-query-engine.conf" \
+            -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
         '';
         user = "root";
+      }
+      {
+        name = "redis-server";
+        command = "${pkgs.redis}/bin/redis-server --bind 0.0.0.0";
+      }
+      {
+        name = "opencontrail-analytics-api";
+        command = "${contrail32Cw.analyticsApi}/bin/contrail-analytics-api --conf_file /etc/contrail/contrail-analytics-api.conf";
+        user = "root";
         fluentd = config.contrail.fluentdForPythonService;
+        after = ["consul-template"];
       }
       {
         name = "opencontrail-collector";
         command = "${contrail32Cw.collector}/bin/contrail-collector --conf_file /etc/contrail/contrail-collector.conf";
-        preStartScript = my_ip + ''
+        preStartScript = ''
           ${waitFor}/bin/wait-for \
             ${config.contrail.services.discovery.dns}:${toString config.contrail.services.discovery.port}
-         /usr/sbin/consul-template-wrapper --token-file=/run/vault-token-collector/vault-token -- -once \
-         -template="${config.contrail.collector}:/etc/contrail/contrail-collector.conf" \
-         -template="${config.contrail.vncApiLib}:/etc/contrail/vnc_api_lib.ini"
         '';
         user = "root";
         fluentd = config.contrail.fluentdForCService;
-      }
-      {
-        name = "redis-server";
-        command = "${pkgs.redis}/bin/redis-server --bind 127.0.0.1 $(hostname --ip-address)";
+        after = ["consul-template"];
       }
       {
         name = "opencontrail-query-engine";
         command = "${contrail32Cw.queryEngine}/bin/qed --conf_file /etc/contrail/contrail-query-engine.conf";
-        preStartScript = my_ip + ''
-          /usr/sbin/consul-template-wrapper --token-file=/run/vault-token-query-engine/vault-token -- -once \
-          -template="${config.contrail.queryEngine}:/etc/contrail/contrail-query-engine.conf"
-          '';
         user = "root";
         fluentd = config.contrail.fluentdForCService;
+        after = ["consul-template"];
       }
     ];
   };

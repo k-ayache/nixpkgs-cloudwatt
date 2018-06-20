@@ -183,7 +183,6 @@ let
       service = {
         oneShot = true;
       };
-
       testScript = ''
         $machine->succeed("sleep 6");
         $machine->succeed("docker exec ${name} cat /tmp/oneshot | wc -l  | xargs test 1 -eq");
@@ -193,6 +192,96 @@ let
         $machine->succeed("docker exec ${name} cat /tmp/oneshot | wc -l  | xargs test 2 -eq");
       '';
     }
+
+    # test after with oneshot services
+    rec {
+      name = "oneshot-after";
+      script1 = pkgs.writeShellScriptBin "script1" ''
+        touch /tmp/oneshot-after-touch
+      '';
+      script2 = pkgs.writeShellScriptBin "script2" ''
+        [ -f /tmp/oneshot-after-touch ] && touch /tmp/oneshot-after
+        while :; do sleep 1; done
+      '';
+      script3 = pkgs.writeShellScriptBin "script3" ''
+        sleep 1
+        exit 1
+      '';
+      script4 = pkgs.writeShellScriptBin "script4" ''
+        touch /tmp/oneshot-after-broken
+        while :; do sleep 1; done
+      '';
+      services = [
+        {
+          name = "service1";
+          oneShot = true;
+          command = "${script1}/bin/script1";
+        }
+        {
+          name = "service2";
+          after = ["service1"];
+          command = "${script2}/bin/script2";
+        }
+        {
+          name = "service3";
+          oneShot = true;
+          command = "${script3}/bin/script3";
+        }
+        {
+          name = "service4";
+          after = ["service3"];
+          command = "${script4}/bin/script4";
+        }
+      ];
+      succeed = [
+        "ls /tmp/oneshot-after"
+        "ls /var/run/perp/service1.success"
+        "ls /var/run/perp/service3.fail"
+      ];
+      fail = [
+        "ls /tmp/oneshot-after-broken"
+      ];
+    }
+
+    # test after with normal services
+    rec {
+      name = "service-after";
+      script1 = pkgs.writeShellScriptBin "script1" ''
+        sleep 2
+        touch /tmp/service1-after
+        while :; do sleep 1; done
+      '';
+      script2 = pkgs.writeShellScriptBin "script2" ''
+        [ -f /tmp/service1-after ] && touch /tmp/service2-after
+        while :; do sleep 1; done
+      '';
+      script3 = pkgs.writeShellScriptBin "script3" ''
+        sleep 1
+        exit 1
+      '';
+      script4 = pkgs.writeShellScriptBin "script4" ''
+        touch /tmp/service-after-broken
+        while :; do sleep 1; done
+      '';
+      services = [
+        {
+          name = "service1";
+          command = "${script1}/bin/script1";
+        }
+        {
+          name = "service2";
+          after = ["service1"];
+          command = "${script2}/bin/script2";
+        }
+      ];
+      succeed = [
+        "ls /tmp/service2-after"
+      ];
+      fail = [
+        "ls /tmp/service-after-broken"
+      ];
+    }
+
   ];
 
   mkImage = test:
@@ -206,7 +295,7 @@ let
       lib.buildImageWithPerps {
         name = test.name;
         fromImage = lib.images.kubernetesBaseImage;
-        services = [ service ];
+        services = if test ? "service" then [ service ] else test.services;
       };
 
   images = map mkImage tests;

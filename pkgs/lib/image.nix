@@ -46,14 +46,26 @@ rec {
       echo -n "${outputString}" > $out
     '';
 
-  runOptions = args@{ chdir ? "", command, ... }:
-    args // {
-      command = ''
-        exec runtool ${pkgs.lib.optionalString (chdir != "") "-c ${chdir}"} ${command}
-      '';
-    };
+  runOptions = { chdir ? "", command, ... }@args:
+    if chdir != "" then
+      args // { command = "exec runtool -c ${chdir} ${command}"; }
+    else
+      args // { command = "exec ${command}"; };
 
-  runAsUser = args@{ user ? "nobody", command, ... }:
+  runOneShot = { oneShot ? false, name, command, ... }@args:
+    let
+      oneshot = pkgs.writeShellScriptBin "oneshot-${name}" ''
+        ${command}
+        ret=$?
+        [ $ret -eq 0 ] && touch /var/run/perp/${name}.success || touch /var/run/perp/${name}.fail
+        exit $ret
+      '';
+    in
+      if oneShot then
+        args // { command = "${oneshot}/bin/oneshot-${name}"; }
+      else args;
+
+  runAsUser = { user ? "nobody", command, ... }@args:
     if user != "nobody" && user != "root" then
       abort "Only nobody and root users are supported."
     else
@@ -76,7 +88,7 @@ rec {
       args // { command = "runenv ${environmentFile} ${command}"; }
     else args;
 
-  genPerpRcMain = args@{
+  genPerpRcMain = {
     name,
     command,
     preStartScript ? "",
@@ -84,18 +96,30 @@ rec {
     oneShot ? false,
     user ? "nobody",
     environmentFile ? "",
+    after ? [],
     ...
-  }:
+  }@args:
     let
-      newArgs = runOptions (runAsUser (runPreScript (runWithEnv args)));
+      newArgs = runOptions (runOneShot (runAsUser (runPreScript (runWithEnv args))));
       oneShotScript = pkgs.lib.optionalString oneShot ''
-        if [ -f /var/run/perp/${name}.already-run ]; then
+        if [ -f /var/run/perp/${name}.started ]; then
           echo "Disable the oneshot perp service ${name} since it has been already executed"
           perpctl X $SVNAME
-          rm /var/run/perp/${name}.already-run
+          rm /var/run/perp/${name}.started
           exit 0
         fi
-        touch /var/run/perp/${name}.already-run
+        touch /var/run/perp/${name}.started
+      '';
+      checkServiceUp = name: ''
+        echo [${args.name}] Waiting for ${name} to be up...
+        while :
+        do
+          [ -f /var/run/perp/${name}.success ] && break
+          [ -f /var/run/perp/${name}.fail ] && echo [${args.name}] ${name} did not run properly.
+          perpok -b /etc/perp -u 3 ${name} && break
+          sleep 2
+        done
+        echo [${args.name}] Starting.
       '';
     in
       pkgs.writeTextFile {
@@ -109,6 +133,8 @@ rec {
 
           TARGET=$1
           SVNAME=$2
+
+          ${pkgs.lib.concatStringsSep "" (map checkServiceUp after)}
 
           ${oneShotScript}
 
