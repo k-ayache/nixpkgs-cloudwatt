@@ -11,6 +11,7 @@ let
     debian = callLibs ./debian.nix;
     tools = callLibs ./tools.nix;
     fluentd = callLibs ./fluentd.nix;
+    trivialBuilders = callLibs ./trivial-builders.nix;
 
     inherit (image) buildImageWithPerp buildImageWithPerps runDockerComposeStack genPerpRcMain dockerPushImage;
 
@@ -18,6 +19,7 @@ let
 
     inherit (tools) runUbuntuVmScript;
 
+    inherit (trivialBuilders) writeConsulTemplateYamlFile;
   };
 
 in lib
