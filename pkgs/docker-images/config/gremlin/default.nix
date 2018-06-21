@@ -17,6 +17,7 @@ rec {
       OS_AUTH_PLUGIN=v2password
 
       CONTRAIL_API_HOST=contrail-api
+      CONTRAIL_API_CLI_CONFIG_DIR=/tmp
 
       GREMLIN_FSCK_SERVER=gremlin-server-pods.service:8182
       GREMLIN_FSCK_LOOP=1
