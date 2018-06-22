@@ -1,8 +1,9 @@
-{ pkgs }:
+{ pkgs, lib }:
 
-pkgs.writeTextFile {
+lib.writeConsulTemplateYamlFile {
   name = "skydive.yml.ctmpl";
   text = ''
+    ---
     ws_pong_timeout: 5
 
     cache:
@@ -55,4 +56,5 @@ pkgs.writeTextFile {
         - http://{{ $data.Address }}:12379
         {{- end }}
   '';
+  consulTemplateMocked = { service = { "skydive-analyzer-pods" = [ { "Address" = "localhost"; }];};};
 }
