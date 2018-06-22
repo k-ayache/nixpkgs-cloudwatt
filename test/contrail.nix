@@ -225,7 +225,7 @@ let
         enable = true;
         provisionning = false;
         configurationFilepath = "${vrouterConfig ip}";
-        contrailInterface = "eth2";
+        contrailInterfaceName = "eth2";
       };
 
       # TODO: add in compute module
