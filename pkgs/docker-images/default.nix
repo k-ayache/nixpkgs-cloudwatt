@@ -3,9 +3,9 @@
 let
 
   config = {
-    contrail = import ./config/contrail.nix pkgs;
-    gremlin = import ./config/gremlin/config.nix { inherit pkgs contrail32Cw; };
-    locksmith = import ./config/locksmith/config.nix { inherit pkgs; };
+    contrail = import ./config/contrail { inherit pkgs; };
+    gremlin = import ./config/gremlin { inherit pkgs contrail32Cw; };
+    locksmith = import ./config/locksmith { inherit pkgs; };
     skydive = import ./config/skydive { inherit pkgs lib; };
   };
 
