@@ -113,13 +113,13 @@ rec {
       {{- end }}
       GREMLIN_SYNC_RABBIT_VHOST=opencontrail
       GREMLIN_SYNC_RABBIT_USER=opencontrail
-      GREMLIN_SYNC_RABBIT_QUEUE=gremlin_sync.$HOSTNAME
       GREMLIN_LOG_NO_COLOR=1
     '';
   };
 
   syncPreStart = ''
     consul-template-wrapper -- -once -template "${syncEnv}:/run/consul-template-wrapper/env"
+    export GREMLIN_SYNC_RABBIT_QUEUE=gremlin_sync.$HOSTNAME
   '';
 
 }
