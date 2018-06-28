@@ -2,15 +2,15 @@
 
 buildGoPackage rec {
   name = "consul-template-mock-${version}";
-  version = "2018-06-21";
+  version = "2018-06-28";
 
   goPackagePath = "github.com/nlewo/consul-template-mock";
 
   src = fetchFromGitHub {
     owner = "nlewo";
     repo = "consul-template-mock";
-    rev = "a08de897efcbc1dc5c06bd6f6179ca93dc71140e";
-    sha256 = "1y28hsvzz2p4cq7w7z6cpdrizkm05q57ffg7l3bv2gy90m4zl3am";
+    rev = "ca7ecf505598d50f6c6480177a31e1ed8a8cf7d6";
+    sha256 = "0lz3hrz4adrqgabq5ag6nlpgglcsnz3abj81m60xwz8l2lzpgyhn";
   };
 
   meta = with stdenv.lib; {
