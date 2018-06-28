@@ -8,7 +8,7 @@
     # https://github.com/nlewo/consul-template-mock for details
     , consulTemplateMocked } :
     let
-      mock = pkgs.writeText "name-consul-mocked" (builtins.toJSON consulTemplateMocked);
+      mock = pkgs.writeText "mock-${name}.json" (builtins.toJSON consulTemplateMocked);
     in
       pkgs.writeTextFile {
         inherit name text;
