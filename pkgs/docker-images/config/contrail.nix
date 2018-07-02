@@ -39,6 +39,9 @@ let
   identityAdminHost = ''
     {{ with $catalog.identity.admin_url }}{{ . | regexReplaceAll "http://([^:/]+).*" "$1" }}{{ end }}'';
 
+  serviceData = service: ''
+    {{ ''$${service} := keyOrDefault "/config/${service}/data" "{}" | parseJSON -}}
+  '';
   cassandraConfig = {
     cassandra_server_list = ipList {
       service = "opencontrail-config-cassandra";
@@ -155,9 +158,11 @@ in rec {
   api = pkgs.writeTextFile {
     name = "contrail-api.conf.ctmpl";
     text = config {
-      headers = catalogOpenstackHeader;
+      headers = catalogOpenstackHeader + serviceData "api-server";
       conf = {
         DEFAULTS = {
+          keystone_resync_workers = ''{{$api-server.settings.keystone_resync_workers}}'';
+          keystone_resync_workers = ''{{$api-server.settings.keystone_resync_interval_secs'';
           listen_ip_addr = containerIP;
           # FIXME, the code is publishing ifmap_server_ip instead of listen_ip_addr to the discovery
           ifmap_server_ip = containerIP;
@@ -179,6 +184,9 @@ in rec {
           ifmap_listen_port = services.ifmap.port;
           ifmap_credentials = "ifmap:" + secret "ifmap_password";
         };
+        NEUTRON = {
+          contrail_extensions_enabled = ''{{$api-server.settings.contrail_extensions_enabled}}''
+        }; 
       };
     };
   };
