@@ -52,6 +52,9 @@ let pkgs = import nixpkgs {};
       test.contrailLoadDatabase = callPackage ./test/contrail-load-database.nix {
         contrailPath = contrail; contrailPkgs = contrail32Cw;
       };
+      test.gremlinDump = callPackage ./test/gremlin-dump.nix {
+        contrailPath = contrail; contrailPkgs = contrail32Cw;
+      };
 
       # to run these tests:
       # nix-instantiate --eval --strict -A test.lib
