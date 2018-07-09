@@ -61,6 +61,7 @@ let
     rabbit_user = "opencontrail";
     rabbit_password = secret "queue_password";
     rabbit_vhost = "opencontrail";
+    rabbit_ha_mode = "True";
   };
 
   zookeeperConfig = {
@@ -132,9 +133,9 @@ in rec {
           listen_ip_addr = "0.0.0.0";
           listen_port = services.discovery.port;
           # minimim time to allow client to cache service information (seconds)
-          ttl_min = 300;
+          ttl_min = 30;
           # maximum time to allow client to cache service information (seconds)
-          ttl_max = 1800;
+          ttl_max = 80;
           # health check ping interval <=0 for disabling
           hc_interval = 5;
           # maximum hearbeats to miss before server will declare publisher out of service.
@@ -158,7 +159,10 @@ in rec {
       headers = catalogOpenstackHeader;
       conf = {
         DEFAULTS = {
+          keystone_resync_workers = 10;
+          keystone_resync_interval_secs = 86400;
           listen_ip_addr = containerIP;
+          sandesh_send_rate_limit = 100;
           # FIXME, the code is publishing ifmap_server_ip instead of listen_ip_addr to the discovery
           ifmap_server_ip = containerIP;
           listen_port = services.api.port;
@@ -166,8 +170,13 @@ in rec {
           disc_server_ip = services.discovery.dns;
           disc_server_port = services.discovery.port;
 
+          vnc_connection_cache_size = 128;
+
           auth = "keystone";
           aaa_mode = "cloud-admin";
+          list_optimization_enabled = "True";
+          apply_subnet_host_routes  = "True";
+          max_request_size = "2097152";
         }
         // cassandraConfig
         // rabbitConfig
@@ -177,7 +186,24 @@ in rec {
         IFMAP_SERVER = {
           ifmap_listen_ip = containerIP;
           ifmap_listen_port = services.ifmap.port;
-          ifmap_credentials = "ifmap:" + secret "ifmap_password";
+          ifmap_credentials = "api-server" + ":" + secret "ifmap_password";
+        };
+        QUOTA = {
+          virtual_network = 200;
+          subnet = 200;
+          virtual_machine_interface = 1000;
+          logical_router = 200;
+          floating_ip = 22;
+          security_group = 50;
+          security_group_rule = 500;
+          loadbalancer_pool = 10;
+          virtual_ip = 10;
+          loadbalancer_member = 20;
+          loadbalancer_healthmonitor = 10;
+        };
+
+        NEUTRON = {
+          contrail_extensions_enabled = "false";
         };
       };
     };
@@ -192,6 +218,7 @@ in rec {
           api_server_ip = services.api.dns;
           disc_server_ip = services.discovery.dns;
           disc_server_port = services.discovery.port;
+          sandesh_send_rate_limit = 100;
         }
         // logConfig services.schemaTransformer
         // cassandraConfig
@@ -211,6 +238,8 @@ in rec {
           api_server_ip = services.api.dns;
           disc_server_ip = services.discovery.dns;
           disc_server_port = services.discovery.port;
+          check_service_interval = 500;
+          sandesh_send_rate_limit = 100;
         }
         // logConfig services.svcMonitor
         // cassandraConfig
@@ -245,7 +274,7 @@ in rec {
         DEFAULT = logConfig services.control;
 
         IFMAP = {
-          user = "ifmap";
+          user = "api-server";
           password = secret "ifmap_password";
         };
 
@@ -294,6 +323,7 @@ in rec {
           rest_api_ip = containerIP;
           aaa_mode = "no-auth";
           partitions = 0;
+          sandesh_send_rate_limit = 100;
         }
         // logConfig services.analyticsApi
         // cassandraAnalyticsConfig;
@@ -312,6 +342,7 @@ in rec {
       conf = {
         DEFAULT = {
           hostip = containerIP;
+          sandesh_send_rate_limit = 100;
         }
         // logConfig services.queryEngine
         // cassandraAnalyticsConfig;
