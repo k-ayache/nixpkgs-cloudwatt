@@ -158,12 +158,13 @@ in rec {
   api = pkgs.writeTextFile {
     name = "contrail-api.conf.ctmpl";
     text = config {
-      headers = catalogOpenstackHeader + serviceData "api-server";
+      headers = catalogOpenstackHeader + serviceData "api";
       conf = {
         DEFAULTS = {
-          keystone_resync_workers = ''{{$api-server.settings.keystone_resync_workers}}'';
-          keystone_resync_workers = ''{{$api-server.settings.keystone_resync_interval_secs'';
+          keystone_resync_workers = ''{{$api.settings.keystone_resync_workers}}'';
+          keystone_resync_interval_secs = ''{{$api.settings.keystone_resync_interval_secs}}'';
           listen_ip_addr = containerIP;
+          sandesh_send_rate_limit = ''{{$api.settings.sandesh_send_rate_limit}}'';
           # FIXME, the code is publishing ifmap_server_ip instead of listen_ip_addr to the discovery
           ifmap_server_ip = containerIP;
           listen_port = services.api.port;
@@ -171,8 +172,14 @@ in rec {
           disc_server_ip = services.discovery.dns;
           disc_server_port = services.discovery.port;
 
+          vnc_connection_cache_size = ''{{$api.settings.vnc_connection_cache_size}}'';
+
           auth = "keystone";
           aaa_mode = "cloud-admin";
+          multi_tenancy             = "True";
+          list_optimization_enabled = "True";
+          apply_subnet_host_routes  = "True";
+          max_request_size = ''{{$api.settings.max_request_size}}'';
         }
         // cassandraConfig
         // rabbitConfig
@@ -182,10 +189,24 @@ in rec {
         IFMAP_SERVER = {
           ifmap_listen_ip = containerIP;
           ifmap_listen_port = services.ifmap.port;
-          ifmap_credentials = "ifmap:" + secret "ifmap_password";
+          ifmap_credentials = ''{{$opencontrail.user_ifmap}}'' + ":" + secret "ifmap_password";
         };
+        QUOTA = {
+          virtual_network = ''{{$api.quota.network}}'';
+          subnet = ''{{$api.quota.subnet}}'';
+          virtual_machine_interface = ''{{$api.quota.port}}'';
+          logical_router = ''{{$api.quota.router}}'';
+          floating_ip = ''{{$api.quota.floatingip}}'';
+          security_group = ''{{$api.quota.security_group}}'';
+          security_group_rule = ''{{$api.quota.security_group_rule}}'';
+          loadbalancer_pool = ''{{$api.quota.pool}}'';
+          virtual_ip = ''{{$api.quota.vip}}'';
+          loadbalancer_member = ''{{$api.quota.member}}'';
+          loadbalancer_healthmonitor = ''{{$api.quota.health_monitor}}'';
+        };
+
         NEUTRON = {
-          contrail_extensions_enabled = ''{{$api-server.settings.contrail_extensions_enabled}}''
+          contrail_extensions_enabled = ''{{$api.settings.contrail_extensions_enabled}}'';
         }; 
       };
     };
@@ -253,7 +274,7 @@ in rec {
         DEFAULT = logConfig services.control;
 
         IFMAP = {
-          user = "ifmap";
+          user = ''{{$opencontrail.user_ifmap}}'';
           password = secret "ifmap_password";
         };
 

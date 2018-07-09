@@ -1,0 +1,23 @@
+{
+  "settings": {
+    "contrail_extensions_enabled": "false",
+    "sandesh_send_rate_limit": 100,
+    "keystone_resync_workers": 10,
+    "keystone_resync_interval_secs": "86400",
+    "vnc_connection_cache_size": 128,
+    "max_request_size": "2097152"
+  },
+  "quota": {
+    "network": 200,
+    "subnet": 200,
+    "port": 1000,
+    "router": 200,
+    "floatingip": 22,
+    "security_group": 50,
+    "security_group_rule": 500,
+    "pool":   10,
+    "vip": 10,
+    "member": 20,
+    "health_monitor": 10
+  }
+}
