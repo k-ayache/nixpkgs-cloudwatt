@@ -76,7 +76,7 @@ let
 
   keystoneConfig = {
     auth_host = identityAdminHost;
-    auth_port = ''{{ if ($catalog.identity.admin_url | printf "%q") | regexMatch "(http:[^:]+:[0-9]+.*)" }}35357{{ else }}80{{ end }}'';
+    auth_port = ''{{ if ($catalog.identity.internal_url | printf "%q") | regexMatch "(http:[^:]+:[0-9]+.*)" }}35357{{ else }}80{{ end }}'';
     auth_protocol = "http";
     admin_tenant_name = "service";
     admin_user = "opencontrail";
