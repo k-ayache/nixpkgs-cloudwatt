@@ -1,9 +1,8 @@
 { pkgs
-, pkgs_path ? <nixpkgs>
 , lib
 }:
 
-with import (pkgs_path + /nixos/lib/testing.nix) { system = builtins.currentSystem; };
+with import (pkgs.path + /nixos/lib/testing.nix) { system = builtins.currentSystem; };
 
 let
 

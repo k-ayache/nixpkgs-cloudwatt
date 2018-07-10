@@ -43,13 +43,16 @@ let pkgs = import nixpkgs {};
 
       openstackClient = callPackage ./pkgs/openstackclient {};
 
-      test.hydra = callPackage ./test/hydra.nix { pkgs_path = nixpkgs; hydraImage = ci.hydraImage; };
-      test.fluentd = callPackage ./test/fluentd.nix { pkgs_path = nixpkgs; cwPkgs = cwPkgs; };
-      test.perp = callPackage ./test/perp.nix { pkgs_path = nixpkgs; };
+      test.hydra = callPackage ./test/hydra.nix { hydraImage = ci.hydraImage; };
+      test.fluentd = callPackage ./test/fluentd.nix { cwPkgs = cwPkgs; };
+      test.perp = callPackage ./test/perp.nix {};
       test.contrail = callPackage ./test/contrail.nix {
-        pkgs_path = nixpkgs; cwPkgs = cwPkgs; contrailPath = contrail; contrailPkgs = contrail32Cw;
+        cwPkgs = cwPkgs; contrailPath = contrail; contrailPkgs = contrail32Cw;
       };
       test.contrailLoadDatabase = callPackage ./test/contrail-load-database.nix {
+        contrailPath = contrail; contrailPkgs = contrail32Cw;
+      };
+      test.gremlinDump = callPackage ./test/gremlin-dump.nix {
         contrailPath = contrail; contrailPkgs = contrail32Cw;
       };
 

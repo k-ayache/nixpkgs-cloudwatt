@@ -4,7 +4,6 @@
 # grep -e 'must succeed\|running command\|exit status' log
 
 { pkgs
-, pkgs_path ? <nixpkgs>
 , cwPkgs
 , contrailPath
 , contrailPkgs
@@ -12,7 +11,7 @@
 , stdenv
 }:
 
-with import (pkgs_path + /nixos/lib/testing.nix) { system = builtins.currentSystem; };
+with import (pkgs.path + /nixos/lib/testing.nix) { system = builtins.currentSystem; };
 
 let
 
