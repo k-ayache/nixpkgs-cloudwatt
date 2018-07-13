@@ -4,6 +4,7 @@ let debianPackageVersion = "3.2-5";
     contrailVrouterUbuntu = kernel: lib.mkDebianPackage rec {
       name = "contrail-vrouter-module-${kernel.version}";
       version = debianPackageVersion;
+      repository = "contrail";
       contents = [ (contrailPkgs.lib.buildVrouter kernel) ];
       description = "Contrail vrouter kernel module for kernel ${kernel.version}";
       script = ''
@@ -28,6 +29,7 @@ in
   contrailVrouterUserland = lib.mkDebianPackage rec {
     name = "contrail-vrouter-userland";
     version = debianPackageVersion;
+    repository = "contrail";
     contents = [
       contrailPkgs.vrouterAgent contrailPkgs.vrouterPortControl
       contrailPkgs.vrouterUtils contrailPkgs.vrouterNetns ];

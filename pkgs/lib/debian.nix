@@ -21,13 +21,16 @@ rec {
   # The script is executed in the package directory context
   , script
   , version
+  # The repository name of this package. Note this is only used to
+  # publish packages to Aptly. By default it is the package name.
+  , repository ? name
   , description
   }:
     pkgs.runCommand "${name}-${version}.deb" {
     exportReferencesGraph =
       map (x: [("closure-" + baseNameOf x) x]) contents;
     buildInputs = [ pkgs.dpkg ];
-    inherit version;
+    inherit version repository;
   } (''
       BUILD_DIR=${name}-0.0
       mkdir -p $BUILD_DIR
@@ -72,7 +75,7 @@ rec {
   };
 
   publishDebianPkg = url: package: unsetProxy:
-    let outputString = "${package.name} published to ${url}";
+    let outputString = "${package.name} published to ${url} in repository ${package.repository}";
     in pkgs.runCommand "publish-${package.name}"
          {
            buildInputs = [ debianPackagePublish ];
@@ -85,7 +88,7 @@ rec {
            mkdir packages
            ln -s ${package} packages/${package.name}
            echo "Publishing ${package.name} to $APTLY_URL ..."
-           debian-package-publish.sh -d trusty -r contrail-${package.version} packages
+           debian-package-publish.sh -d trusty -r ${package.repository}-${package.version} packages
            echo -n ${outputString} > $out
          '';
 }
