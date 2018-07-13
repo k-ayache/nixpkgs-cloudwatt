@@ -14,6 +14,9 @@ in
 rec {
   mkDebianPackage =
   { name
+  # All Nix dependencies of contents are copied to the $NIX_STORE
+  # (/var/opt/) directory in the Debian package and a link is created
+  # from $NIX_STORE to /nix/store.
   , contents ? []
   # The script is executed in the package directory context
   , script
