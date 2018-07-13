@@ -1,17 +1,17 @@
-{ pkgs, contrailPkgs, lib, deps }:
+{ pkgs, contrailPkgs, lib, deps, skydive }:
 
-let debianPackageVersion = "3.2-4";
+let debianPackageVersion = "3.2-5";
     contrailVrouterUbuntu = kernel: lib.mkDebianPackage rec {
       name = "contrail-vrouter-module-${kernel.version}";
       version = debianPackageVersion;
-      contents = contrailPkgs.lib.buildVrouter kernel;
+      contents = [ (contrailPkgs.lib.buildVrouter kernel) ];
       description = "Contrail vrouter kernel module for kernel ${kernel.version}";
-      linkScript = ''
-        vrouterRelativePath=$(find ${contents} -name vrouter.ko -printf '%P')
+      script = ''
+        vrouterRelativePath=$(find ${pkgs.lib.concatStrings contents} -name vrouter.ko -printf '%P')
         vrouterRelativeDir=$(dirname $vrouterRelativePath)
         mkdir -p $vrouterRelativeDir
 
-        vrouterPath=$(find ${contents} -name vrouter.ko)
+        vrouterPath=$(find ${pkgs.lib.concatStrings contents} -name vrouter.ko)
         ln -s $vrouterPath $vrouterRelativeDir
       '';
     };
@@ -34,7 +34,7 @@ in
     description = "Vrouter userland programs (contrail-vrouter-agent, vrouter utilities, opencontrail-netns tools)";
     # This links all binaries files found in the contents to the
     # /usr/bin directory of the target system
-    linkScript = ''
+    script = ''
       for path in ${pkgs.lib.foldl (a: b: a + " " + b) "" contents};
       do
         find $path/bin/ -type f -not -name ".*" >> files
@@ -45,4 +45,15 @@ in
       rm files
     '';
     };
+
+  skydive = lib.mkDebianPackage rec {
+    name = "skydive";
+    version = "${skydive.version}-1";
+    description = skydive.meta.description;
+    script = ''
+      mkdir -p usr/bin/
+      cp ${skydive}/bin/skydive usr/bin/
+    '';
+  };
 }
+
