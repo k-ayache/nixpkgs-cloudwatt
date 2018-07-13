@@ -30,7 +30,10 @@ let pkgs = import nixpkgs {};
         nixpkgsPath = nixpkgs;
       };
 
-      debianPackages = callPackages ./pkgs/debian-packages { contrailPkgs = contrail32Cw; };
+      debianPackages = callPackages ./pkgs/debian-packages {
+        contrailPkgs = contrail32Cw;
+        skydive = skydive.override (_: { enableStatic = true;});
+      };
       dockerImages = callPackages ./pkgs/docker-images { contrailPath = contrail; nixpkgs = nixpkgs; };
 
       tools = callPackages ./pkgs/tools { };

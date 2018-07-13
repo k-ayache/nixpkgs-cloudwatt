@@ -1,4 +1,4 @@
-{ pkgs, contrailPkgs, lib, deps }:
+{ pkgs, contrailPkgs, lib, deps, skydive }:
 
 let debianPackageVersion = "3.2-4";
     contrailVrouterUbuntu = kernel: lib.mkDebianPackage rec {
@@ -45,4 +45,15 @@ in
       rm files
     '';
     };
+
+  skydive = lib.mkDebianPackage rec {
+    name = "skydive";
+    version = "1";
+    description = skydive.meta.description;
+    script = ''
+      mkdir -p usr/bin/
+      cp ${skydive}/bin/skydive usr/bin/
+    '';
+  };
 }
+
