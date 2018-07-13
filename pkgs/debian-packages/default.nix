@@ -4,14 +4,14 @@ let debianPackageVersion = "3.2-4";
     contrailVrouterUbuntu = kernel: lib.mkDebianPackage rec {
       name = "contrail-vrouter-module-${kernel.version}";
       version = debianPackageVersion;
-      contents = contrailPkgs.lib.buildVrouter kernel;
+      contents = [ (contrailPkgs.lib.buildVrouter kernel) ];
       description = "Contrail vrouter kernel module for kernel ${kernel.version}";
-      linkScript = ''
-        vrouterRelativePath=$(find ${contents} -name vrouter.ko -printf '%P')
+      script = ''
+        vrouterRelativePath=$(find ${pkgs.lib.concatStrings contents} -name vrouter.ko -printf '%P')
         vrouterRelativeDir=$(dirname $vrouterRelativePath)
         mkdir -p $vrouterRelativeDir
 
-        vrouterPath=$(find ${contents} -name vrouter.ko)
+        vrouterPath=$(find ${pkgs.lib.concatStrings contents} -name vrouter.ko)
         ln -s $vrouterPath $vrouterRelativeDir
       '';
     };
@@ -34,7 +34,7 @@ in
     description = "Vrouter userland programs (contrail-vrouter-agent, vrouter utilities, opencontrail-netns tools)";
     # This links all binaries files found in the contents to the
     # /usr/bin directory of the target system
-    linkScript = ''
+    script = ''
       for path in ${pkgs.lib.foldl (a: b: a + " " + b) "" contents};
       do
         find $path/bin/ -type f -not -name ".*" >> files

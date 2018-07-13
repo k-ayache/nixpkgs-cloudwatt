@@ -1,51 +1,58 @@
 { pkgs, ... }:
 
+let
+  control = name: version: description:
+    pkgs.writeText "control-${name}" ''
+      Package: ${name}
+      Architecture: all
+      Description: ${description}
+      Maintainer: nobody
+      Version: ${version}
+    '';
+
+in
 rec {
   mkDebianPackage =
   { name
-  , contents
+  , contents ? []
   # The script is executed in the package directory context
-  , linkScript
+  , script
   , version
   , description
   }:
     pkgs.runCommand "${name}-${version}.deb" {
     exportReferencesGraph =
-      let contentsList = if builtins.isList contents then contents else [ contents ];
-      in map (x: [("closure-" + baseNameOf x) x]) contentsList;
+      map (x: [("closure-" + baseNameOf x) x]) contents;
     buildInputs = [ pkgs.dpkg ];
     inherit version;
-  } ''
-    NIX_STORE=var/opt/
-    BUILD_DIR=${name}-0.0
+  } (''
+      BUILD_DIR=${name}-0.0
+      mkdir -p $BUILD_DIR
+    '' + pkgs.lib.optionalString (contents != []) ''
+      NIX_STORE=var/opt/
 
-    mkdir -p $BUILD_DIR/$NIX_STORE
-    paths=$(cat closure-* | grep "^/" | sort | uniq)
-    for p in $paths; do
-      echo "Copying $p..."
-      cp -rp --parents $p $BUILD_DIR/$NIX_STORE
-    done
+      mkdir -p $BUILD_DIR/$NIX_STORE
+      paths=$(cat closure-* | grep "^/" | sort | uniq)
+      for p in $paths; do
+        echo "Copying $p..."
+        cp -rp --parents $p $BUILD_DIR/$NIX_STORE
+      done
 
-    pushd $BUILD_DIR
+      ln -s $NIX_STORE/nix $BUILD_DIR/nix
+    '' + ''
+      pushd $BUILD_DIR
 
-    ln -s $NIX_STORE/nix nix
+      mkdir DEBIAN
+      cp ${control name version description} DEBIAN/control
 
-    mkdir DEBIAN
-    cat > DEBIAN/control <<EOF
-    Package: ${name}
-    Architecture: all
-    Description: ${description}
-    Maintainer: nobody
-    Version: ${version}
-    EOF
+      ${script}
 
-    ${linkScript}
+      popd
 
-    popd
-
-    dpkg-deb --build $BUILD_DIR package.deb
-    cp package.deb $out
-  '';
+      # FIXME: the -Z option is a workaround for https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1730627
+      # -Z could be removed when dpkg 1.17.5ubuntu5.8 is deployed.
+      dpkg-deb --build -Z gzip $BUILD_DIR $out
+    '');
 
   debianPackagePublish = pkgs.stdenv.mkDerivation rec {
     name = "debian-package-publish.sh";
