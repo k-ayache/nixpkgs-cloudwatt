@@ -25,7 +25,7 @@ let pkgs = import nixpkgs {};
       consulTemplateMock = callPackage ./pkgs/consul-template-mock { };
 
       contrail32Cw = import ./pkgs/contrail32Cw {
-        inherit pkgs;
+        inherit pkgs deps;
         contrailPath = contrail;
         nixpkgsPath = nixpkgs;
       };

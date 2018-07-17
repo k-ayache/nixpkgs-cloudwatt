@@ -1,12 +1,12 @@
 { pkgs, contrailPkgs, lib, deps, skydive }:
 
 let debianPackageVersion = "3.2-5";
-    contrailVrouterUbuntu = kernel: lib.mkDebianPackage rec {
-      name = "contrail-vrouter-module-${kernel.version}";
+    vrouterUbuntu = module: lib.mkDebianPackage rec {
+      name = "${module.name}.deb";
       version = debianPackageVersion;
       repository = "contrail";
-      contents = [ (contrailPkgs.lib.buildVrouter kernel) ];
-      description = "Contrail vrouter kernel module for kernel ${kernel.version}";
+      contents = [ module ];
+      description = module.meta.description;
       script = ''
         vrouterRelativePath=$(find ${pkgs.lib.concatStrings contents} -name vrouter.ko -printf '%P')
         vrouterRelativeDir=$(dirname $vrouterRelativePath)
@@ -19,12 +19,12 @@ let debianPackageVersion = "3.2-5";
 in
 {
 
-  contrailVrouterUbuntu_3_13_0_83_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_3_13_0_83_generic;
-  contrailVrouterUbuntu_3_13_0_112_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_3_13_0_112_generic;
-  contrailVrouterUbuntu_3_13_0_125_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_3_13_0_125_generic;
-  contrailVrouterUbuntu_3_13_0_141_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_3_13_0_141_generic;
-  contrailVrouterUbuntu_3_13_0_143_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_3_13_0_143_generic;
-  contrailVrouterUbuntu_4_4_0_101_generic = contrailVrouterUbuntu deps.ubuntuKernelHeaders_4_4_0_101_generic;
+  vrouter_ubuntu_3_13_0_83_generic = vrouterUbuntu contrailPkgs.vrouter_ubuntu_3_13_0_83_generic;
+  vrouter_ubuntu_3_13_0_112_generic = vrouterUbuntu contrailPkgs.vrouter_ubuntu_3_13_0_112_generic;
+  vrouter_ubuntu_3_13_0_125_generic = vrouterUbuntu contrailPkgs.vrouter_ubuntu_3_13_0_125_generic;
+  vrouter_ubuntu_3_13_0_141_generic = vrouterUbuntu contrailPkgs.vrouter_ubuntu_3_13_0_141_generic;
+  vrouter_ubuntu_3_13_0_143_generic = vrouterUbuntu contrailPkgs.vrouter_ubuntu_3_13_0_143_generic;
+  vrouter_ubuntu_4_4_0_101_generic = vrouterUbuntu contrailPkgs.vrouter_ubuntu_4_4_0_101_generic;
 
   contrailVrouterUserland = lib.mkDebianPackage rec {
     name = "contrail-vrouter-userland";
