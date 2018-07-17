@@ -129,7 +129,7 @@ in rec {
     text = config {
       conf = {
         DEFAULTS = {
-          listen_ip_addr = containerIP;
+          listen_ip_addr = "0.0.0.0";
           listen_port = services.discovery.port;
           # minimim time to allow client to cache service information (seconds)
           ttl_min = 300;
