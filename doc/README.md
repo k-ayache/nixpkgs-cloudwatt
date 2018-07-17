@@ -1,3 +1,12 @@
+### How to manually compile a vrouter kernel module
+
+```
+$ nix-shell -A contrail32Cw.vrouter_ubuntu_3_13_0_83_generic
+[nix-shell] $ unpackPhase
+[nix-shell] $ cd contrail-workspace
+[nix-shell] $ scons --kernel-dir=$kernelSrc vrouter/vrouter.ko
+```
+
 ### How to build the vrouter for a new kernel version
 
 First, add fetch expressions in `deps.nix` to get both Ubuntu kernel sources and CONFIG.
