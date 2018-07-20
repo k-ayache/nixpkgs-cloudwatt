@@ -1,6 +1,23 @@
 { pkgs, cwPkgs, lib }:
 
-{
+let
+
+  yamllintConfig = pkgs.writeText "config" ''
+    extends: default
+    rules:
+      indentation: {spaces: consistent}
+  '';
+
+in {
+
+  # Validates yaml file contents
+  writeYamlFile = { name, text }: pkgs.writeTextFile {
+    inherit name text;
+    checkPhase = ''
+      ${pkgs.python36Packages.yamllint}/bin/yamllint -c ${yamllintConfig} $n
+    '';
+  };
+
   # Render the consul template file and check it is a valid YAML file
   writeConsulTemplateYamlFile =
     { name, text

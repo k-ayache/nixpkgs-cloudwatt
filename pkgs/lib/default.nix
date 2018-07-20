@@ -22,7 +22,7 @@ let
 
     inherit (tools) runUbuntuVmScript;
 
-    inherit (trivialBuilders) writeConsulTemplateYamlFile;
+    inherit (trivialBuilders) writeConsulTemplateYamlFile writeYamlFile;
   };
 
 in lib
