@@ -1,4 +1,4 @@
-{ pkgs, contrailPkgs, lib, deps, skydive }:
+{ pkgs, contrailPkgs, lib, skydive }:
 
 let debianPackageVersion = "3.2-5";
     vrouterUbuntu = module: lib.mkDebianPackage rec {

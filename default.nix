@@ -5,12 +5,11 @@
 
 let pkgs = import nixpkgs {};
     lib =  import ./pkgs/lib { inherit pkgs cwPkgs; };
-    deps =  import ./pkgs/deps.nix pkgs;
 
     callPackage = pkgs.lib.callPackageWith (
-      pkgs // cwPkgs // { inherit pkgs lib deps callPackage; });
+      pkgs // cwPkgs // { inherit pkgs lib callPackage; });
     callPackages = pkgs.lib.callPackagesWith (
-      pkgs // cwPkgs // { inherit pkgs lib deps callPackage; });
+      pkgs // cwPkgs // { inherit pkgs lib callPackage; });
 
     cwPkgs = rec {
 
@@ -24,8 +23,8 @@ let pkgs = import nixpkgs {};
 
       consulTemplateMock = callPackage ./pkgs/consul-template-mock { };
 
-      contrail32Cw = import ./pkgs/contrail32Cw {
-        inherit pkgs deps;
+      contrail32Cw = callPackages ./pkgs/contrail32Cw {
+        inherit pkgs;
         contrailPath = contrail;
         nixpkgsPath = nixpkgs;
       };
@@ -62,6 +61,8 @@ let pkgs = import nixpkgs {};
       # to run these tests:
       # nix-instantiate --eval --strict -A test.lib
       test.lib = callPackage ./pkgs/lib/tests.nix {};
+
+      ubuntuKernelHeaders = callPackages ./pkgs/ubuntu-kernel-headers {};
 
     };
 
