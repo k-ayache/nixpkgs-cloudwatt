@@ -79,7 +79,7 @@ let
     text = ''
       <source>
         @type forward
-        bind 169.254.1.15
+        bind 169.254.1.14
         port 24224
       </source>
       <match **>
@@ -200,22 +200,22 @@ in {
         '';
       };
 
-      rabbitmqVhosts = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = ''
-          List of rabbitmq vhosts to create. A user is created for
-          each vhost.
-          If the list is empty, rabbitmq is not started.
-        '';
-      };
-
       externalServices = mkOption {
-        type = types.listOf types.attrs;
-        default = [];
+        type = types.attrsOf types.attrs;
+        default = {};
         description = ''
           Allow to pass a list of services definitions that will be
           integrated in the infra.
+
+          Example:
+
+            {
+              cassandra = {
+                address = "169.254.1.100";
+                port = 9160;
+              };
+            };
+
         '';
       };
 
@@ -289,7 +289,19 @@ in {
     };
   };
 
-  config = mkIf cfg.enable (mkMerge [{
+  config = mkIf cfg.enable {
+
+    assertions = [
+      rec {
+        ips = mapAttrsToList (_: { address, ... }: address) cfg.externalServices;
+        assertion = length (ips) == length (unique ips);
+        message = ''
+          Multiple externalServices have the same IP address:
+              ${concatStringsSep "\n    "
+                (mapAttrsToList (name: { address , ...}: "${name}: ${address}") cfg.externalServices)}
+        '';
+      }
+    ];
 
     networking = {
       firewall.enable = false;
@@ -300,19 +312,17 @@ in {
         "169.254.1.11" = [ "consul.localdomain" "consul" ];
         "169.254.1.12" = [ "api.localdomain" "api.${cfg.domain}" "api" ];
         "169.254.1.13" = [ "vault.localdomain" "vault" ];
-        "169.254.1.14" = [ "rabbit.localdomain" "rabbit" ];
-        "169.254.1.15" = [ "fluentd.localdomain" "fluentd" ];
+        "169.254.1.14" = [ "fluentd.localdomain" "fluentd" ];
         "${cfg.masterIP}" = [ "${cfg.masterName}.${cfg.domain}" cfg.masterName ];
-      } // listToAttrs (map ({ address, name, ... }:
-        { name = address; value = [ "${name}.localdomain" name ];}) cfg.externalServices);
+      } // mapAttrs' (name: { address, ... }: nameValuePair address [ "${name}.localdomain" name ])
+        cfg.externalServices;
       interfaces.lo.ipv4.addresses = [
         { address = "169.254.1.10"; prefixLength = 32; }
         { address = "169.254.1.11"; prefixLength = 32; }
         { address = "169.254.1.12"; prefixLength = 32; }
         { address = "169.254.1.13"; prefixLength = 32; }
         { address = "169.254.1.14"; prefixLength = 32; }
-        { address = "169.254.1.15"; prefixLength = 32; }
-      ] ++ map ({ address, ... }: { inherit address; prefixLength = 32; }) cfg.externalServices;
+      ] ++ mapAttrsToList (name: { address, ... }: { inherit address; prefixLength = 32; }) cfg.externalServices;
     };
 
     services.etcd = {
@@ -492,14 +502,9 @@ in {
       "kubernetes/infra/kube2consul.yml".source = kube2consulDeployment;
       "kubernetes/infra/pod-preset.yml".source = kubePodPreset;
       "kubernetes/volumeplugins/cloudwatt~vaulttmpfs/vaulttmpfs".source = "${cwPkgs.vaulttmpfs}/bin/kubernetes-flexvolume-vault-plugin";
-    } // listToAttrs (map ({ address, name, port }: {
-      name = "consul.d/${name}.json";
-      value = {
-        text = toJSON {
-          service = { inherit name port address; };
-        };
-      };
-    }) cfg.externalServices);
+    } // (mapAttrs' (name: { address, port }:
+      nameValuePair "consul.d/${name}.json" { text = toJSON { service = { inherit name port address; }; }; }
+    ) cfg.externalServices);
 
     environment.variables = {
       TERM = "xterm";
@@ -507,46 +512,6 @@ in {
       VAULT_ADDR = "http://vault.localdomain:8200";
     };
 
-  } (mkIf (cfg.rabbitmqVhosts != []) {
-
-    services.rabbitmq = {
-      enable = true;
-      listenAddress = "169.254.1.14";
-    };
-
-    systemd.services.rabbitmq-bootstrap = {
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        User = "rabbitmq";
-        Group = "rabbitmq";
-      };
-      wantedBy = [ "multi-user.target" ];
-      after = [ "rabbitmq.service" ];
-      path = with pkgs; [ rabbitmq_server ];
-      script = ''
-        ${concatStringsSep "\n" (map (v: ''
-          rabbitmqctl add_user ${v} development
-          rabbitmqctl add_vhost ${v}
-          rabbitmqctl set_policy -p ${v} ha-all '^(?!amq\.).*' '{"ha-mode":"all"}'
-          rabbitmqctl set_permissions -p ${v} ${v} '.*' '.*' '.*'
-        '') cfg.rabbitmqVhosts)}
-      '';
-    };
-
-    environment.etc = listToAttrs (map (v: {
-      name = "consul.d/rabbitmq-${v}.json";
-      value = {
-        text = toJSON {
-          service = {
-            name = "${v}-queue";
-            address = "169.254.1.14";
-            port = 5672;
-          };
-        };
-      };
-    }) cfg.rabbitmqVhosts);
-
-  })]);
+  };
 
 }

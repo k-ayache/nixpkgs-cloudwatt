@@ -165,6 +165,7 @@ let
 
     imports = [
       ../modules/infra_k8s.nix
+      ../modules/rabbitmq_k8s.nix
     ];
 
     config = {
@@ -178,14 +179,12 @@ let
       infra.k8s = {
         enable = true;
         masterName = "master";
-        rabbitmqVhosts = [ "foo" ];
-        externalServices = [
-          {
-            name = "foo";
-            address = "169.254.1.50";
+        externalServices = {
+          foo = {
+            address = "169.254.1.100";
             port = 2222;
-          }
-        ];
+          };
+        };
         consulData = {
           service2 = {
             data = "foo";
@@ -203,6 +202,11 @@ let
             };
           };
         };
+      };
+
+      rabbitmq.k8s = {
+        enable = true;
+        vhosts = [ "foo" ];
       };
 
       virtualisation = {
@@ -242,6 +246,7 @@ let
     $master->succeed("grep -q foo /etc/hosts");
     # check rabbitmq provisionning
     $master->succeed("su -s ${stdenv.shell} rabbitmq -c 'rabbitmqctl list_users' | grep -q foo");
+    $master->succeed("curl -s consul:8500/v1/catalog/services | grep -q foo-queue");
     # check consul provisionning
     $master->succeed("curl -s http://consul:8500/v1/kv/service2 | jq -r '.[].Value' | base64 -d | jq -e '.data == \"foo\"'");
     # check k8s deployment
