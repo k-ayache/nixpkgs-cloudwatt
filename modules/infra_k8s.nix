@@ -338,11 +338,11 @@ in {
       initialAdvertisePeerUrls = ["https://etcd.${cfg.domain}:2380"];
     };
 
+    # dnsmasq will bind on all interfaces because it
+    # sets 127.0.0.1 in resolv.conf
     services.dnsmasq = {
       enable = true;
-      resolveLocalQueries = false;
       extraConfig = ''
-        listen-address=169.254.1.10
         bind-interfaces
         no-negcache
         server=/localdomain/

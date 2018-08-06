@@ -77,7 +77,6 @@ let
   service2 = pkgs.writeShellScriptBin "service2" ''
     while true
     do
-      echo "service2"
       sleep 1
     done
   '';
@@ -166,6 +165,7 @@ let
     imports = [
       ../modules/infra_k8s.nix
       ../modules/rabbitmq_k8s.nix
+      ../modules/keystone_k8s.nix
     ];
 
     config = {
@@ -209,9 +209,13 @@ let
         vhosts = [ "foo" ];
       };
 
+      keystone.k8s = {
+        enable = true;
+      };
+
       virtualisation = {
         diskSize = 10000;
-        memorySize = 2048;
+        memorySize = 6144;
         cores = 2;
       };
 
@@ -221,7 +225,7 @@ let
       #   "-netdev user,id=user.0,hostfwd=tcp::2222-:22"
       # ];
 
-      environment.systemPackages = with pkgs; [ jq kubectl docker vault ];
+      environment.systemPackages = with pkgs; [ jq kubectl docker vault dnsutils cwPkgs.openstackClient ];
 
       environment.etc = {
         "kubernetes/test/service1.deployment.yml".source = service1Deployment;
@@ -260,6 +264,11 @@ let
     # check consul-template with vault secrets
     $master->waitUntilSucceeds("kubectl exec \$(kubectl get pod -l service=service2 -o jsonpath='{.items[0].metadata.name}') -- cat /run/consul-template-wrapper/result | grep -q foo");
     $master->waitUntilSucceeds("kubectl exec \$(kubectl get pod -l service=service2 -o jsonpath='{.items[0].metadata.name}') -- cat /run/consul-template-wrapper/result | grep -q plop");
+    # check keystone is running
+    $master->waitUntilSucceeds("curl -s consul:8500/v1/catalog/services | grep -q keystone-admin-api-pods");
+    # check keystone is provisioned
+    $master->waitUntilSucceeds("source /etc/openstack/admin-token.openrc && openstack user list | grep -q admin");
+    $master->waitUntilSucceeds("source /etc/openstack/admin.openrc && openstack user list | grep -q admin");
     # check fluentd forwarding
     $master->waitUntilSucceeds("journalctl --unit fluentd --no-pager | grep -q service1");
   '';
