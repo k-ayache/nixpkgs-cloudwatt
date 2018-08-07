@@ -1,45 +1,72 @@
-{ pkgs }:
+{ pkgs, lib }:
 
-rec {
+lib.writeConsulTemplateYamlFile {
+  name = "config.yaml.ctmpl";
+  text = ''
+    ---
+    {{$locksmith := keyOrDefault "/config/locksmith/data" "{}" | parseJSON -}}
+    {{- $primaryVault := index $locksmith "primary-vault" -}}
+    {{- $secondaryVaults := index $locksmith "secondary-vaults" -}}
+    {{- if $primaryVault -}}
+    primary-vault:
+      {{- if index $primaryVault "address"}}
+      address: {{index $primaryVault "address"}}
+      {{- end}}
+      {{- if index $primaryVault "proxy"}}
+      proxy: {{index $primaryVault "proxy"}}
+      {{- end}}
+      token-file: {{or (index $primaryVault "token-file") "/run/vault-token/vault-token"}}
+      token-renew: {{or (index $primaryVault "token-renew") "true"}}
 
-  locksmithConf = pkgs.writeTextFile {
-    name = "config.yaml.ctmpl";
-    text = ''
-      {{ $locksmith := keyOrDefault "/config/locksmith/data" "{}" | parseJSON -}}
-      {{ $primaryVault := ( "{}" | parseJSON ) | or (index $locksmith "primary-vault") -}}
-      {{ $secondaryVault := ( "{}" | parseJSON ) | or (index $locksmith "secondary-vault") -}}
-      primary-vault:
-        address: {{ "https://vault.service:8200" | or (index $primaryVault "address") }}
-        proxy: {{ "http://http-proxy.localdomain:8123" | or (index $primaryVault "proxy") }}
-        token-file: {{ "/run/vault-token/vault-token" | or (index $primaryVault "token-file") }}
-        token-renew: {{ "true" | or (index $primaryVault "token-renew") }}
+    {{end -}}
+    {{- if $secondaryVaults -}}
+    secondary-vaults:
+      {{- range $i, $v := $secondaryVaults}}
+      - address: {{index $v "address"}}
+        {{- if index $v "proxy"}}
+        proxy: {{index $v "proxy"}}
+        {{- end}}
+        {{- with secret "secret/locksmith"}}
+        token: {{index .Data.secondaryVaultsTokens $i}}
+        {{- end}}
+        token-renew: {{or (index $v "token-renew") "true"}}
+      {{- end}}
 
-      secondary-vaults:
-        - address: {{ index $secondaryVault "address" }}
-          proxy: {{ index $secondaryVault "proxy" }}
-          {{ with secret "secret/locksmith" }}token: {{  .Data.secondaryVaultToken }}{{ end }}
-          token-renew: {{ "true" | or (index $secondaryVault "token-renew") }}
+    {{end -}}
+    ttl: {{or (index $locksmith "ttl") "120"}}
 
-      ttl: {{ "120" | or (index $locksmith "ttl") }}
+    secret-path: {{or (index $locksmith "secretPath") "secret/fernet-keys"}}
 
-      secret-path: {{ "secret/fernet-keys" | or (index $locksmith "secretPath") }}
+    health: {{or (index $locksmith "health") "true"}}
 
-      health: {{ "true" | or (index $locksmith "health") }}
+    lock: {{or (index $locksmith "lock") "true"}}
 
-      lock: {{ "true" | or (index $locksmith "lock") }}
+    lock-key: {{or (index $locksmith "lockKey") "locks/locksmith/.lock"}}
 
-      lock-key: {{ "locks/locksmith/.lock" | or (index $locksmith "lockKey") }}
+    {{- if index $locksmith "consul-address"}}
+    consul-address: {{index $locksmith "consul-address"}}
+    {{- end}}
 
-      consul-address: {{ "http://consul.localdomain:8500" | or (index $locksmith "consul-address") }}
-
-      {{ with secret "secret/locksmith" -}}
-      consul-token: {{ .Data.consulToken }}
-      {{- end }}
-    '';
-  };
-
-  locksmithPreStart = ''
-    consul-template-wrapper -- -once \
-      -template "${locksmithConf}:/run/consul-template-wrapper/etc/locksmith/config.yaml"
+    {{with secret "secret/locksmith" -}}
+    consul-token: {{.Data.consulToken}}
+    {{- end}}
   '';
+  consulTemplateMocked = {
+    secret = {
+      "secret/locksmith" = {
+        "consulToken" = "secret-consul-token";
+        "secondaryVaultsTokens" = [ "secret-secondaryVaults[0]-token" ];};};
+    key = {
+      "/config/locksmith/data" = ''
+        {
+          "primary-vault": {
+            "address": "https://vault1.service:8200"
+          },
+          "secondary-vaults": [
+            {
+              "address": "https://vault2.service:8200"
+            }
+          ]
+        }'';};
+  };
 }

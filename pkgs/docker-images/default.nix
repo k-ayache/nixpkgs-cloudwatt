@@ -5,7 +5,7 @@ let
   config = {
     contrail = import ./config/contrail { inherit pkgs; };
     gremlin = import ./config/gremlin { inherit pkgs contrail32Cw; };
-    locksmith = import ./config/locksmith { inherit pkgs; };
+    locksmith = import ./config/locksmith { inherit pkgs lib; };
     skydive = import ./config/skydive { inherit pkgs lib; };
   };
 
@@ -148,7 +148,10 @@ in
     name = "locksmith/worker";
     fromImage = lib.images.kubernetesBaseImage;
     command = "${locksmith}/bin/vault-fernet-locksmith -logtostderr -config-file-dir /run/consul-template-wrapper/etc/locksmith -config-file config";
-    preStartScript = config.locksmith.locksmithPreStart;
+    preStartScript = ''
+      consul-template-wrapper -- -once \
+        -template "${config.locksmith}:/run/consul-template-wrapper/etc/locksmith/config.yaml"
+    '';
     user = "root";
   };
 
