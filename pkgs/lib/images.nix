@@ -4,8 +4,8 @@
 
   kubernetesBaseImage = pkgs.dockerTools.pullImage {
     imageName = "docker-registry.sec.cloudwatt.com/kubernetes/base";
-    imageTag = "16.04-861a9e3cd4c7cb3e";
-    sha256 = "1q22fm4y5jc5bs6pcg6pcf26aaz6jqfdz5svv31ax2wmvza0r2l1";
+    imageTag = "16.04-b1536c115472e001";
+    sha256 = "0rj1417nn7lmlj9m1l4dsicqrz5y1az7j5v911wfrl590ym57xrb";
   };
 
   consulAgentImage = pkgs.dockerTools.pullImage {
