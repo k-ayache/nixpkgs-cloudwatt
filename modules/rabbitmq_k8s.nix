@@ -19,11 +19,6 @@ in {
         default = false;
       };
 
-      name = mkOption {
-        type = types.str;
-        default = "rabbit";
-      };
-
       address = mkOption {
         type = types.str;
         default = "169.254.1.50";
@@ -33,8 +28,8 @@ in {
         type = types.listOf types.str;
         default = [];
         description = ''
-          List of rabbitmq vhosts to create. A user is created for
-          each vhost.
+          List of rabbitmq vhosts to create. A user is created for each vhost with the same name.
+          The vhost is also registered in consul with the name "<vhost>-queue".
         '';
       };
 
@@ -49,23 +44,11 @@ in {
   config = mkIf cfg.enable {
 
     infra.k8s = {
-      externalServices = {
-        "${cfg.name}" = { address = cfg.address; inherit port; };
-      };
+      enable = true;
+      externalServices = listToAttrs (
+        map (v: nameValuePair "${v}-queue" { address = cfg.address; inherit port; }) cfg.vhosts
+      );
     };
-
-    environment.etc = listToAttrs (map (v: {
-      name = "consul.d/rabbitmq-${v}.json";
-      value = {
-        text = toJSON {
-          service = {
-            name = "${v}-queue";
-            address = cfg.address;
-            inherit port;
-          };
-        };
-      };
-    }) cfg.vhosts);
 
     services.rabbitmq = {
       enable = true;
