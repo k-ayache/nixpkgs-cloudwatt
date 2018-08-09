@@ -212,6 +212,7 @@ in {
   options = {
 
     keystone.k8s = {
+
       enable = mkOption {
         type = types.bool;
         default = false;
@@ -244,6 +245,7 @@ in {
 
   imports = [
     ./infra_k8s.nix
+    ./mysql_k8s.nix
   ];
 
   config = mkIf cfg.enable {
@@ -258,32 +260,11 @@ in {
       "openstack/admin.openrc".source = keystoneAdminRc;
     };
 
-    services.mysql = {
-      enable = true;
-      package = pkgs.mysql;
-      bind = "169.254.1.51";
-      ensureDatabases = [
-        "keystone"
-      ];
-    };
-
-    systemd.services.mysql-bootstrap = {
-      serviceConfig.Type = "oneshot";
-      serviceConfig.RemainAfterExit = true;
-      wantedBy = [ "multi-user.target" ];
-      after = [ "mysql.service" ];
-      path = [ pkgs.mysql ];
-      script = ''
-        echo "CREATE USER IF NOT EXISTS 'keystone'@'%' IDENTIFIED BY '${keystoneDBPassword}';" | mysql -u root -N
-        echo "GRANT ALL PRIVILEGES ON keystone.* TO 'keystone'@'%';" | mysql -u root -N
-      '';
-    };
-
     systemd.services.keystone = {
       serviceConfig.Type = "oneshot";
       serviceConfig.RemainAfterExit = true;
       wantedBy = [ "kubernetes.target" ];
-      after = [ "kube-bootstrap.service" ];
+      after = [ "kube-bootstrap.service" "mysql-bootstrap.service" ];
       path = [ pkgs.kubectl pkgs.docker cwPkgs.waitFor cwPkgs.openstackClient ];
       script = ''
         kubectl apply -f /etc/kubernetes/openstack/
@@ -300,12 +281,6 @@ in {
 
     infra.k8s = {
 
-      externalServices = {
-        keystone-db = {
-          address = "169.254.1.51";
-          port = 3306;
-        };
-      };
       enable = true;
 
       seedDockerImages = [
@@ -395,6 +370,21 @@ in {
           };
         };
       };
+
+    };
+
+    mysql.k8s = {
+
+      enable = true;
+
+      databases = {
+        keystone = {
+          user = "keystone";
+          password = keystoneDBPassword;
+        };
+      };
+
+      aliases = [ "keystone-db" ];
 
     };
 

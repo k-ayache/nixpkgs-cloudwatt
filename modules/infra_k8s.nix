@@ -289,18 +289,6 @@ in {
 
   config = mkIf cfg.enable {
 
-    assertions = [
-      rec {
-        ips = mapAttrsToList (_: { address, ... }: address) cfg.externalServices;
-        assertion = length (ips) == length (unique ips);
-        message = ''
-          Multiple externalServices have the same IP address:
-              ${concatStringsSep "\n    "
-                (mapAttrsToList (name: { address , ...}: "${name}: ${address}") cfg.externalServices)}
-        '';
-      }
-    ];
-
     networking = {
       firewall.enable = false;
       domain = cfg.domain;
