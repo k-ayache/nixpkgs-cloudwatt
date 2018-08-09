@@ -164,7 +164,7 @@ let
     inherit pkgs;
     internalDomain = cfg.domain;
     externalDomain = cfg.domain;
-    kubelets = [ cfg.masterName ];
+    kubelets = [ config.networking.hostName ];
   };
 
 in {
@@ -192,13 +192,6 @@ in {
         '';
       };
 
-      masterName = mkOption {
-        type = types.str;
-        default = "machine";
-        description = ''
-          The name of the machine that will run the k8s cluster.
-        '';
-      };
 
       externalServices = mkOption {
         type = types.attrsOf types.attrs;
@@ -313,7 +306,7 @@ in {
         "169.254.1.12" = [ "api.localdomain" "api.${cfg.domain}" "api" ];
         "169.254.1.13" = [ "vault.localdomain" "vault" ];
         "169.254.1.14" = [ "fluentd.localdomain" "fluentd" ];
-        "${cfg.masterIP}" = [ "${cfg.masterName}.${cfg.domain}" cfg.masterName ];
+        "${cfg.masterIP}" = [ "${config.networking.hostName}.${cfg.domain}" config.networking.hostName ];
       } // mapAttrs' (name: { address, ... }: nameValuePair address [ "${name}.localdomain" name ])
         cfg.externalServices;
       interfaces.lo.ipv4.addresses = [
@@ -334,7 +327,7 @@ in {
       listenClientUrls = ["https://0.0.0.0:2379"];
       listenPeerUrls = ["https://0.0.0.0:2380"];
       advertiseClientUrls = ["https://etcd.${cfg.domain}:2379"];
-      initialCluster = ["${cfg.masterName}=https://etcd.${cfg.domain}:2380"];
+      initialCluster = ["${config.networking.hostName}=https://etcd.${cfg.domain}:2380"];
       initialAdvertisePeerUrls = ["https://etcd.${cfg.domain}:2380"];
     };
 
@@ -438,7 +431,7 @@ in {
         ${writeVaultPaths "auth/token/roles/" (defaultVaultRoles // cfg.vaultRoles)}
         ${writeVaultPaths "" (defaultVaultData // cfg.vaultData)}
         # create token for vaulttmpfs
-        vault token create -orphan -metadata="node=${cfg.masterName}" -period=86400 -renewable=true -policy=applications_token_creator -metadata="applications=kubernetes-flexvolume-vault-plugin" -id ${vaultTmpfsToken}
+        vault token create -orphan -period=86400 -renewable=true -policy=applications_token_creator -metadata="applications=kubernetes-flexvolume-vault-plugin" -id ${vaultTmpfsToken}
       '';
     };
 

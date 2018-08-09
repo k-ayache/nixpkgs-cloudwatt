@@ -178,7 +178,6 @@ let
 
       infra.k8s = {
         enable = true;
-        masterName = "master";
         externalServices = {
           foo = {
             address = "169.254.1.100";
