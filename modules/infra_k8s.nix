@@ -91,21 +91,18 @@ let
   # Set the VAULT_ADDR variable for all pods
   # Also sets no_proxy variable to not use hard coded https_proxy in consul-template-wrapper
   # This is applied by the kube-bootstrap service
-  kubePodPreset = cwLibs.writeYamlFile {
-    name = "pod-preset.yml";
-    text = ''
-      ---
-      apiVersion: settings.k8s.io/v1alpha1
-      kind: PodPreset
-      metadata:
-        name: set-vault-token
-      spec:
-        env:
-          - name: VAULT_ADDR
-            value: "http://vault.localdomain:8200"
-          - name: no_proxy
-            value: "*"
-    '';
+  kubePodPreset = toJSON {
+    apiVersion = "settings.k8s.io/v1alpha1";
+    kind = "PodPreset";
+    metadata = {
+      name = "vault-config";
+    };
+    spec = {
+      env = [
+        { name = "VAULT_ADDR"; value = "http://vault.localdomain:8200"; }
+        { name = "no_proxy"; value = "*"; }
+      ];
+    };
   };
 
   kube2consulImage = cwLibs.buildImageWithPerp {
@@ -119,45 +116,18 @@ let
     command = "${cwPkgs.kube2consul}/bin/kube2consul -lock";
   };
 
-  kube2consulDeployment = cwLibs.writeYamlFile {
-    name = "deployment.yml";
-    text = ''
-      ---
-      apiVersion: extensions/v1beta1
-      kind: Deployment
-      metadata:
-        name: kube2consul-worker
-      spec:
-        replicas: 1
-        template:
-          metadata:
-            labels:
-              application: kube2consul
-              service: worker
-          spec:
-            dnsPolicy: Default
-            containers:
-              - name: kube2consul-worker
-                image: ${kube2consulImage.imageName}:${kube2consulImage.imageTag}
-                imagePullPolicy: IfNotPresent
-                env:
-                  - name: K2C_LOGTOSTDERR
-                    value: "true"
-                volumeMounts:
-                  - mountPath: /run/vault-token
-                    name: vault-token
-                  - mountPath: /run/consul-template-wrapper
-                    name: config
-            volumes:
-              - emptyDir:
-                name: config
-              - flexVolume:
-                  driver: cloudwatt/vaulttmpfs
-                  fsType: tmpfs
-                  options:
-                    vault/policies: kube2consul
-                name: vault-token
-    '';
+  kube2consulDeployment = cwLibs.mkJSONDeployment {
+    application = "kube2consul";
+    service = "worker";
+    vaultPolicy = "kube2consul";
+    containers = [
+      {
+        image = "${kube2consulImage.imageName}:${kube2consulImage.imageTag}";
+        env = [
+          { name = "K2C_LOGTOSTDERR"; value = "true"; }
+        ];
+      }
+    ];
   };
 
   certs = import (pkgs.path + /nixos/tests/kubernetes/certs.nix) {
@@ -466,10 +436,7 @@ in {
           --user=admin \
           --user=kubelet \
           --group=system:serviceaccounts
-        # set vault token in all pods
-        kubectl apply -f /etc/kubernetes/infra/pod-preset.yml
-        # deploy kube2consul
-        kubectl apply -f /etc/kubernetes/infra/kube2consul.yml
+        kubectl apply -f /etc/kubernetes/infra
       '';
     };
 
@@ -486,12 +453,19 @@ in {
         nameserver 169.254.1.10
         options timeout:1
       '';
-      "kubernetes/infra/kube2consul.yml".source = kube2consulDeployment;
-      "kubernetes/infra/pod-preset.yml".source = kubePodPreset;
+      "kubernetes/infra/kube2consul.json".text = kube2consulDeployment;
+      "kubernetes/infra/pod-preset.json".text = kubePodPreset;
       "kubernetes/volumeplugins/cloudwatt~vaulttmpfs/vaulttmpfs".source = "${cwPkgs.vaulttmpfs}/bin/kubernetes-flexvolume-vault-plugin";
     } // (mapAttrs' (name: { address, port }:
       nameValuePair "consul.d/${name}.json" { text = toJSON { service = { inherit name port address; }; }; }
     ) cfg.externalServices);
+
+    environment.systemPackages = with pkgs; [
+      jq
+      kubectl
+      docker
+      vault
+    ];
 
     environment.variables = {
       TERM = "xterm";

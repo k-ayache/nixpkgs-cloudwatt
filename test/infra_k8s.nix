@@ -32,46 +32,17 @@ let
     ];
   };
 
-  service1Deployment = lib.writeYamlFile {
-    name = "deployment.yml";
-    text = ''
-      ---
-      apiVersion: extensions/v1beta1
-      kind: Deployment
-      metadata:
-        name: service1-pods
-      spec:
-        replicas: 1
-        template:
-          metadata:
-            labels:
-              application: test
-              service: service1
-          spec:
-            dnsPolicy: Default
-            containers:
-              - name: service1
-                image: ${service1Image.imageName}:${service1Image.imageTag}
-                imagePullPolicy: IfNotPresent
-    '';
+  service1Deployment = lib.mkJSONDeployment {
+    application = "test";
+    service = "service1";
+    containers = [
+      { image = "${service1Image.imageName}:${service1Image.imageTag}"; }
+    ];
   };
 
-  service1Service = lib.writeYamlFile {
-    name = "service.yml";
-    text = ''
-      ---
-      apiVersion: v1
-      kind: Service
-      metadata:
-        name: service1-pods
-      spec:
-        clusterIP: None
-        selector:
-          application: test
-          service: service1
-        ports:
-          - port: 1
-    '';
+  service1Service = lib.mkJSONService {
+    application = "test";
+    service = "service1";
   };
 
   service2 = pkgs.writeShellScriptBin "service2" ''
@@ -107,57 +78,32 @@ let
     ];
   };
 
-  service2Deployment = lib.writeYamlFile {
-    name = "deployment.yml";
-    text = ''
-      ---
-      apiVersion: extensions/v1beta1
-      kind: Deployment
-      metadata:
-        name: service2-pods
-      spec:
-        replicas: 1
-        template:
-          metadata:
-            labels:
-              application: test
-              service: service2
-          spec:
-            dnsPolicy: Default
-            securityContext:
-              fsGroup: 65534
-            containers:
-              - name: service2
-                image: ${service2Image.imageName}:${service2Image.imageTag}
-                imagePullPolicy: IfNotPresent
-                volumeMounts:
-                  - name: vault-token
-                    mountPath: /run/vault-token
-            volumes:
-              - name: vault-token
-                flexVolume:
-                  driver: cloudwatt/vaulttmpfs
-                  options:
-                    vault/policies: service2
-    '';
+  service2Deployment = lib.mkJSONDeployment' {
+    application = "test";
+    service = "service2";
+    vaultPolicy = "service2";
+    containers = [
+      {
+        image = "${service2Image.imageName}:${service2Image.imageTag}";
+        env = [
+          { name = "test"; value = "test"; }
+        ];
+      }
+    ];
+  } {
+    spec = {
+      template = {
+        spec = {
+          # mode for volumeMounts so that user can access it
+          securityContext = { fsGroup = 65534; };
+        };
+      };
+    };
   };
 
-  service2Service = lib.writeYamlFile {
-    name = "service.yml";
-    text = ''
-      ---
-      apiVersion: v1
-      kind: Service
-      metadata:
-        name: service2-pods
-      spec:
-        clusterIP: None
-        selector:
-          application: test
-          service: service2
-        ports:
-          - port: 1
-    '';
+  service2Service = lib.mkJSONService {
+    application = "test";
+    service = "service2";
   };
 
   master = { config, ... }: {
@@ -214,12 +160,22 @@ let
 
       keystone.k8s = {
         enable = true;
+        roles = [ "admin" "Member" "test" ];
+        projects = {
+          test = {
+            users = {
+              test = {
+                password = "test";
+                roles = [ "admin" "test" ];
+              };
+            };
+          };
+        };
       };
 
       virtualisation = {
         diskSize = 10000;
-        memorySize = 6144;
-        cores = 2;
+        memorySize = 4096;
       };
 
       # # forward some ports on the host for debugging
@@ -231,10 +187,10 @@ let
       environment.systemPackages = with pkgs; [ jq kubectl docker vault dnsutils cwPkgs.openstackClient ];
 
       environment.etc = {
-        "kubernetes/test/service1.deployment.yml".source = service1Deployment;
-        "kubernetes/test/service2.deployment.yml".source = service2Deployment;
-        "kubernetes/test/service1.service.yml".source = service1Service;
-        "kubernetes/test/service2.service.yml".source = service2Service;
+        "kubernetes/test/service1.deployment.json".text = service1Deployment;
+        "kubernetes/test/service2.deployment.json".text = service2Deployment;
+        "kubernetes/test/service1.service.json".text = service1Service;
+        "kubernetes/test/service2.service.json".text = service2Service;
       };
 
     };
@@ -257,19 +213,19 @@ let
     # check k8s deployment
     $master->succeed("kubectl apply -f /etc/kubernetes/test/");
     $master->waitUntilSucceeds("kubectl get pods -l application=test | wc -l | grep -q 3");
-    $master->waitUntilSucceeds("kubectl get services | grep -q service1-pods");
+    $master->waitUntilSucceeds("kubectl get services | grep -q test-service1");
     # check kube2consul
-    $master->waitUntilSucceeds("curl -s consul:8500/v1/catalog/services | grep -q service1-pods");
+    $master->waitUntilSucceeds("curl -s consul:8500/v1/catalog/services | grep -q test-service1");
     # check networking
-    $master->succeed("kubectl exec \$(kubectl get pod -l service=service1 -o jsonpath='{.items[0].metadata.name}') -- ping -c1 service2-pods.service");
+    $master->succeed("kubectl exec \$(kubectl get pod -l service=service1 -o jsonpath='{.items[0].metadata.name}') -- ping -c1 test-service2.service");
     # check consul-template with vault secrets
     $master->waitUntilSucceeds("kubectl exec \$(kubectl get pod -l service=service2 -o jsonpath='{.items[0].metadata.name}') -- cat /run/consul-template-wrapper/result | grep -q foo");
     $master->waitUntilSucceeds("kubectl exec \$(kubectl get pod -l service=service2 -o jsonpath='{.items[0].metadata.name}') -- cat /run/consul-template-wrapper/result | grep -q plop");
     # check keystone is running
-    $master->waitUntilSucceeds("curl -s consul:8500/v1/catalog/services | grep -q keystone-admin-api-pods");
+    $master->waitUntilSucceeds("curl -s consul:8500/v1/catalog/services | grep -q keystone-admin-api");
     # check keystone is provisioned
     $master->waitUntilSucceeds("source /etc/openstack/admin-token.openrc && openstack user list | grep -q admin");
-    $master->waitUntilSucceeds("source /etc/openstack/admin.openrc && openstack user list | grep -q admin");
+    $master->waitUntilSucceeds("source /etc/openstack/admin.openrc && openstack user list | grep -q test");
     # check fluentd forwarding
     $master->waitUntilSucceeds("journalctl --unit fluentd --no-pager | grep -q service1");
   '';

@@ -13,6 +13,7 @@ let
     tools = callLibs ./ubuntu-vm.nix;
     fluentd = callLibs ./fluentd.nix;
     trivialBuilders = callLibs ./trivial-builders.nix;
+    k8s = callLibs ./k8s.nix;
 
     inherit (contrail) buildContrailImageWithPerp buildContrailImageWithPerps;
 
@@ -23,6 +24,8 @@ let
     inherit (tools) runUbuntuVmScript;
 
     inherit (trivialBuilders) writeConsulTemplateYamlFile writeYamlFile;
+
+    inherit (k8s) mkJSONDeployment mkJSONDeployment' mkJSONService mkHTTPGetProbe;
   };
 
 in lib

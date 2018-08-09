@@ -10,8 +10,8 @@ let
   apiPort = 5000;
   adminApiPort = 35357;
 
-  keystoneApiAdminHost = "keystone-admin-api-pods.service";
-  keystoneApiHost = "keystone-api-pods.service";
+  keystoneApiAdminHost = "keystone-admin-api.service";
+  keystoneApiHost = "keystone-api.service";
 
   keystoneAdminPassword = "development";
   keystoneAdminToken = "development";
@@ -112,99 +112,44 @@ let
     inherit imageName imageTag sha256;
   };
 
-  keystoneApiDeployment = service: port: cwLibs.writeYamlFile {
-    name = "deployment.yml";
-    text = ''
-      ---
-      apiVersion: extensions/v1beta1
-      kind: Deployment
-      metadata:
-        name: keystone-${service}
-      spec:
-        replicas: 1
-        template:
-          metadata:
-            labels:
-              application: keystone
-              service: ${service}
-          spec:
-            dnsPolicy: Default
-            containers:
-              - name: keystone-${service}
-                image: ${imageName}:${imageTag}
-                env:
-                  - name: openstack_region
-                    valueFrom:
-                      configMapKeyRef:
-                        name: openstack
-                        key: region
-                  - name: service
-                    value: ${service}
-                ports:
-                  - containerPort: ${toString port}
-                lifecycle:
-                  preStop:
-                    exec:
-                      command: ["/usr/sbin/stop-container"]
-                livenessProbe:
-                  httpGet:
-                    path: /
-                    port: 1988
-                  initialDelaySeconds: 10
-                  periodSeconds: 30
-                  timeoutSeconds: 15
-                readinessProbe:
-                  httpGet:
-                    path: /ready
-                    port: 1988
-                  initialDelaySeconds: 10
-                  periodSeconds: 30
-                  timeoutSeconds: 15
-                volumeMounts:
-                  - name: config
-                    mountPath: /run/consul-template-wrapper
-                  - name: vault-token
-                    mountPath: /run/vault-token
-                  - name: vault-token-keystone-keys
-                    mountPath: /run/vault-token-keystone-keys
-            volumes:
-              - name: config
-                emptyDir:
-              - name: vault-token
-                flexVolume:
-                  driver: cloudwatt/vaulttmpfs
-                  fsType: tmpfs
-                  options:
-                    vault/policies: keystone
-              - name: vault-token-keystone-keys
-                flexVolume:
-                  driver: cloudwatt/vaulttmpfs
-                  fsType: tmpfs
-                  options:
-                    vault/policies: fernet-keys-read
-                    vault/role: "periodic-fernet-reader"
-                    vault/filePermissions: "640"
-                    vault/unwrap: "true"
-            terminationGracePeriodSeconds: 1200
-    '';
+  keystoneDeployment = service: port: cwLibs.mkJSONDeployment {
+    inherit service port;
+    application = "keystone";
+    vaultPolicy = "keystone";
+    containers = [
+      {
+        image = "${imageName}:${imageTag}";
+        lifecycle = {
+          preStop = {
+            exec = { command = ["/usr/sbin/stop-container"]; };
+          };
+        };
+        livenessProbe = cwLibs.mkHTTPGetProbe "/" 1988 10 30 15;
+        readinessProbe = cwLibs.mkHTTPGetProbe "/ready" 1988 10 30 15;
+        volumeMounts = [
+          { name = "vault-token-keystone-keys"; mountPath = "/run/vault-token-keystone-keys"; }
+        ];
+      }
+    ];
+    volumes = [
+      {
+        name = "vault-token-keystone-keys";
+        flexVolume = {
+          driver = "cloudwatt/vaulttmpfs";
+          options = {
+            "vault/policies" = "fernet-keys-read";
+            "vault/role" = "periodic-fernet-reader";
+            "vault/filePermissions" = "640";
+            "vault/unwrap" = "true";
+          };
+        };
+      }
+    ];
   };
 
-  keystoneApiService = service: port: cwLibs.writeYamlFile {
-    name = "service.yml";
-    text = ''
-      ---
-      apiVersion: v1
-      kind: Service
-      metadata:
-        name: keystone-${service}-pods
-      spec:
-        clusterIP: None
-        selector:
-          application: keystone
-          service: ${service}
-        ports:
-          - port: ${toString port}
-    '';
+  keystoneService = service: cwLibs.mkJSONService {
+    inherit service;
+    application = "keystone";
   };
 
 in {
@@ -252,10 +197,10 @@ in {
 
     environment.etc = {
       "kubernetes/openstack/configmap.yml".source = kubeConfigMap;
-      "kubernetes/keystone/api.deployment.yml".source = keystoneApiDeployment "api" apiPort;
-      "kubernetes/keystone/admin-api.deployment.yml".source = keystoneApiDeployment "admin-api" adminApiPort;
-      "kubernetes/keystone/api.service.yml".source = keystoneApiService "api" apiPort;
-      "kubernetes/keystone/admin-api.service.yml".source = keystoneApiService "admin-api" adminApiPort;
+      "kubernetes/keystone/api.deployment.json".text = keystoneDeployment "api" apiPort;
+      "kubernetes/keystone/admin-api.deployment.json".text = keystoneDeployment "admin-api" adminApiPort;
+      "kubernetes/keystone/api.service.json".text = keystoneService "api";
+      "kubernetes/keystone/admin-api.service.json".text = keystoneService "admin-api";
       "openstack/admin-token.openrc".source = keystoneAdminTokenRc;
       "openstack/admin.openrc".source = keystoneAdminRc;
     };
@@ -271,7 +216,7 @@ in {
         kubectl apply -f /etc/kubernetes/keystone/
       '';
       postStart = ''
-        wait-for ${keystoneApiAdminHost}.${config.infra.k8s.domain}:${toString adminApiPort} -q -t 300
+        wait-for ${keystoneApiAdminHost}:${toString adminApiPort} -q -t 300
         source ${keystoneAdminTokenRc}
         ${createCatalog (defaultCatalog // cfg.catalog)}
         ${createRoles cfg.roles}
