@@ -184,6 +184,10 @@ let
             port = 2222;
           };
         };
+        seedDockerImages = [
+          service1Image
+          service2Image
+        ];
         consulData = {
           service2 = {
             data = "foo";
@@ -239,8 +243,6 @@ let
 
   testScript = ''
     $master->waitForUnit("docker.service");
-    $master->succeed("docker load -i ${service1Image}");
-    $master->succeed("docker load -i ${service2Image}");
     $master->waitForUnit("kube-bootstrap.service");
     $master->waitForUnit("rabbitmq-bootstrap.service");
     $master->waitForUnit("vault.service");

@@ -286,8 +286,7 @@ in {
       after = [ "kube-bootstrap.service" ];
       path = [ pkgs.kubectl pkgs.docker cwPkgs.waitFor cwPkgs.openstackClient ];
       script = ''
-        docker load -i ${keystoneAllImage}
-        kubectl apply -f /etc/kubernetes/openstack/configmap.yml
+        kubectl apply -f /etc/kubernetes/openstack/
         kubectl apply -f /etc/kubernetes/keystone/
       '';
       postStart = ''
@@ -307,6 +306,11 @@ in {
           port = 3306;
         };
       };
+      enable = true;
+
+      seedDockerImages = [
+        keystoneAllImage
+      ];
 
       consulData = {
         "config/openstack/catalog/${region}/data" = defaultCatalog // cfg.catalog;

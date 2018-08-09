@@ -192,6 +192,11 @@ in {
         '';
       };
 
+      seedDockerImages = mkOption {
+        description = "List of docker images to preload on system";
+        default = [];
+        type = types.listOf types.package;
+      };
 
       externalServices = mkOption {
         type = types.attrsOf types.attrs;
@@ -376,6 +381,7 @@ in {
           keyFile = "${certs.worker}/apiserver-client-kubelet-${config.networking.hostName}-key.pem";
         };
         extraOpts = "--resolv-conf=/etc/kubernetes/kubelet/resolv.conf --volume-plugin-dir=/etc/kubernetes/volumeplugins";
+        seedDockerImages = [ kube2consulImage ] ++ cfg.seedDockerImages;
       };
       controllerManager = {
         serviceAccountKeyFile = "${certs.master}/kube-service-accounts-key.pem";
@@ -398,6 +404,7 @@ in {
         };
       };
       addonManager.enable = false;
+      addons.dns.enable = false;
     };
 
     systemd.services.kubelet = {
@@ -474,7 +481,6 @@ in {
         # set vault token in all pods
         kubectl apply -f /etc/kubernetes/infra/pod-preset.yml
         # deploy kube2consul
-        docker load -i ${kube2consulImage}
         kubectl apply -f /etc/kubernetes/infra/kube2consul.yml
       '';
     };
