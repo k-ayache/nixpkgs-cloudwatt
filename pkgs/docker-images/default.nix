@@ -4,7 +4,6 @@ let
 
   config = {
     gremlin = import ./config/gremlin { inherit pkgs contrail32Cw; };
-    locksmith = import ./config/locksmith { inherit pkgs lib; };
   };
 
 in
@@ -13,16 +12,7 @@ callPackages ./contrail { inherit contrailPath; } //
 {
   hydra = callPackage ./hydra { };
 
-  locksmithWorker = lib.buildImageWithPerp {
-    name = "locksmith/worker";
-    fromImage = lib.images.kubernetesBaseImage;
-    command = "${locksmith}/bin/vault-fernet-locksmith -logtostderr -config-file-dir /run/consul-template-wrapper/etc/locksmith -config-file config";
-    preStartScript = ''
-      consul-template-wrapper -- -once \
-        -template "${config.locksmith}:/run/consul-template-wrapper/etc/locksmith/config.yaml"
-    '';
-    user = "root";
-  };
+  locksmithWorker = callPackage ./locksmithWorker { };
 
   gremlinServer = lib.buildImageWithPerps {
     name = "gremlin/server";
