@@ -6,9 +6,9 @@
 # compute nodes uses their MAC address (provided by QEMU) to provision
 # their dataplane IP address and hostname.
 
-{ contrailPkgs, pkgs_path, contrailPath, configFiles, waitFor }:
+{ pkgs, contrailPkgs, contrailPath, configFiles, waitFor }:
 
-with import (pkgs_path + "/nixos/lib/testing.nix") { system = builtins.currentSystem; };
+with import (pkgs.path + "/nixos/lib/testing.nix") { system = builtins.currentSystem; };
 
 let
   contrailVrouterAgentFilepath = "/run/contrail-vrouter-agent.conf";

@@ -30,13 +30,6 @@ let
       '';
     };
 
-  contrailVrouter = import ./contrail-vrouter {
-    inherit waitFor contrailPath;
-    pkgs_path = nixpkgs;
-    contrailPkgs = contrail32Cw;
-    configFiles = config;
-  };
-
   my_ip  = ''
     # hack to populate the configuration with the container ip
     # with consul-template it is only possible to read a file
@@ -45,7 +38,11 @@ let
 
 in
 {
-  inherit contrailVrouter;
+  contrailVrouter = callPackage ./contrail-vrouter {
+    inherit contrailPath;
+    contrailPkgs = contrail32Cw;
+    configFiles = config;
+  };
 
   hydra = callPackage ./hydra { };
 
