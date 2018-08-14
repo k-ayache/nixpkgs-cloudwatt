@@ -1,9 +1,9 @@
-{ fetched ? import ./nixpkgs-fetch.nix {}
+{ fetched ? import ./nixpkgs-fetch.nix { }
 , nixpkgs ? fetched.pkgs
 , contrail ? fetched.contrail
 }:
 
-let pkgs = import nixpkgs {};
+let pkgs = import nixpkgs { };
     lib =  import ./pkgs/lib { inherit pkgs cwPkgs; };
 
     callPackage = pkgs.lib.callPackageWith (
@@ -39,15 +39,15 @@ let pkgs = import nixpkgs {};
 
       locksmith = callPackage ./pkgs/vault-fernet-locksmith { };
 
-      skydive = callPackage ./pkgs/skydive {};
+      skydive = callPackage ./pkgs/skydive { };
 
-      waitFor = callPackage ./pkgs/wait-for {};
+      waitFor = callPackage ./pkgs/wait-for { };
 
-      openstackClient = callPackage ./pkgs/openstackclient {};
+      openstackClient = callPackage ./pkgs/openstackclient { };
 
       test.hydra = callPackage ./test/hydra.nix { hydraImage = ci.hydraImage; };
       test.fluentd = callPackage ./test/fluentd.nix { };
-      test.perp = callPackage ./test/perp.nix {};
+      test.perp = callPackage ./test/perp.nix { };
       test.contrail = callPackage ./test/contrail.nix {
         cwPkgs = cwPkgs; contrailPath = contrail; contrailPkgs = contrail32Cw;
       };
@@ -60,9 +60,9 @@ let pkgs = import nixpkgs {};
 
       # to run these tests:
       # nix-instantiate --eval --strict -A test.lib
-      test.lib = callPackage ./pkgs/lib/tests.nix {};
+      test.lib = callPackage ./pkgs/lib/tests.nix { };
 
-      ubuntuKernelHeaders = callPackages ./pkgs/ubuntu-kernel-headers {};
+      ubuntuKernelHeaders = callPackages ./pkgs/ubuntu-kernel-headers { };
 
     };
 
