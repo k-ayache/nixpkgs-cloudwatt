@@ -46,7 +46,7 @@ let pkgs = import nixpkgs {};
       openstackClient = callPackage ./pkgs/openstackclient {};
 
       test.hydra = callPackage ./test/hydra.nix { hydraImage = ci.hydraImage; };
-      test.fluentd = callPackage ./test/fluentd.nix { cwPkgs = cwPkgs; };
+      test.fluentd = callPackage ./test/fluentd.nix { };
       test.perp = callPackage ./test/perp.nix {};
       test.contrail = callPackage ./test/contrail.nix {
         cwPkgs = cwPkgs; contrailPath = contrail; contrailPkgs = contrail32Cw;

@@ -1,5 +1,5 @@
 { pkgs
-, cwPkgs
+, fluentdCw
 , lib
 }:
 
@@ -89,7 +89,7 @@ let
       systemd.services.fluentd = {
         wantedBy = [ "multi-user.target" ];
         after = [ "network.target" ];
-        script = "${cwPkgs.fluentdCw}/bin/fluentd --no-supervisor -c ${fluentdConf}";
+        script = "${fluentdCw}/bin/fluentd --no-supervisor -c ${fluentdConf}";
       };
 
     };
