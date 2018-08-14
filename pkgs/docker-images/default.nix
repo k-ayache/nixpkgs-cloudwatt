@@ -1,4 +1,4 @@
-{ callPackage, callPackages, pkgs, lib, contrail32Cw, locksmith, contrailPath, nixpkgs, waitFor, fluentdCw }:
+{ callPackage, callPackages, contrailPath }:
 
 callPackages ./contrail { inherit contrailPath; } //
 {

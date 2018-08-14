@@ -31,7 +31,8 @@ let pkgs = import nixpkgs { };
         contrailPkgs = contrail32Cw;
         skydive = skydive.override (_: { enableStatic = true;});
       };
-      dockerImages = callPackages ./pkgs/docker-images { contrailPath = contrail; nixpkgs = nixpkgs; };
+
+      dockerImages = callPackages ./pkgs/docker-images { contrailPath = contrail; };
 
       tools = callPackages ./pkgs/tools { };
 

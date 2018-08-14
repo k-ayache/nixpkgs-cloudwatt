@@ -34,10 +34,6 @@ let
   jobs = {
     inherit (cwPkgs) debianPackages dockerImages test;
     inherit contrail32Cw;
-
-    ci = { hydraImage = cwPkgs.ci.hydraImage; }
-         // pkgs.lib.optionalAttrs pushToDockerRegistry {
-           pushHydraImage = lib.dockerPushImage cwPkgs.ci.hydraImage commitId unsetProxyForSkopeo; };
   }
   // pkgs.lib.optionalAttrs pushToDockerRegistry {
     pushDockerImages = genDockerPushJobs cwPkgs.dockerImages; }
