@@ -7,9 +7,9 @@ let pkgs = import nixpkgs { };
     lib =  import ./pkgs/lib { inherit pkgs cwPkgs; };
 
     callPackage = pkgs.lib.callPackageWith (
-      pkgs // cwPkgs // { inherit pkgs lib callPackage; });
+      pkgs // cwPkgs // { inherit pkgs lib callPackage callPackages; });
     callPackages = pkgs.lib.callPackagesWith (
-      pkgs // cwPkgs // { inherit pkgs lib callPackage; });
+      pkgs // cwPkgs // { inherit pkgs lib callPackage callPackages; });
 
     cwPkgs = rec {
 
