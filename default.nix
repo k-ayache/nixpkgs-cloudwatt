@@ -13,8 +13,6 @@ let pkgs = import nixpkgs { };
 
     cwPkgs = rec {
 
-      ci = callPackage ./ci { };
-
       perp = callPackage ./pkgs/perp { };
 
       fluentd = callPackage ./pkgs/fluentd { };

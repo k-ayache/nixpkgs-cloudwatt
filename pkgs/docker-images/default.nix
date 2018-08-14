@@ -1,4 +1,4 @@
-{ pkgs, lib, contrail32Cw, locksmith, contrailPath, nixpkgs, waitFor, fluentdCw, skydive }:
+{ callPackage, pkgs, lib, contrail32Cw, locksmith, contrailPath, nixpkgs, waitFor, fluentdCw, skydive }:
 
 let
 
@@ -47,6 +47,8 @@ let
 in
 {
   inherit contrailVrouter;
+
+  hydra = callPackage ./hydra { };
 
   contrailApi = buildContrailImageWithPerp {
     name = "opencontrail/api";

@@ -1,7 +1,7 @@
-{ callPackage, ci, cwPkgs, contrailPath, contrailPkgs }:
+{ callPackage, cwPkgs, contrailPath, contrailPkgs }:
 
 {
-  hydra = callPackage ./hydra.nix { hydraImage = ci.hydraImage; };
+  hydra = callPackage ./hydra.nix { };
 
   fluentd = callPackage ./fluentd.nix { };
 
