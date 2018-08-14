@@ -45,22 +45,7 @@ let pkgs = import nixpkgs { };
 
       openstackClient = callPackage ./pkgs/openstackclient { };
 
-      test.hydra = callPackage ./test/hydra.nix { hydraImage = ci.hydraImage; };
-      test.fluentd = callPackage ./test/fluentd.nix { };
-      test.perp = callPackage ./test/perp.nix { };
-      test.contrail = callPackage ./test/contrail.nix {
-        cwPkgs = cwPkgs; contrailPath = contrail; contrailPkgs = contrail32Cw;
-      };
-      test.contrailLoadDatabase = callPackage ./test/contrail-load-database.nix {
-        contrailPath = contrail; contrailPkgs = contrail32Cw;
-      };
-      test.gremlinDump = callPackage ./test/gremlin-dump.nix {
-        contrailPath = contrail; contrailPkgs = contrail32Cw;
-      };
-
-      # to run these tests:
-      # nix-instantiate --eval --strict -A test.lib
-      test.lib = callPackage ./pkgs/lib/tests.nix { };
+      test = callPackages ./test { inherit cwPkgs; contrailPath = contrail; contrailPkgs = contrail32Cw; };
 
       ubuntuKernelHeaders = callPackages ./pkgs/ubuntu-kernel-headers { };
 
