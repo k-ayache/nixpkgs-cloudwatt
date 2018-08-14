@@ -8,34 +8,6 @@ let
     locksmith = import ./config/locksmith { inherit pkgs lib; };
   };
 
-  buildContrailImageWithPerp = { name, command, preStartScript, fluentd}:
-    buildContrailImageWithPerps {
-      inherit name;
-        services = [
-           {name = builtins.replaceStrings ["/"] ["-"] name;
-            user = "root";
-            inherit command preStartScript fluentd;
-           }
-        ];
-    };
-
-  buildContrailImageWithPerps = { name, services }:
-    lib.buildImageWithPerps {
-      inherit name services;
-      fromImage = lib.images.kubernetesBaseImage;
-      extraCommands = ''
-        chmod u+w etc
-        mkdir -p var/log/contrail etc/contrail
-        ln -s /run/consul-template-wrapper/contrail/vnc_api_lib.ini  etc/contrail/vnc_api_lib.ini
-      '';
-    };
-
-  my_ip  = ''
-    # hack to populate the configuration with the container ip
-    # with consul-template it is only possible to read a file
-    [[ ! -f /my-ip ]] && hostname --ip-address > /my-ip
-    '';
-
 in
 {
   contrailVrouter = callPackage ./contrail-vrouter {
@@ -46,10 +18,10 @@ in
 
   hydra = callPackage ./hydra { };
 
-  contrailApi = buildContrailImageWithPerp {
+  contrailApi = lib.buildContrailImageWithPerp {
     name = "opencontrail/api";
     command = "${contrail32Cw.api}/bin/contrail-api --conf_file /run/consul-template-wrapper/contrail/contrail-api.conf";
-    preStartScript = my_ip + ''
+    preStartScript = lib.myIp + ''
       consul-template-wrapper -- -once \
         -template="${config.contrail.api}:/run/consul-template-wrapper/contrail/contrail-api.conf" \
         -template="${config.contrail.vncApiLib}:/run/consul-template-wrapper/contrail/vnc_api_lib.ini"
@@ -57,17 +29,17 @@ in
     fluentd = config.contrail.fluentdForPythonService;
   };
 
-  contrailDiscovery = buildContrailImageWithPerp {
+  contrailDiscovery = lib.buildContrailImageWithPerp {
     name = "opencontrail/discovery";
     command = "${contrail32Cw.discovery}/bin/contrail-discovery --conf_file /run/consul-template-wrapper/contrail/contrail-discovery.conf";
-    preStartScript = my_ip + ''
+    preStartScript = lib.myIp + ''
       consul-template-wrapper -- -once \
         -template="${config.contrail.discovery}:/run/consul-template-wrapper/contrail/contrail-discovery.conf"
     '';
     fluentd = config.contrail.fluentdForPythonService;
   };
 
-  contrailControl = buildContrailImageWithPerp {
+  contrailControl = lib.buildContrailImageWithPerp {
     name = "opencontrail/control";
     command = "${contrail32Cw.control}/bin/contrail-control --conf_file /run/consul-template-wrapper/contrail/contrail-control.conf";
     preStartScript = ''
@@ -79,13 +51,13 @@ in
     fluentd = config.contrail.fluentdForCService;
   };
 
-  contrailAnalytics = buildContrailImageWithPerps {
+  contrailAnalytics = lib.buildContrailImageWithPerps {
     name = "opencontrail/analytics";
     services = [
       {
         name = "consul-template";
         oneShot = true;
-        preStartScript = my_ip;
+        preStartScript = lib.myIp;
         command = ''
           /usr/sbin/consul-template-wrapper -- -once \
             -template="${config.contrail.analyticsApi}:/run/consul-template-wrapper/contrail/contrail-analytics-api.conf" \
@@ -120,7 +92,7 @@ in
     ];
   };
 
-  contrailSchemaTransformer = buildContrailImageWithPerp {
+  contrailSchemaTransformer = lib.buildContrailImageWithPerp {
     name = "opencontrail/schema-transformer";
     command = "${contrail32Cw.schemaTransformer}/bin/contrail-schema --conf_file /run/consul-template-wrapper/contrail/contrail-schema-transformer.conf";
     preStartScript = ''
@@ -131,7 +103,7 @@ in
     fluentd = config.contrail.fluentdForPythonService;
   };
 
-  contrailSvcMonitor = buildContrailImageWithPerp {
+  contrailSvcMonitor = lib.buildContrailImageWithPerp {
     name = "opencontrail/svc-monitor";
     command = "${contrail32Cw.svcMonitor}/bin/contrail-svc-monitor --conf_file /run/consul-template-wrapper/contrail/contrail-svc-monitor.conf";
     preStartScript = ''

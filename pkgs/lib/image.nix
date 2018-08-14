@@ -226,4 +226,10 @@ rec {
         echo "To destroy the stack:"
         echo "  ${pkgs.docker_compose}/bin/docker-compose -f ${dockerComposeFile} down"
       '';
+
+  myIp = ''
+    # hack to populate the configuration with the container ip
+    # with consul-template it is only possible to read a file
+    [[ ! -f /my-ip ]] && hostname --ip-address > /my-ip
+    '';
 }
