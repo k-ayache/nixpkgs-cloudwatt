@@ -1,4 +1,6 @@
-{ pkgs, contrailPath, nixpkgsPath, deps }:
+{ pkgs, contrailPath, nixpkgsPath, ubuntuKernelHeaders }:
+
+with ubuntuKernelHeaders;
 
 let
   contrailAllPackages = import (contrailPath + "/all-packages.nix") { inherit pkgs; nixpkgs=nixpkgsPath; };
@@ -24,10 +26,10 @@ in
             vms lib
             tools;
 
-  vrouter_ubuntu_3_13_0_83_generic = contrailPkgsCw.lib.buildVrouter deps.ubuntuKernelHeaders_3_13_0_83_generic;
-  vrouter_ubuntu_4_4_0_101_generic = contrailPkgsCw.lib.buildVrouter deps.ubuntuKernelHeaders_4_4_0_101_generic;
-  vrouter_ubuntu_3_13_0_112_generic = contrailPkgsCw.lib.buildVrouter deps.ubuntuKernelHeaders_3_13_0_112_generic;
-  vrouter_ubuntu_3_13_0_125_generic = contrailPkgsCw.lib.buildVrouter deps.ubuntuKernelHeaders_3_13_0_125_generic;
-  vrouter_ubuntu_3_13_0_141_generic = contrailPkgsCw.lib.buildVrouter deps.ubuntuKernelHeaders_3_13_0_141_generic;
-  vrouter_ubuntu_3_13_0_143_generic = contrailPkgsCw.lib.buildVrouter deps.ubuntuKernelHeaders_3_13_0_143_generic;
+  vrouter_ubuntu_3_13_0_83_generic = contrailPkgsCw.lib.buildVrouter ubuntuKernelHeaders_3_13_0_83_generic;
+  vrouter_ubuntu_4_4_0_101_generic = contrailPkgsCw.lib.buildVrouter ubuntuKernelHeaders_4_4_0_101_generic;
+  vrouter_ubuntu_3_13_0_112_generic = contrailPkgsCw.lib.buildVrouter ubuntuKernelHeaders_3_13_0_112_generic;
+  vrouter_ubuntu_3_13_0_125_generic = contrailPkgsCw.lib.buildVrouter ubuntuKernelHeaders_3_13_0_125_generic;
+  vrouter_ubuntu_3_13_0_141_generic = contrailPkgsCw.lib.buildVrouter ubuntuKernelHeaders_3_13_0_141_generic;
+  vrouter_ubuntu_3_13_0_143_generic = contrailPkgsCw.lib.buildVrouter ubuntuKernelHeaders_3_13_0_143_generic;
   }

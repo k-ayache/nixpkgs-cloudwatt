@@ -193,8 +193,8 @@ let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 
       exec ${perp}/usr/sbin/perpd
     '';
 
-in {
-  hydraImage = pkgs.dockerTools.buildImageWithNixDb rec {
+in
+  pkgs.dockerTools.buildImageWithNixDb rec {
     name = "hydra/master";
     fromImage = lib.images.kubernetesBaseImage;
 
@@ -245,5 +245,4 @@ in {
         "DECL_VALUE="
       ];
     };
-  };
-}
+  }

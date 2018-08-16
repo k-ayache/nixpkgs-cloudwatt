@@ -14,7 +14,7 @@ Note the json job file can be locally built and validated
 
 First build the Hydra Docker image (from the `nixpkgs-cloudwatt` directory)
 ```
-$ nix-build -A ci.hydraImage
+$ nix-build -A dockerImages.hydra
 ```
 
 The link `result` points to the image which can be loaded by Docker

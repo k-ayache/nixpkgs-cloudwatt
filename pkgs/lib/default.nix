@@ -6,14 +6,17 @@ let
 
   lib = rec {
 
+    contrail = callLibs ./contrail.nix;
     image  = callLibs ./image.nix;
     images = callLibs ./images.nix;
     debian = callLibs ./debian.nix;
-    tools = callLibs ./tools.nix;
+    tools = callLibs ./ubuntu-vm.nix;
     fluentd = callLibs ./fluentd.nix;
     trivialBuilders = callLibs ./trivial-builders.nix;
 
-    inherit (image) buildImageWithPerp buildImageWithPerps runDockerComposeStack genPerpRcMain dockerPushImage;
+    inherit (contrail) buildContrailImageWithPerp buildContrailImageWithPerps;
+
+    inherit (image) buildImageWithPerp buildImageWithPerps runDockerComposeStack genPerpRcMain dockerPushImage myIp;
 
     inherit (debian) mkDebianPackage publishDebianPkg;
 

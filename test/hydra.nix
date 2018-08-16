@@ -1,5 +1,5 @@
 { pkgs
-, hydraImage
+, dockerImages
 , lib
 }:
 
@@ -20,7 +20,7 @@ let
         environment = [ "POSTGRES_PASSWORD=MYPWD" ];
       };
       hydra = {
-        image = builtins.baseNameOf hydraImage;
+        image = builtins.baseNameOf dockerImages.hydra;
         environment = [ "HYDRA_DBI=dbi:Pg:dbname=postgres;host=postgres;user=postgres;"
                         "POSTGRES_PASSWORD=MYPWD"
                         "HYDRA_ADMIN_USERNAME=admin"
