@@ -1,7 +1,33 @@
-{ nixpkgs, declInput }:
+{ nixpkgs, declInput, pulls }:
 let
   pkgs = import nixpkgs {};
-  desc = {
+  prs = builtins.fromJSON (builtins.readFile pulls);
+  prJobsets =  pkgs.lib.mapAttrs (num: info:
+    { enabled = 1;
+      hidden = false;
+      description = "PR ${num}: ${info.title}";
+      nixexprinput = "cloudwatt";
+      nixexprpath = "jobset.nix";
+      checkinterval = 30;
+      schedulingshares = 20;
+      enableemail = false;
+      emailoverride = "";
+      keepnr = 1;
+      inputs = {
+        cloudwatt = {
+          type = "git";
+          value = "git://github.com/${info.head.repo.owner.login}/${info.head.repo.name}.git ${info.head.ref} keepDotGit";
+          emailresponsible = false;
+        };
+        bootstrap_pkgs = {
+          value = "https://github.com/NixOS/nixpkgs acd89daabcb47cb882bc72ffc2d01281ed1fecb8";
+          type = "git";
+          emailresponsible = false;
+        };
+      };
+    }
+  ) prs;
+  desc = prJobsets // {
     trunk = {
       description = "Build master of nixpkgs-cloudwatt";
       checkinterval = "60";
