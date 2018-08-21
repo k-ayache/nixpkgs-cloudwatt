@@ -1,4 +1,4 @@
-{ stdenv, buildGoPackage, fetchFromGitHub }:
+{ stdenv, buildGoPackage, fetchFromGitHub, lib }:
 
 buildGoPackage rec {
   name = "calico-kube-controllers-${version}";
@@ -20,4 +20,16 @@ buildGoPackage rec {
 
   buildFlagsArray = ''
     -ldflags= -X main.VERSION=v${version}'';
+
+  meta = {
+    homepage = https://docs.projectcalico.org;
+    description = "Kubernetes controllers for Calico";
+    licenses = [ lib.licenses.asl20 ];
+    platforms = [ "x86_64-linux" ];
+    maintainers = [{
+      email = "marc.fouche@orange.com";
+      github = "aevox";
+      name = "Marc Fouché";}
+    ];
+  };
 }
