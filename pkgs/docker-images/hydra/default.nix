@@ -1,10 +1,18 @@
-{pkgs, lib, perp, makeWrapper, curl, stdenv, waitFor }:
+{ pkgs, lib, perp, makeWrapper, curl, stdenv, waitFor, fetchpatch, perlPackages }:
 
 with lib;
 
-let hydraServerCmd = "${pkgs.hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 -p 3000 --max_spare_servers 5 --max_servers 25 --max_requests 100 -d";
-    hydraQueueRunnerCmd = "${pkgs.hydra}/bin/hydra-queue-runner -vvvvv --option build-use-substitutes true";
-    hydraEvaluator = "${pkgs.hydra}/bin/hydra-evaluator -vvvvv";
+let hydra = pkgs.hydra.overrideAttrs(old: {
+      # This patch is for the github PR plugin and could be removed on 18.09
+      patches = [ (fetchpatch {
+        url = https://github.com/NixOS/hydra/commit/028ecf7c1facc0e8a060c75f3b3abbc390529171.patch;
+        sha256 = "13aqsnswfv900r9zfnhy9y466b5h118pi2d2snf4zkjqvm4aj31y";
+        })];
+      buildInputs = old.buildInputs ++ [ perlPackages.CryptSSLeay ];
+      });
+    hydraServerCmd = "${hydra}/bin/hydra-server hydra-server -f -h 0.0.0.0 -p 3000 --max_spare_servers 5 --max_servers 25 --max_requests 100 -d";
+    hydraQueueRunnerCmd = "${hydra}/bin/hydra-queue-runner -vvvvv --option build-use-substitutes true";
+    hydraEvaluator = "${hydra}/bin/hydra-evaluator -vvvvv";
 
     binaryCacheUri = "file:///nix-cache/";
     hydraBaseDir = "var/lib/hydra/";
@@ -199,7 +207,7 @@ in
     fromImage = lib.images.kubernetesBaseImage;
 
     contents = [
-      pkgs.hydra
+      hydra
       pkgs.nix
       hydraEvalScript
 
@@ -229,6 +237,10 @@ in
       Env = [
         # hydra-queue-runner fails to start without this
         "LOGNAME=none"
+
+        # To do https queries through http proxy
+        "PERL_NET_HTTPS_SSL_SOCKET_CLASS=Net::SSL"
+        "PERL_LWP_SSL_VERIFY_HOSTNAME=0"
 
         "HYDRA_DATA=/${hydraBaseDir}"
         "HYDRA_CONFIG=/${hydraBaseDir}/hydra.conf"
