@@ -16,7 +16,7 @@ let
       inputs = {
         cloudwatt = {
           type = "git";
-          value = "git://github.com/${info.head.repo.owner.login}/${info.head.repo.name}.git ${info.head.ref} keepDotGit";
+          value = "https://github.com/${info.head.repo.owner.login}/${info.head.repo.name}.git ${info.head.ref} keepDotGit";
           emailresponsible = false;
         };
         bootstrap_pkgs = {
