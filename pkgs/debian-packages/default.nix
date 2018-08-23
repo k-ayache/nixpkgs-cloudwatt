@@ -1,6 +1,6 @@
 { pkgs, contrailPkgs, lib, skydive }:
 
-let debianPackageVersion = "3.2-5";
+let debianPackageVersion = "3.2-6";
     vrouterUbuntu = module: lib.mkDebianPackage rec {
       name = "${module.name}.deb";
       version = debianPackageVersion;
