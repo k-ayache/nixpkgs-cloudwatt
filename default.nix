@@ -38,6 +38,8 @@ let pkgs = import nixpkgs { };
 
       locksmith = callPackage ./pkgs/vault-fernet-locksmith { };
 
+      kube2consul = callPackage ./pkgs/kube2consul { };
+
       calicoKubeControllers = callPackage ./pkgs/calico-kube-controllers { };
 
       skydive = callPackage ./pkgs/skydive { };

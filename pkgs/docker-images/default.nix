@@ -6,6 +6,8 @@ callPackages ./contrail { inherit contrailPath; } //
 
   locksmithWorker = callPackage ./locksmithWorker { };
 
+  kube2consulWorker = callPackage ./kube2consulWorker { };
+
   calicoKubeControllers = callPackage ./calico-kube-controllers { };
 
   gremlinServer = callPackage ./gremlin-server { };
