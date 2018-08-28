@@ -66,6 +66,10 @@ in {
       enable = true;
       package = pkgs.mysql;
       bind = cfg.address;
+      extraOptions = ''
+        # Skip reverse DNS lookup of clients
+        skip-name-resolve
+      '';
     };
 
     systemd.services.mysql-bootstrap = {

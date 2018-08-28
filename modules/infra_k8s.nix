@@ -100,6 +100,7 @@ let
     spec = {
       env = [
         { name = "VAULT_ADDR"; value = "http://vault.localdomain:8200"; }
+        { name = "CONSUL_LOG_LEVEL"; value = "debug"; }
         { name = "no_proxy"; value = "*"; }
       ];
     };
@@ -116,18 +117,347 @@ let
     command = "${cwPkgs.kube2consul}/bin/kube2consul -lock";
   };
 
-  kube2consulDeployment = cwLibs.mkJSONDeployment {
-    application = "kube2consul";
-    service = "worker";
-    vaultPolicy = "kube2consul";
-    containers = [
-      {
-        image = "${kube2consulImage.imageName}:${kube2consulImage.imageTag}";
-        env = [
-          { name = "K2C_LOGTOSTDERR"; value = "true"; }
-        ];
-      }
-    ];
+  kube2consulDeployment = toJSON {
+    apiVersion = "extensions/v1beta1";
+    kind = "Deployment";
+    metadata = { name = "kube2consul-worker"; };
+    spec = {
+      replicas = 1;
+      template = {
+        metadata = {
+          labels = { application = "kube2consul"; service = "worker"; };
+        };
+        spec = {
+          dnsPolicy = "Default";
+          containers = [
+            {
+              name = "kube2consul-worker";
+              image = "${kube2consulImage.imageName}:${kube2consulImage.imageTag}";
+              imagePullPolicy = "IfNotPresent";
+              env = [ { name = "K2C_LOGTOSTDERR"; value = "true"; } ];
+              livenessProbe = cwLibs.mkHTTPGetProbe "/health" 8080 10 30 15;
+              volumeMounts = [
+                { mountPath = "/run/vault-token"; name = "vault-token"; }
+                { mountPath = "/run/consul-template-wrapper"; name = "config"; }
+              ];
+            }
+          ];
+          volumes = [
+            { name = "config"; emptyDir = {}; }
+            {
+              name = "vault-token";
+              flexVolume = {
+                driver = "cloudwatt/vaulttmpfs";
+                options = { "vault/policies" = "kube2consul"; };
+              };
+            }
+          ];
+        };
+      };
+    };
+  };
+
+  calicoImageTag = "v3.1.3";
+  calicoNodeImageName = "quay.io/calico/node";
+  calicoNodeImage = pkgs.dockerTools.pullImage {
+    imageName = calicoNodeImageName;
+    imageTag = calicoImageTag;
+    sha256 = "1ai16r1fhvgc6lvgxq7b6dnxwb9d3czjxvplv9h7l6l37p2v4wpw";
+  };
+
+  calicoConfigMap = toJSON {
+    kind = "ConfigMap";
+    apiVersion = "v1";
+    metadata = {
+      name = "calico-config";
+      namespace = "kube-system";
+    };
+    data = {
+      etcd_ca = "/calico-secrets/etcd-ca";
+      etcd_cert = "/calico-secrets/etcd-cert";
+      etcd_key = "/calico-secrets/etcd-key";
+      calico_backend = "bird";
+    };
+  };
+
+  calicoSecrets = toJSON {
+    apiVersion = "v1";
+    kind = "Secret";
+    type = "Opaque";
+    metadata = {
+      name = "calico-etcd-secrets";
+      namespace = "kube-system";
+    };
+    data = {
+      # Populate the following files with etcd TLS configuration if desired, but leave blank if
+      # not using TLS for etcd.
+      # This self-hosted install expects three files with the following names.  The values
+      # should be base64 encoded strings of the entire contents of each file.
+      etcd-ca = cwLibs.base64File "${certs.master}/ca.pem";
+      etcd-cert = cwLibs.base64File "${certs.master}/etcd.pem";
+      etcd-key = cwLibs.base64File "${certs.master}/etcd-key.pem";
+    };
+  };
+
+  calicoNodeDaemonSet = toJSON {
+    apiVersion = "extensions/v1beta1";
+    kind = "DaemonSet";
+    metadata = {
+      name = "calico-node";
+      namespace = "kube-system";
+      labels = {
+        k8s-app = "calico-node";
+      };
+    };
+    spec = {
+      selector = {
+        matchLabels = {
+          k8s-app = "calico-node";
+        };
+      };
+      updateStrategy = {
+        type = "RollingUpdate";
+        rollingUpdate = {
+          maxUnavailable = 1;
+        };
+      };
+      template = {
+        metadata = {
+          labels = {
+            k8s-app = "calico-node";
+          };
+          annotations = {
+            "scheduler.alpha.kubernetes.io/critical-pod" = "";
+          };
+        };
+        spec = {
+          hostNetwork = true;
+          tolerations = [
+            # Make sure calico/node gets scheduled on all nodes.;
+            { effect = "NoSchedule"; operator = "Exists"; }
+            # Mark the pod as a critical add-on for rescheduling.;
+            { key = "CriticalAddonsOnly"; operator = "Exists"; }
+            { effect = "NoExecute"; operator = "Exists"; }
+          ];
+          serviceAccountName = "calico-node";
+          # Minimize downtime during a rolling upgrade or deletion; tell Kubernetes to do a "force;
+          # deletion" = https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.;
+          terminationGracePeriodSeconds = 0;
+          containers = [
+            # Runs calico/node container on each Kubernetes node.  This;
+            # container programs network policy and routes on each;
+            # host.;
+            {
+              name = "calico-node";
+              image = "${calicoNodeImageName}:${calicoImageTag}";
+              imagePullPolicy = "IfNotPresent";
+              env = [
+                # The location of the Calico etcd cluster.;
+                { name = "ETCD_ENDPOINTS"; value = "https://etcd.${cfg.domain}:2379"; }
+                # Choose the backend to use.;
+                {
+                  name = "CALICO_NETWORKING_BACKEND";
+                  valueFrom = {
+                    configMapKeyRef = { name = "calico-config"; key = "calico_backend"; };
+                  };
+                }
+                # Cluster type to identify the deployment type;
+                { name = "CLUSTER_TYPE"; value = "k8s,bgp"; }
+                # Disable file logging so `kubectl logs` works.;
+                { name = "CALICO_DISABLE_FILE_LOGGING"; value = "true"; }
+                # Set noderef for node controller.;
+                {
+                  name = "CALICO_K8S_NODE_REF";
+                  valueFrom = { fieldRef = { fieldPath = "spec.nodeName"; }; };
+                }
+                # Set Felix endpoint to host default action to ACCEPT.;
+                { name = "FELIX_DEFAULTENDPOINTTOHOSTACTION"; value = "ACCEPT"; }
+                # The default IPv4 pool to create on startup if none exists. Pod IPs will be;
+                # chosen from this range. Changing this value after installation will have;
+                # no effect. This should fall within `--cluster-cidr`.;
+                { name = "CALICO_IPV4POOL_CIDR"; value = config.services.kubernetes.clusterCidr; }
+                { name = "CALICO_IPV4POOL_IPIP"; value = "Always"; }
+                # Disable IPv6 on Kubernetes.;
+                { name = "FELIX_IPV6SUPPORT"; value = "false"; }
+                # Set Felix logging to "info";
+                { name = "FELIX_LOGSEVERITYSCREEN"; value = "info"; }
+                # Set MTU for tunnel device used if ipip is enabled;
+                { name = "FELIX_IPINIPMTU"; value = "1440"; }
+                # Location of the CA certificate for etcd.;
+                {
+                  name = "ETCD_CA_CERT_FILE";
+                  valueFrom = {
+                    configMapKeyRef = { name = "calico-config"; key = "etcd_ca"; };
+                  };
+                }
+                # Location of the client key for etcd.;
+                {
+                  name = "ETCD_KEY_FILE";
+                  valueFrom = {
+                    configMapKeyRef = { name = "calico-config"; key = "etcd_key"; };
+                  };
+                }
+                # Location of the client certificate for etcd.;
+                {
+                  name = "ETCD_CERT_FILE";
+                  valueFrom = {
+                    configMapKeyRef = { name = "calico-config"; key = "etcd_cert"; };
+                  };
+                }
+                # Auto-detect the BGP IP address.;
+                { name = "IP"; value = "autodetect"; }
+                { name = "FELIX_HEALTHENABLED"; value = "true"; }
+              ];
+              securityContext = {
+                privileged = true;
+              };
+              livenessProbe = {
+                httpGet = {
+                  path = "/liveness";
+                  port = 9099;
+                };
+                periodSeconds = 10;
+                initialDelaySeconds = 10;
+                failureThreshold = 6;
+              };
+              readinessProbe = {
+                httpGet = {
+                  path = "/readiness";
+                  port = 9099;
+                };
+                periodSeconds = 10;
+              };
+              volumeMounts = [
+                { mountPath = "/lib/modules"; name = "lib-modules"; readOnly = true; }
+                { mountPath = "/var/run/calico"; name = "var-run-calico"; readOnly = false; }
+                { mountPath = "/var/lib/calico"; name = "var-lib-calico"; readOnly = false; }
+                { mountPath = "/calico-secrets"; name = "etcd-certs"; }
+              ];
+            }
+          ];
+          volumes = [
+            # Used by calico/node.;
+            { name = "lib-modules"; hostPath = { path = "/lib/modules"; }; }
+            { name = "var-run-calico"; hostPath = { path = "/var/run/calico"; }; }
+            { name = "var-lib-calico"; hostPath = { path = "/var/lib/calico"; }; }
+            # Mount in the etcd TLS secrets with mode 400.;
+            # See https =//kubernetes.io/docs/concepts/configuration/secret/;
+            {
+              name = "etcd-certs";
+              secret = { secretName = "calico-etcd-secrets"; defaultMode = 0400; };
+            }
+          ];
+        };
+      };
+    };
+  };
+
+  calicoKubeControllersDeployment = toJSON {
+    apiVersion = "extensions/v1beta1";
+    kind = "Deployment";
+    metadata = {
+      name = "calico-kube-controllers";
+      namespace = "kube-system";
+      labels = {
+        k8s-app = "calico-kube-controllers";
+      };
+      annotations = {
+        "scheduler.alpha.kubernetes.io/critical-pod" = "";
+      };
+    };
+    spec = {
+      # The controllers can only have a single active instance.;
+      replicas = 1;
+      strategy = {
+        type = "Recreate";
+      };
+      template = {
+        metadata = {
+          name = "calico-kube-controllers";
+          namespace = "kube-system";
+          labels = {
+            k8s-app = "calico-kube-controllers";
+          };
+        };
+        spec = {
+          # The controllers must run in the host network namespace so that;
+          # it isn't governed by policy that would prevent it from working.;
+          hostNetwork = true;
+          tolerations = [
+            # Mark the pod as a critical add-on for rescheduling.;
+            { key = "CriticalAddonsOnly"; operator = "Exists"; }
+            { key = "node-role.kubernetes.io/master"; effect = "NoSchedule"; }
+          ];
+          serviceAccountName = "calico-kube-controllers";
+          securityContext = { fsGroup = 65534; };
+          containers = with cwPkgs.dockerImages; [
+            {
+              name = "calico-kube-controllers";
+              image = "${calicoKubeControllers.imageName}:${calicoKubeControllers.imageTag}";
+              imagePullPolicy = "IfNotPresent";
+              env = [
+                # The location of the Calico etcd cluster.;
+                { name = "ETCD_ENDPOINTS"; value = "https://etcd.${cfg.domain}:2379"; }
+                # Location of the CA certificate for etcd.;
+                {
+                  name = "ETCD_CA_CERT_FILE";
+                  valueFrom = {
+                    configMapKeyRef = { name = "calico-config"; key = "etcd_ca"; };
+                  };
+                }
+                # Location of the client key for etcd.;
+                {
+                  name = "ETCD_KEY_FILE";
+                  valueFrom = {
+                    configMapKeyRef = { name = "calico-config"; key = "etcd_key"; };
+                  };
+                }
+                # Location of the client certificate for etcd.;
+                {
+                  name = "ETCD_CERT_FILE";
+                  valueFrom = {
+                    configMapKeyRef = { name = "calico-config"; key = "etcd_cert"; };
+                  };
+                }
+                # Choose which controllers to run.;
+                { name = "ENABLED_CONTROLLERS"; value = "policy,profile,workloadendpoint,node"; }
+                { name = "KUBERNETES_SERVICE_HOST"; value = "api.${cfg.domain}"; }
+              ];
+              volumeMounts = [
+                # Mount in the etcd TLS secrets.;
+                { mountPath = "/calico-secrets"; name = "etcd-certs"; }
+              ];
+            }
+          ];
+          volumes = [
+            # Mount in the etcd TLS secrets with mode 400.;
+            # See https =//kubernetes.io/docs/concepts/configuration/secret/;
+            {
+              name = "etcd-certs";
+              secret = { secretName = "calico-etcd-secrets"; defaultMode = 0400; };
+            }
+          ];
+        };
+      };
+    };
+  };
+
+  calicoKubeControllersServiceAccount = toJSON {
+    apiVersion = "v1";
+    kind = "ServiceAccount";
+    metadata = {
+      name = "calico-kube-controllers";
+      namespace = "kube-system";
+    };
+  };
+
+  calicoNodeServiceAccount = toJSON {
+    apiVersion = "v1";
+    kind = "ServiceAccount";
+    metadata = {
+      name = "calico-node";
+      namespace = "kube-system";
+    };
   };
 
   certs = import (pkgs.path + /nixos/tests/kubernetes/certs.nix) {
@@ -286,7 +616,7 @@ in {
       certFile = "${certs.master}/etcd.pem";
       keyFile = "${certs.master}/etcd-key.pem";
       trustedCaFile = "${certs.master}/ca.pem";
-      peerClientCertAuth = true;
+      peerClientCertAuth = false;
       listenClientUrls = ["https://0.0.0.0:2379"];
       listenPeerUrls = ["https://0.0.0.0:2380"];
       advertiseClientUrls = ["https://etcd.${cfg.domain}:2379"];
@@ -311,6 +641,7 @@ in {
     services.kubernetes = {
       roles = ["master" "node"];
       verbose = false;
+      clusterCidr = "10.1.0.0/16";
       caFile = "${certs.master}/ca.pem";
       etcd = {
         servers = ["https://etcd.${cfg.domain}:2379"];
@@ -338,8 +669,63 @@ in {
           certFile = "${certs.worker}/apiserver-client-kubelet-${config.networking.hostName}.pem";
           keyFile = "${certs.worker}/apiserver-client-kubelet-${config.networking.hostName}-key.pem";
         };
+        networkPlugin = "cni";
+        cni = {
+          packages = [ cwPkgs.cni_0_3_0 cwPkgs.calicoCniPlugin ];
+          config = [
+            {
+              name = "calico-k8s-network";
+              cniVersion = "0.3.0";
+              type = "calico";
+              etcd_endpoints = "https://etcd.${cfg.domain}:2379";
+              etcd_key_file = "${certs.master}/etcd-key.pem";
+              etcd_cert_file = "${certs.master}/etcd.pem";
+              etcd_ca_cert_file = "${certs.master}/ca.pem";
+              log_level = "INFO";
+              ipam = {
+                type = "calico-ipam";
+              };
+              policy = {
+                type = "k8s";
+              };
+              kubernetes = {
+                kubeconfig = pkgs.writeText "cni-kubeconfig" (builtins.toJSON {
+                  apiVersion = "v1";
+                  kind = "Config";
+                  clusters = [{
+                    name = "local";
+                    cluster.certificate-authority = "${certs.master}/ca.pem";
+                    cluster.server = "https://api.${cfg.domain}";
+                  }];
+                  users = [{
+                    name = "kubelet";
+                    user = {
+                      client-certificate =
+                        "${certs.worker}/apiserver-client-kubelet-${config.networking.hostName}.pem";
+                      client-key =
+                        "${certs.worker}/apiserver-client-kubelet-${config.networking.hostName}-key.pem";
+                    };
+                  }];
+                  contexts = [{
+                    context = { cluster = "local"; user = "kubelet"; };
+                    current-context = "kubelet-context";
+                  }];
+                });
+              };
+            }
+            {
+              name = "loopback";
+              cniVersion = "0.3.0";
+              type = "loopback";
+            }
+          ];
+        };
         extraOpts = "--resolv-conf=/etc/kubernetes/kubelet/resolv.conf --volume-plugin-dir=/etc/kubernetes/volumeplugins";
-        seedDockerImages = [ kube2consulImage ] ++ cfg.seedDockerImages;
+        seedDockerImages = with cwPkgs.dockerImages; [
+          kube2consulImage
+          calicoNodeImage
+          calicoKubeControllers
+        ] ++ cfg.seedDockerImages;
       };
       controllerManager = {
         serviceAccountKeyFile = "${certs.master}/kube-service-accounts-key.pem";
@@ -426,8 +812,8 @@ in {
       serviceConfig.Type = "oneshot";
       serviceConfig.RemainAfterExit = true;
       wantedBy = [ "kubernetes.target" ];
-      after = [ "consul.service" "kube-apiserver.service" ];
-      path = [ pkgs.kubectl pkgs.docker cwPkgs.waitFor ];
+      after = [ "consul.service" "kube-apiserver.service" "kubelet-bootstrap.service" ];
+      path = with pkgs; [ kubectl docker cwPkgs.waitFor ];
       script = ''
         wait-for localhost:8080 -q -t 300
         # give cluster-admin role to all accounts
@@ -455,7 +841,14 @@ in {
       '';
       "kubernetes/infra/kube2consul.json".text = kube2consulDeployment;
       "kubernetes/infra/pod-preset.json".text = kubePodPreset;
-      "kubernetes/volumeplugins/cloudwatt~vaulttmpfs/vaulttmpfs".source = "${cwPkgs.vaulttmpfs}/bin/kubernetes-flexvolume-vault-plugin";
+      "kubernetes/infra/calico-config-map.json".text = calicoConfigMap;
+      "kubernetes/infra/calico-secrets.json".text = calicoSecrets;
+      "kubernetes/infra/calico-node.daemonset.json".text = calicoNodeDaemonSet;
+      "kubernetes/infra/calico-node.serviceaccount.json".text = calicoNodeServiceAccount;
+      "kubernetes/infra/calico-kube-controllers.deployment.json".text = calicoKubeControllersDeployment;
+      "kubernetes/infra/calico-kube-controllers.serviceaccount.json".text = calicoKubeControllersServiceAccount;
+      "kubernetes/volumeplugins/cloudwatt~vaulttmpfs/vaulttmpfs".source =
+        "${cwPkgs.vaulttmpfs}/bin/kubernetes-flexvolume-vault-plugin";
     } // (mapAttrs' (name: { address, port }:
       nameValuePair "consul.d/${name}.json" { text = toJSON { service = { inherit name port address; }; }; }
     ) cfg.externalServices);

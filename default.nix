@@ -3,8 +3,8 @@
 , contrail ? fetched.contrail
 }:
 
-let pkgs = import nixpkgs { };
-    lib =  import ./pkgs/lib { inherit pkgs cwPkgs; };
+let pkgs = import nixpkgs {};
+    lib = import ./pkgs/lib { inherit pkgs cwPkgs; };
 
     callPackage = pkgs.lib.callPackageWith (
       pkgs // cwPkgs // { inherit pkgs lib callPackage callPackages; });
@@ -20,6 +20,10 @@ let pkgs = import nixpkgs { };
       fluentdCw = callPackage ./pkgs/fluentdCw { };
 
       vaulttmpfs = callPackage ./pkgs/kubernetes-flexvolume-vault-plugin { };
+
+      calicoCniPlugin = callPackage ./pkgs/calicoCniPlugin { };
+
+      cni_0_3_0 = callPackage ./pkgs/cni { };
 
       consulTemplateMock = callPackage ./pkgs/consul-template-mock { };
 

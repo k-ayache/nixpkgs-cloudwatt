@@ -44,14 +44,8 @@ let
         };
       };
     }
-    {
-      name = "application";
-      value = application;
-    }
-    {
-      name = "service";
-      value = service;
-    }
+    { name = "application"; value = application; }
+    { name = "service"; value = service; }
   ];
 
   volumeMountsTemplate = vaultPolicy: [
