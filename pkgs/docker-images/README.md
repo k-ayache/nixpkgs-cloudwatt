@@ -4,18 +4,19 @@ Docker images definitions
 One service in image
 --------------------
 
-Use `lib.buildContrailImageWithPerp` helper:
+Use `lib.buildImageWithPerp` helper:
 
     locksmithWorker = lib.buildImageWithPerp {
         # name of the image
         name = "locksmith/worker";
-        # the base image
-        fromImage = lib.images.kubernetesBaseImage;
         # executable that will be run with perp
         command = "${locksmith}/bin/vault-fernet-locksmith";
         # shell commands to be run before running the executable
         preStartScript = "";
     };
+
+By default the parent image is `dockerImages.pulled.kubernetesBaseImage`. You can
+change it by setting the `fromImage` attribute.
 
 Multiple services in the image
 ------------------------------
@@ -24,7 +25,6 @@ Use `lib.buildImageWithPerps` helper:
 
     gremlinServer = lib.buildImageWithPerps {
         name = "gremlin/server";
-        fromImage = lib.images.javaJreImage;
         # list of services to be run by perp
         services = [
           {
@@ -71,7 +71,6 @@ To run the service as `root`, set `user` to `root`:
 
     image = lib.buildImageWithPerp {
         name = "foo/bar";
-        fromImage = lib.images.kubernetesBaseImage;
         command = "${svc}/bin/svc";
         user = "root";
     }
@@ -94,7 +93,6 @@ environment to the service, use the `environmentFile` attribute:
 
     image = lib.buildImageWithPerp {
         name = "foo/bar";
-        fromImage = lib.images.kubernetesBaseImage;
         command = "${svc}/bin/svc";
         environmentFile = ${imageEnv};
     };
@@ -107,7 +105,6 @@ With `lib.buildImageWithPerps` or `lib.buildImageWithPerp` you can provide a
 
     dockerImage = lib.buildImageWithPerp {
         name = "foo/bar";
-        fromImage = lib.images.kubernetesBaseImage;
         command = "${service1}/bin/service1";
         fluentd = {
             source = { type = "stdout"; };
@@ -123,7 +120,6 @@ It works with multiple services as well:
 
     dockerImage = lib.buildImageWithPerps {
         name = "foo/bar";
-        fromImage = lib.images.kubernetesBaseImage;
         command = "foo";
         services = [
           {

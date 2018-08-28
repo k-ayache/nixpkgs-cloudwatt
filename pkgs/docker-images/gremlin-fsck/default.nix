@@ -31,7 +31,6 @@ let
 in
   lib.buildImageWithPerps {
     name = "gremlin/fsck";
-    fromImage = lib.images.kubernetesBaseImage;
     services = [
       {
         name = "gremlin-fsck";

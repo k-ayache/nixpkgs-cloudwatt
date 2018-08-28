@@ -108,7 +108,6 @@ let
 
   kube2consulImage = cwLibs.buildImageWithPerp {
     name = "kube2consul/worker";
-    fromImage = cwLibs.images.kubernetesBaseImage;
     environmentFile = pkgs.writeText "env" ''
       KUBERNETES_SERVICE_HOST=api.${cfg.domain}
       KUBERNETES_SERVICE_PORT=443
@@ -155,14 +154,6 @@ let
         };
       };
     };
-  };
-
-  calicoImageTag = "v3.1.3";
-  calicoNodeImageName = "quay.io/calico/node";
-  calicoNodeImage = pkgs.dockerTools.pullImage {
-    imageName = calicoNodeImageName;
-    imageTag = calicoImageTag;
-    sha256 = "1ai16r1fhvgc6lvgxq7b6dnxwb9d3czjxvplv9h7l6l37p2v4wpw";
   };
 
   calicoConfigMap = toJSON {
@@ -243,13 +234,13 @@ let
           # Minimize downtime during a rolling upgrade or deletion; tell Kubernetes to do a "force;
           # deletion" = https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.;
           terminationGracePeriodSeconds = 0;
-          containers = [
+          containers = with cwPkgs.dockerImages.pulled; with cwLibs.image; [
             # Runs calico/node container on each Kubernetes node.  This;
             # container programs network policy and routes on each;
             # host.;
             {
               name = "calico-node";
-              image = "${calicoNodeImageName}:${calicoImageTag}";
+              image = "${imageName calicoNodeImage}:${imageTag calicoNodeImage}";
               imagePullPolicy = "IfNotPresent";
               env = [
                 # The location of the Calico etcd cluster.;
@@ -723,7 +714,7 @@ in {
         extraOpts = "--resolv-conf=/etc/kubernetes/kubelet/resolv.conf --volume-plugin-dir=/etc/kubernetes/volumeplugins";
         seedDockerImages = with cwPkgs.dockerImages; [
           kube2consulImage
-          calicoNodeImage
+          pulled.calicoNodeImage
           calicoKubeControllers
         ] ++ cfg.seedDockerImages;
       };

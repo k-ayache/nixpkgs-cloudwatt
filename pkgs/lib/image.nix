@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, cwPkgs }:
 
 rec {
   # We use environment variables REGISTRY_URL, REGISTRY_USERNAME,
@@ -153,7 +153,7 @@ rec {
   # Build an image where 'command' is started by Perp
   buildImageWithPerp = {
     name,
-    fromImage,
+    fromImage ? cwPkgs.dockerImages.pulled.kubernetesBaseImage,
     command,
     preStartScript ? "",
     contents ? [],
@@ -174,7 +174,7 @@ rec {
 
   buildImageWithPerps = args@{
     name,
-    fromImage ? null,
+    fromImage ? cwPkgs.dockerImages.pulled.kubernetesBaseImage,
     services,
     contents ? [],
     extraCommands ? "",
@@ -185,7 +185,11 @@ rec {
     in
       pkgs.dockerTools.buildImage {
         inherit name runAsRoot;
-        fromImage = newArgs.fromImage;
+        fromImage =
+          if newArgs ? fromImage then
+            newArgs.fromImage
+          else
+            cwPkgs.dockerImages.pulled.kubernetesBaseImage;
         config = {
           Cmd = [ "/usr/sbin/perpd" ];
         };
@@ -232,4 +236,18 @@ rec {
     # with consul-template it is only possible to read a file
     [[ ! -f /my-ip ]] && hostname --ip-address > /my-ip
     '';
+
+  imageName = image: with pkgs.lib;
+    # for pullImage
+    if image ? imageId then
+      toString (head (splitString ":" image.imageId))
+    # for buildImage
+    else
+      image.imageName;
+
+  imageTag = image: with pkgs.lib;
+    if image ? imageId then
+      toString (tail (splitString ":" image.imageId))
+    else
+      image.imageTag;
 }

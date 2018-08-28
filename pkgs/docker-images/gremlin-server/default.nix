@@ -96,7 +96,6 @@ let
 in
   lib.buildImageWithPerps {
     name = "gremlin/server";
-    fromImage = lib.images.kubernetesBaseImage;
     services = [
       {
         name = "gremlin-server";

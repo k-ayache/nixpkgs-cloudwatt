@@ -8,7 +8,6 @@ let
 
     contrail = callLibs ./contrail.nix;
     image  = callLibs ./image.nix;
-    images = callLibs ./images.nix;
     debian = callLibs ./debian.nix;
     tools = callLibs ./ubuntu-vm.nix;
     fluentd = callLibs ./fluentd.nix;

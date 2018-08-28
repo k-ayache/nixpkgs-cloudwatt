@@ -75,7 +75,6 @@ in
 
 lib.buildImageWithPerp {
     name = "locksmith/worker";
-    fromImage = lib.images.kubernetesBaseImage;
     command = "${locksmith}/bin/vault-fernet-locksmith -logtostderr -config-file-dir /run/consul-template-wrapper/etc/locksmith -config-file config";
     preStartScript = ''
       consul-template-wrapper -- -once \

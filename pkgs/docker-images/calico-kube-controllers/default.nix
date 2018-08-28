@@ -1,7 +1,6 @@
-{ lib, calicoKubeControllers}:
+{ lib, calicoKubeControllers }:
 
 lib.buildImageWithPerp {
-    name = "calico/kube-controllers";
-    fromImage = lib.images.kubernetesBaseImage;
-    command = "${calicoKubeControllers}/bin/kube-controllers";
+  name = "calico/kube-controllers";
+  command = "${calicoKubeControllers}/bin/kube-controllers";
 }

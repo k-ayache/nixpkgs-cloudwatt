@@ -18,7 +18,6 @@ let
 
   service1Image = lib.buildImageWithPerps {
     name = "test/service1";
-    fromImage = lib.images.kubernetesBaseImage;
     services = [
       {
         name = "service1";
@@ -65,7 +64,6 @@ let
 
   service2Image = lib.buildImageWithPerps {
     name = "test/service2";
-    fromImage = lib.images.kubernetesBaseImage;
     services = [
       {
         name = "service2";

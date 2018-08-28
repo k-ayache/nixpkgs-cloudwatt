@@ -11,7 +11,6 @@ in
 
 lib.buildImageWithPerp {
     name = "kube2consul/worker";
-    fromImage = lib.images.kubernetesBaseImage;
     command = "${kube2consul}/bin/kube2consul -lock -consul-token=`cat /run/consul-template-wrapper/kube2consul/consul_token`";
     preStartScript = ''
       export K2C_CONSUL_API=''${K2C_CONSUL_API:-consul.localdomain:8500}

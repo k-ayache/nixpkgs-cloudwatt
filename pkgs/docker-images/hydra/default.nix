@@ -1,4 +1,4 @@
-{ pkgs, lib, perp, makeWrapper, curl, stdenv, waitFor, fetchpatch, perlPackages }:
+{ pkgs, lib, dockerImages, perp, makeWrapper, curl, stdenv, waitFor, fetchpatch, perlPackages }:
 
 with lib;
 
@@ -204,7 +204,7 @@ let hydra = pkgs.hydra.overrideAttrs(old: {
 in
   pkgs.dockerTools.buildImageWithNixDb rec {
     name = "hydra/master";
-    fromImage = lib.images.kubernetesBaseImage;
+    fromImage = dockerImages.pulled.kubernetesBaseImage;
 
     contents = [
       hydra
