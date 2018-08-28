@@ -9,7 +9,11 @@ let
   vaultRootToken = "development";
   vaultTmpfsToken = "vaulttmpfs";
 
-  defaultVaultData = {};
+  defaultVaultData = {
+    "secret/kube2consul" = {
+      consul_token = "dummy";
+    };
+  };
 
   defaultVaultPolicies = {
     admin = {
@@ -106,16 +110,6 @@ let
     };
   };
 
-  kube2consulImage = cwLibs.buildImageWithPerp {
-    name = "kube2consul/worker";
-    environmentFile = pkgs.writeText "env" ''
-      KUBERNETES_SERVICE_HOST=api.${cfg.domain}
-      KUBERNETES_SERVICE_PORT=443
-      K2C_CONSUL_API=consul.localdomain:8500
-    '';
-    command = "${cwPkgs.kube2consul}/bin/kube2consul -lock";
-  };
-
   kube2consulDeployment = toJSON {
     apiVersion = "extensions/v1beta1";
     kind = "Deployment";
@@ -128,12 +122,18 @@ let
         };
         spec = {
           dnsPolicy = "Default";
-          containers = [
+          securityContext = { fsGroup = 65534; };
+          containers = with cwPkgs.dockerImages; [
             {
               name = "kube2consul-worker";
-              image = "${kube2consulImage.imageName}:${kube2consulImage.imageTag}";
+              image = "${kube2consulWorker.imageName}:${kube2consulWorker.imageTag}";
               imagePullPolicy = "IfNotPresent";
-              env = [ { name = "K2C_LOGTOSTDERR"; value = "true"; } ];
+              env = [
+                { name = "KUBERNETES_SERVICE_HOST"; value = "api.${cfg.domain}"; }
+                { name = "KUBERNETES_SERVICE_PORT"; value = "443"; }
+                { name = "K2C_CONSUL_API"; value = "consul.localdomain:8500"; }
+                { name = "K2C_LOGTOSTDERR"; value = "true"; }
+              ];
               livenessProbe = cwLibs.mkHTTPGetProbe "/health" 8080 10 30 15;
               volumeMounts = [
                 { mountPath = "/run/vault-token"; name = "vault-token"; }
@@ -713,7 +713,7 @@ in {
         };
         extraOpts = "--resolv-conf=/etc/kubernetes/kubelet/resolv.conf --volume-plugin-dir=/etc/kubernetes/volumeplugins";
         seedDockerImages = with cwPkgs.dockerImages; [
-          kube2consulImage
+          kube2consulWorker
           pulled.calicoNodeImage
           calicoKubeControllers
         ] ++ cfg.seedDockerImages;
