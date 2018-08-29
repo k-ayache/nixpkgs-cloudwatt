@@ -16,6 +16,7 @@ let debianPackageVersion = "3.2-6";
         ln -s $vrouterPath $vrouterRelativeDir
       '';
     };
+    config = import ./config.nix {inherit pkgs;};
 in
 {
 
@@ -45,6 +46,14 @@ in
       echo "Link binaries found in contents"
       cat files | xargs -I'{}' -t ln -s '{}' usr/bin/
       rm files
+
+      # Copy debian scripts to DEBIAN/
+      cp ${config.vrouterPostinst} DEBIAN/${config.vrouterPostinst.name}
+      chmod 775 DEBIAN/postinst
+      cp ${config.vrouterPostrm} DEBIAN/${config.vrouterPostrm.name}
+      chmod 775 DEBIAN/postrm
+      mkdir -p etc/init
+      cp ${config.vrouterUpstart} etc/init/contrail-vrouter-agent.conf
     '';
     };
 
