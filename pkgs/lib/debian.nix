@@ -25,6 +25,9 @@ rec {
   # publish packages to Aptly. By default it is the package name.
   , repository ? name
   , description
+  # A list of derivations that are copiyed to the DEBIAN
+  # directory. This can be used to add postinst scripts for instance.
+  , maintainerScripts ? []
   }:
     pkgs.runCommand "${name}-${version}.deb" {
     exportReferencesGraph =
@@ -51,7 +54,8 @@ rec {
       mkdir DEBIAN
       cp ${control name version description} DEBIAN/control
 
-      ${script}
+    '' + pkgs.lib.concatMapStringsSep "\n" (x: "cp ${x} DEBIAN/${x.name}") maintainerScripts
+    + ''
 
       popd
 

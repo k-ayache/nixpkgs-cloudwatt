@@ -16,7 +16,6 @@ let debianPackageVersion = "3.2-6";
         ln -s $vrouterPath $vrouterRelativeDir
       '';
     };
-    config = import ./config.nix {inherit pkgs;};
 in
 {
 
@@ -35,6 +34,10 @@ in
       contrailPkgs.vrouterAgent contrailPkgs.vrouterPortControl
       contrailPkgs.vrouterUtils contrailPkgs.vrouterNetns ];
     description = "Vrouter userland programs (contrail-vrouter-agent, vrouter utilities, opencontrail-netns tools)";
+    maintainerScripts = [
+      (pkgs.writeScript "postinst" (builtins.readFile ./contrail/postinst))
+      (pkgs.writeScript "postrm" (builtins.readFile ./contrail/postrm))
+      (pkgs.writeText "contrail-vrouter-agent.upstart" (builtins.readFile ./contrail/contrail-vrouter-agent.upstart)) ];
     # This links all binaries files found in the contents to the
     # /usr/bin directory of the target system
     script = ''
@@ -46,14 +49,6 @@ in
       echo "Link binaries found in contents"
       cat files | xargs -I'{}' -t ln -s '{}' usr/bin/
       rm files
-
-      # Copy debian scripts to DEBIAN/
-      cp ${config.vrouterPostinst} DEBIAN/${config.vrouterPostinst.name}
-      chmod 775 DEBIAN/postinst
-      cp ${config.vrouterPostrm} DEBIAN/${config.vrouterPostrm.name}
-      chmod 775 DEBIAN/postrm
-      mkdir -p etc/init
-      cp ${config.vrouterUpstart} etc/init/contrail-vrouter-agent.conf
     '';
     };
 
