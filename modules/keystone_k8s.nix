@@ -7,149 +7,27 @@ let
 
   cfg = config.keystone.k8s;
 
-  apiPort = 5000;
-  adminApiPort = 35357;
-
-  keystoneApiAdminHost = "keystone-admin-api.service";
-  keystoneApiHost = "keystone-api.service";
-
-  keystoneAdminPassword = "development";
-  keystoneAdminToken = "development";
-  keystoneDBPassword = "development";
-
-  imageName = "r.cwpriv.net/keystone/all";
-  imageTag = "9.0.0-61516ea9ed2202a1";
-  sha256 = "1z944khvnp0z4mchnkxb5pgm9c29cll5v544jin596pwgrqbcw99";
-
-  region = head (splitString "." config.infra.k8s.domain);
-
-  keystoneAdminTokenRc = pkgs.writeTextFile {
-    name = "admin-token.openrc";
-    text = ''
-      export OS_URL="http://${keystoneApiAdminHost}.${config.infra.k8s.domain}:${toString adminApiPort}/v2.0"
-      export OS_TOKEN="${keystoneAdminToken}"
-    '';
-  };
-
-  keystoneAdminRc = pkgs.writeTextFile {
-    name = "admin.openrc";
-    text = ''
-      export OS_AUTH_TYPE="v2password"
-      export OS_AUTH_URL="http://${keystoneApiAdminHost}.${config.infra.k8s.domain}:${toString adminApiPort}/v2.0"
-      export OS_REGION_NAME="${region}"
-      export OS_PROJECT_NAME="openstack"
-      export OS_TENANT_NAME="openstack"
-      export OS_USERNAME="admin"
-      export OS_PASSWORD="${keystoneAdminPassword}"
-      export OS_INTERFACE="admin"
-    '';
-  };
+  keystoneLib = import ./lib/keystone_k8s.nix { inherit pkgs; };
+  keystoneConfig = import ./config/keystone_k8s.nix { inherit pkgs cwPkgs cwLibs config; };
 
   defaultProjects = {
     openstack = {
       users = {
         admin = {
-          password = keystoneAdminPassword;
+          password = keystoneConfig.keystoneAdminPassword;
           roles = ["admin"];
         };
       };
     };
   };
 
-  defaultCatalog = {
+  defaultCatalog = with keystoneConfig; {
     identity = {
       name = "keystone";
-      admin_url = "http://${keystoneApiAdminHost}.${config.infra.k8s.domain}:${toString adminApiPort}/v2.0";
-      internal_url = "http://${keystoneApiHost}.${config.infra.k8s.domain}:${toString apiPort}/v2.0";
-      public_url = "http://${keystoneApiHost}.${config.infra.k8s.domain}:${toString apiPort}/v2.0";
+      admin_url = "http://${keystoneApiAdminHost}.${config.networking.domain}:${toString adminApiPort}/v2.0";
+      internal_url = "http://${keystoneApiHost}.${config.networking.domain}:${toString apiPort}/v2.0";
+      public_url = "http://${keystoneApiHost}.${config.networking.domain}:${toString apiPort}/v2.0";
     };
-  };
-
-  createProjectUserRole = project: user: roles:
-    concatStringsSep "\n" (map (role: ''
-      openstack role add --project ${project} --user ${user} ${role}
-    '') roles);
-
-  createProjectUsers = project: users:
-    concatStringsSep "\n" (mapAttrsToList (user: { password, roles ? [] }: ''
-      openstack user create --password '${password}' ${user}
-    '' + optionalString (roles != []) (createProjectUserRole project user roles)) users);
-
-  createProject = project: { users ? {} }: ''
-    openstack project create ${project}
-  '' + optionalString (users != {}) (createProjectUsers project users);
-
-  createProjects = projects:
-    concatStringsSep "\n" (mapAttrsToList createProject projects);
-
-  createCatalog = catalog:
-    concatStringsSep "\n" (mapAttrsToList (type: { name, admin_url, internal_url, public_url }: ''
-      openstack service create --description "${type} service" --name ${name} ${type}
-      openstack endpoint create --region ${region} --adminurl "${admin_url}" --internalurl "${internal_url}" \
-        --publicurl "${public_url}" ${type}
-    '') catalog);
-
-  createRoles = roles:
-    concatStringsSep "\n" (map (role: ''
-      openstack role create ${role}
-    '') roles);
-
-  kubeConfigMap = cwLibs.writeYamlFile {
-    name = "configmap.yml";
-    text = ''
-      ---
-      apiVersion: v1
-      kind: ConfigMap
-      metadata:
-        name: openstack
-        namespace: default
-      data:
-        region: ${region}
-    '';
-  };
-
-  keystoneAllImage = pkgs.dockerTools.pullImage {
-    inherit imageName imageTag sha256;
-  };
-
-  keystoneDeployment = service: port: cwLibs.mkJSONDeployment {
-    inherit service port;
-    application = "keystone";
-    vaultPolicy = "keystone";
-    containers = [
-      {
-        image = "${imageName}:${imageTag}";
-        lifecycle = {
-          preStop = {
-            exec = { command = ["/usr/sbin/stop-container"]; };
-          };
-        };
-        livenessProbe = cwLibs.mkHTTPGetProbe "/" 1988 10 30 15;
-        readinessProbe = cwLibs.mkHTTPGetProbe "/ready" 1988 10 30 15;
-        volumeMounts = [
-          { name = "vault-token-keystone-keys"; mountPath = "/run/vault-token-keystone-keys"; }
-        ];
-      }
-    ];
-    volumes = [
-      {
-        name = "vault-token-keystone-keys";
-        flexVolume = {
-          driver = "cloudwatt/vaulttmpfs";
-          options = {
-            "vault/policies" = "fernet-keys-read";
-            "vault/role" = "periodic-fernet-reader";
-            "vault/filePermissions" = "640";
-            "vault/unwrap" = "true";
-          };
-        };
-      }
-    ];
-  };
-
-  keystoneService = service: cwLibs.mkJSONService {
-    inherit service;
-    application = "keystone";
   };
 
 in {
@@ -195,7 +73,7 @@ in {
 
   config = mkIf cfg.enable {
 
-    environment.etc = {
+    environment.etc = with keystoneConfig; {
       "kubernetes/openstack/configmap.yml".source = kubeConfigMap;
       "kubernetes/keystone/api.deployment.json".text = keystoneDeployment "api" apiPort;
       "kubernetes/keystone/admin-api.deployment.json".text = keystoneDeployment "admin-api" adminApiPort;
@@ -215,10 +93,10 @@ in {
         kubectl apply -f /etc/kubernetes/openstack/
         kubectl apply -f /etc/kubernetes/keystone/
       '';
-      postStart = ''
+      postStart = with keystoneConfig; with keystoneLib; ''
         wait-for ${keystoneApiAdminHost}:${toString adminApiPort} -q -t 300
         source ${keystoneAdminTokenRc}
-        ${createCatalog (defaultCatalog // cfg.catalog)}
+        ${createCatalog (defaultCatalog // cfg.catalog) region}
         ${createRoles cfg.roles}
         ${createProjects (defaultProjects // cfg.projects)}
       '';
@@ -228,19 +106,17 @@ in {
 
       enable = true;
 
-      seedDockerImages = [
-        keystoneAllImage
-      ];
+      seedDockerImages = [ cwPkgs.dockerImages.pulled.keystoneAllImage ];
 
-      consulData = {
+      consulData = with keystoneConfig; {
         "config/openstack/catalog/${region}/data" = defaultCatalog // cfg.catalog;
       };
 
       vaultData = {
         "secret/keystone" = {
           admin_password = "development";
-          admin_token = keystoneAdminToken;
-          db_password = keystoneDBPassword;
+          admin_token = keystoneConfig.keystoneAdminToken;
+          db_password = keystoneConfig.keystoneDBPassword;
         };
         "secret/fernet-keys" = {
           creation_time = 1519801272;
@@ -325,7 +201,7 @@ in {
       databases = {
         keystone = {
           user = "keystone";
-          password = keystoneDBPassword;
+          password = keystoneConfig.keystoneDBPassword;
         };
       };
 
