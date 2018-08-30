@@ -141,7 +141,8 @@ rec {
     let
       layer = pkgs.dockerTools.buildImage {
         name = "fluentd";
-        fromImage = imageDesc.fromImage;
+        fromImage =
+          if imageDesc ? fromImage then imageDesc.fromImage else cwPkgs.dockerImages.pulled.kubernetesBaseImage;
         contents = [ cwPkgs.fluentdCw ];
       };
     in

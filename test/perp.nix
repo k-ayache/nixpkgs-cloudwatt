@@ -293,7 +293,6 @@ let
     in
       lib.buildImageWithPerps {
         name = test.name;
-        fromImage = lib.images.kubernetesBaseImage;
         services = if test ? "service" then [ service ] else test.services;
       };
 

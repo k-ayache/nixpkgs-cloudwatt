@@ -15,7 +15,6 @@ rec {
   buildContrailImageWithPerps = { name, services }:
     lib.buildImageWithPerps {
       inherit name services;
-      fromImage = lib.images.kubernetesBaseImage;
       extraCommands = ''
         chmod u+w etc
         mkdir -p var/log/contrail etc/contrail

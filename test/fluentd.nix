@@ -38,7 +38,6 @@ let
 
   testImage = lib.buildImageWithPerps {
     name = "test-image";
-    fromImage = lib.images.kubernetesBaseImage;
     services = [
       {
         name = "stdout-svc";

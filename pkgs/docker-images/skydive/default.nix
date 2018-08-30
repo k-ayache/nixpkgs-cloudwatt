@@ -64,7 +64,6 @@ in
 
 lib.buildImageWithPerp {
   name = "skydive/analyzer";
-  fromImage = lib.images.kubernetesBaseImage;
   command = "${skydive}/bin/skydive analyzer analyzer -c /run/consul-template-wrapper/skydive.yml";
   preStartScript = ''
     consul-template-wrapper --no-lock --no-vault -- -once \

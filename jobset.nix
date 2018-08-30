@@ -36,7 +36,11 @@ let
     inherit contrail32Cw;
   }
   // pkgs.lib.optionalAttrs pushToDockerRegistry {
-    pushDockerImages = genDockerPushJobs cwPkgs.dockerImages; }
+    pushDockerImages = genDockerPushJobs (
+      # exclude sub attrs like dockerImages.pulled
+      pkgs.lib.filterAttrs (n: v: pkgs.lib.isDerivation v) cwPkgs.dockerImages
+    );
+  }
   // pkgs.lib.optionalAttrs publishToAptly {
     publishDebianPackages = genDebPublishJobs cwPkgs.debianPackages; };
 
@@ -46,8 +50,11 @@ let
     "contrail32Cw.lib.buildVrouter"
     # Upload fail because image is to big
     "pushDockerImages.contrailVrouter"
+    # FIXME: because of callPackages theses attributes are added to the set
+    "dockerImages.pulled.override"
+    "dockerImages.pulled.overrideDerivation"
   ];
 
-in 
+in
   # We remove excluded jobs
   builtins.foldl' (j: e: pkgs.lib.recursiveUpdate j (pkgs.lib.setAttrByPath e null)) jobs excludedJobs

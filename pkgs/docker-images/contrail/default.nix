@@ -71,6 +71,9 @@ in {
       {
         name = "opencontrail-collector";
         command = "${contrail32Cw.collector}/bin/contrail-collector --conf_file /run/consul-template-wrapper/contrail/contrail-collector.conf";
+        preStartScript = ''
+          ${waitFor}/bin/wait-for opencontrail-discovery.service:5998 -t 300 -q
+        '';
         fluentd = config.fluentdForCService;
         after = ["consul-template"];
       }

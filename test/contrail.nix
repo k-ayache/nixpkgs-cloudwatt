@@ -62,30 +62,30 @@ let
       '';
     };
 
-  images = with lib.images; [
+  images = with cwPkgs.dockerImages; [
     # infrastructure
-    consulAgentImage
-    developmentDnsmaskImage
-    developmentFluentdImage
-    developmentPolipoImage
-    developmentPolymurImage
-    developmentRegistratorImage
-    developmentVaultImage
+    pulled.consulAgentImage
+    pulled.developmentDnsmaskImage
+    pulled.developmentFluentdImage
+    pulled.developmentPolipoImage
+    pulled.developmentPolymurImage
+    pulled.developmentRegistratorImage
+    pulled.developmentVaultImage
     # openstack
-    developmentMysqlImage
-    developmentRabbitmqImage
+    pulled.developmentMysqlImage
+    pulled.developmentRabbitmqImage
     # keystone
-    openstackToolsImage
-    keystoneAllImage
+    pulled.openstackToolsImage
+    pulled.keystoneAllImage
     # contrail
-    zookeeperImage
-    cassandraImage
-    cwPkgs.dockerImages.contrailApi
-    cwPkgs.dockerImages.contrailDiscovery
-    cwPkgs.dockerImages.contrailControl
-    cwPkgs.dockerImages.contrailSchemaTransformer
-    cwPkgs.dockerImages.contrailSvcMonitor
-    cwPkgs.dockerImages.contrailAnalytics
+    pulled.zookeeperImage
+    pulled.cassandraImage
+    contrailApi
+    contrailDiscovery
+    contrailControl
+    contrailSchemaTransformer
+    contrailSvcMonitor
+    contrailAnalytics
   ];
 
   openstackRegion = "dev0";
@@ -140,25 +140,10 @@ let
     '';
   };
 
-  loadImage = image: with pkgs.lib;
-    let
-      imageName =
-        # for pullImage
-        if image ? imageId then
-          toString (head (splitString ":" image.imageId))
-        # for buildImage
-        else
-          image.imageName;
-      imageTag =
-        if image ? imageId then
-          toString (tail (splitString ":" image.imageId))
-        else
-          image.imageTag;
-    in
-      ''
-        $controller->succeed("docker load -i ${image}");
-        $controller->succeed("docker tag ${imageName}:${imageTag} ${imageName}:latest");
-      '';
+  loadImage = image: with lib.image; ''
+    $controller->succeed("docker load -i ${image}");
+    $controller->succeed("docker tag ${imageName image}:${imageTag image} ${imageName image}:latest");
+  '';
   loadImages = builtins.concatStringsSep "\n" (map loadImage images);
 
   # Don't use the disco since it will report docker IPs but vrouter VM
