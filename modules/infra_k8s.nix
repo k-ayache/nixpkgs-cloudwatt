@@ -409,7 +409,7 @@ in {
       serviceConfig.Type = "oneshot";
       serviceConfig.RemainAfterExit = true;
       wantedBy = [ "kubernetes.target" ];
-      after = [ "consul.service" "kube-apiserver.service" "kubelet-bootstrap.service" ];
+      after = [ "vault.service" "consul.service" "kube-apiserver.service" "kubelet-bootstrap.service" ];
       path = with pkgs; [ kubectl docker cwPkgs.waitFor ];
       script = ''
         wait-for localhost:8080 -q -t 300
@@ -419,7 +419,13 @@ in {
           --user=admin \
           --user=kubelet \
           --group=system:serviceaccounts
-        kubectl apply -f /etc/kubernetes/infra
+        kubectl apply -f /etc/kubernetes/infra/stage1
+        while [ $(kubectl --namespace kube-system get pods --field-selector=status.phase=Running 2>/dev/null | wc -l) -ne 3 ]
+        do
+          echo "Waiting on calico to be ready..."
+          sleep 1
+        done
+        kubectl apply -f /etc/kubernetes/infra/stage2
       '';
     };
 
@@ -437,17 +443,19 @@ in {
         options timeout:1
       '';
       # prodPreset to configure consul-template-wrapper
-      "kubernetes/infra/pod-preset.json".text = kubePodPreset;
-      # kube2consul deployment
-      "kubernetes/infra/kube2consul.json".text = kube2consulDeployment;
+      "kubernetes/infra/stage1/pod-preset.json".text = kubePodPreset;
       # calico config to be applied in the cluster
-      "kubernetes/infra/calico-config-map.json".text = calicoConfigMap;
-      "kubernetes/infra/calico-secrets.json".text = calicoSecrets;
-      "kubernetes/infra/calico-node.serviceaccount.json".text = calicoNodeServiceAccount;
-      "kubernetes/infra/calico-kube-controllers.serviceaccount.json".text = calicoKubeControllersServiceAccount;
+      "kubernetes/infra/stage1/calico-config-map.json".text = calicoConfigMap;
+      "kubernetes/infra/stage1/calico-secrets.json".text = calicoSecrets;
+      "kubernetes/infra/stage1/calico-node.serviceaccount.json".text = calicoNodeServiceAccount;
+      "kubernetes/infra/stage1/calico-kube-controllers.serviceaccount.json".text =
+        calicoKubeControllersServiceAccount;
       # deployment of calico
-      "kubernetes/infra/calico-node.daemonset.json".text = calicoNodeDaemonSet;
-      "kubernetes/infra/calico-kube-controllers.deployment.json".text = calicoKubeControllersDeployment;
+      "kubernetes/infra/stage1/calico-node.daemonset.json".text = calicoNodeDaemonSet;
+      "kubernetes/infra/stage1/calico-kube-controllers.deployment.json".text =
+        calicoKubeControllersDeployment;
+      # kube2consul deployment
+      "kubernetes/infra/stage2/kube2consul.json".text = kube2consulDeployment;
       # vaulttmpfs plugin must be placed in a special directory tree so that the kubelet can
       # find it. This directory is passed to the kubelet with the --volume-plugin-dir flag.
       "kubernetes/volumeplugins/cloudwatt~vaulttmpfs/vaulttmpfs".source =
