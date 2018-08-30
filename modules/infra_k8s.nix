@@ -99,6 +99,9 @@ in {
           Allow to pass a list of services definitions that will be
           integrated in the infra.
 
+          The ip address will be added to the loopback interface.
+          The service will be registered in consul.
+
           Example:
 
             {
@@ -433,17 +436,25 @@ in {
         nameserver 169.254.1.10
         options timeout:1
       '';
-      "kubernetes/infra/kube2consul.json".text = kube2consulDeployment;
+      # prodPreset to configure consul-template-wrapper
       "kubernetes/infra/pod-preset.json".text = kubePodPreset;
+      # kube2consul deployment
+      "kubernetes/infra/kube2consul.json".text = kube2consulDeployment;
+      # calico config to be applied in the cluster
       "kubernetes/infra/calico-config-map.json".text = calicoConfigMap;
       "kubernetes/infra/calico-secrets.json".text = calicoSecrets;
-      "kubernetes/infra/calico-node.daemonset.json".text = calicoNodeDaemonSet;
       "kubernetes/infra/calico-node.serviceaccount.json".text = calicoNodeServiceAccount;
-      "kubernetes/infra/calico-kube-controllers.deployment.json".text = calicoKubeControllersDeployment;
       "kubernetes/infra/calico-kube-controllers.serviceaccount.json".text = calicoKubeControllersServiceAccount;
+      # deployment of calico
+      "kubernetes/infra/calico-node.daemonset.json".text = calicoNodeDaemonSet;
+      "kubernetes/infra/calico-kube-controllers.deployment.json".text = calicoKubeControllersDeployment;
+      # vaulttmpfs plugin must be placed in a special directory tree so that the kubelet can
+      # find it. This directory is passed to the kubelet with the --volume-plugin-dir flag.
       "kubernetes/volumeplugins/cloudwatt~vaulttmpfs/vaulttmpfs".source =
         "${cwPkgs.vaulttmpfs}/bin/kubernetes-flexvolume-vault-plugin";
-    } // (mapAttrs' (name: { address, port }:
+    }
+    # add host services in consul
+    // (mapAttrs' (name: { address, port }:
       nameValuePair "consul.d/${name}.json" { text = toJSON { service = { inherit name port address; }; }; }
     ) cfg.externalServices);
 
