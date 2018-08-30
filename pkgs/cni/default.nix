@@ -30,7 +30,7 @@ stdenv.mkDerivation rec {
     description = "Container Network Interface - networking for Linux containers";
     license = licenses.asl20;
     homepage = https://github.com/containernetworking/cni;
-    maintainers = with maintainers; [offline];
+    maintainers = [ { github = "eonpatapon"; } ];
     platforms = [ "x86_64-linux" ];
   };
 }
