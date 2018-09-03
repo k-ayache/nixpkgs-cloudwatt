@@ -156,21 +156,6 @@ let
         vhosts = [ "foo" ];
       };
 
-      keystone.k8s = {
-        enable = true;
-        roles = [ "admin" "Member" "test" ];
-        projects = {
-          test = {
-            users = {
-              test = {
-                password = "test";
-                roles = [ "admin" "test" ];
-              };
-            };
-          };
-        };
-      };
-
       virtualisation = {
         diskSize = 10000;
         memorySize = 4096;
@@ -219,11 +204,6 @@ let
     # check consul-template with vault secrets
     $master->waitUntilSucceeds("kubectl exec \$(kubectl get pod -l service=service2 -o jsonpath='{.items[0].metadata.name}') -- cat /run/consul-template-wrapper/result | grep -q foo");
     $master->waitUntilSucceeds("kubectl exec \$(kubectl get pod -l service=service2 -o jsonpath='{.items[0].metadata.name}') -- cat /run/consul-template-wrapper/result | grep -q plop");
-    # check keystone is running
-    $master->waitUntilSucceeds("curl -s consul:8500/v1/catalog/services | grep -q keystone-admin-api");
-    # check keystone is provisioned
-    $master->waitUntilSucceeds("source /etc/openstack/admin-token.openrc && openstack user list | grep -q admin");
-    $master->waitUntilSucceeds("source /etc/openstack/admin.openrc && openstack user list | grep -q test");
     # check fluentd forwarding
     $master->waitUntilSucceeds("journalctl --unit fluentd --no-pager | grep -q service1");
   '';

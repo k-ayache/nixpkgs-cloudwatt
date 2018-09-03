@@ -419,6 +419,7 @@ in {
           --user=admin \
           --user=kubelet \
           --group=system:serviceaccounts
+        kubectl apply -f /etc/kubernetes/openstack
         kubectl apply -f /etc/kubernetes/infra/stage1
         while [ $(kubectl --namespace kube-system get pods --field-selector=status.phase=Running 2>/dev/null | wc -l) -ne 3 ]
         do
@@ -442,6 +443,7 @@ in {
         nameserver 169.254.1.10
         options timeout:1
       '';
+      "kubernetes/openstack/configmap.yml".source = kubeConfigMap;
       # prodPreset to configure consul-template-wrapper
       "kubernetes/infra/stage1/pod-preset.json".text = kubePodPreset;
       # calico config to be applied in the cluster
