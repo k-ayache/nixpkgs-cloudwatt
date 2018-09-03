@@ -23,6 +23,10 @@
     inherit cwPkgs;
   };
 
+  keystoneK8S = callPackage ./keystone_k8s.nix {
+    inherit cwPkgs;
+  };
+
   # to run these tests:
   # nix-instantiate --eval --strict -A test.lib
   lib = callPackage ../pkgs/lib/tests.nix { };

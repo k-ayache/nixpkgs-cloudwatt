@@ -1,8 +1,11 @@
 { pkgs, cwPkgs, cwLibs, config, certs }:
 
 with builtins;
+with pkgs.lib;
 
 rec {
+
+  region = head (splitString "." config.networking.domain);
 
   fluentdConf = pkgs.writeTextFile {
     name = "fluentd.conf";
@@ -15,6 +18,20 @@ rec {
       <match **>
         @type stdout
       </match>
+    '';
+  };
+
+  kubeConfigMap = cwLibs.writeYamlFile {
+    name = "configmap.yml";
+    text = ''
+      ---
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: openstack
+        namespace: default
+      data:
+        region: ${region}
     '';
   };
 

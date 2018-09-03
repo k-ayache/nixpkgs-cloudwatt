@@ -74,7 +74,6 @@ in {
   config = mkIf cfg.enable {
 
     environment.etc = with keystoneConfig; {
-      "kubernetes/openstack/configmap.yml".source = kubeConfigMap;
       "kubernetes/keystone/api.deployment.json".text = keystoneDeployment "api" apiPort;
       "kubernetes/keystone/admin-api.deployment.json".text = keystoneDeployment "admin-api" adminApiPort;
       "kubernetes/keystone/api.service.json".text = keystoneService "api";
@@ -83,6 +82,10 @@ in {
       "openstack/admin.openrc".source = keystoneAdminRc;
     };
 
+    environment.systemPackages = with pkgs; [
+      cwPkgs.openstackClient
+    ];
+
     systemd.services.keystone = {
       serviceConfig.Type = "oneshot";
       serviceConfig.RemainAfterExit = true;
@@ -90,7 +93,6 @@ in {
       after = [ "kube-bootstrap.service" "mysql-bootstrap.service" ];
       path = [ pkgs.kubectl pkgs.docker cwPkgs.waitFor cwPkgs.openstackClient ];
       script = ''
-        kubectl apply -f /etc/kubernetes/openstack/
         kubectl apply -f /etc/kubernetes/keystone/
       '';
       postStart = with keystoneConfig; with keystoneLib; ''

@@ -39,20 +39,6 @@ rec {
     '';
   };
 
-  kubeConfigMap = cwLibs.writeYamlFile {
-    name = "configmap.yml";
-    text = ''
-      ---
-      apiVersion: v1
-      kind: ConfigMap
-      metadata:
-        name: openstack
-        namespace: default
-      data:
-        region: ${region}
-    '';
-  };
-
   keystoneDeployment = service: port: cwLibs.mkJSONDeployment {
     inherit service port;
     application = "keystone";
