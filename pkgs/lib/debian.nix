@@ -57,6 +57,8 @@ rec {
     '' + pkgs.lib.concatMapStringsSep "\n" (x: "cp ${x} DEBIAN/${x.name}") maintainerScripts
     + ''
 
+      ${script}
+
       popd
 
       # FIXME: the -Z option is a workaround for https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1730627
